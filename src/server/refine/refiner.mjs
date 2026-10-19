@@ -5,6 +5,7 @@ import { findProvider } from "../providers/index.mjs";
 import { createMeter } from "./meter.mjs";
 import { textFromModelOutput } from "./output.mjs";
 import { SYSTEM_PROMPT, TASK_REMINDER } from "./prompt.mjs";
+import { audioTranslatePrompt, audioTranslateReminder } from "./translate-prompt.mjs";
 
 // 原生链路：录音直接交给收音频的大模型，一次请求出成品。
 // 数字来自 scripts/dev/eval-prompt.mjs：同一批 60 条真实录音跑了 12 遍，共 720 条成品。
@@ -69,9 +70,11 @@ export function createRefiner({
     /**
      * 用户开口说话了：让这一家先把要用的东西备好，说完整理时就用得上。现在只有 Gemini 有事做（建提示词缓存，
      * 见 providers/gemini-cache.mjs），花的钱记一笔"缓存"。备不好只是这一次贵一点，记一条警告，从不往外抛
+     * @param {{ translateTarget?: string | null }} [intent] 这次录音是干什么的；翻译的那次（translateTarget
+     *   非 null）不建缓存：缓存的是整理的系统提示词，翻译用不上
      */
-    async prepare() {
-      if (!client.prepare) return;
+    async prepare(intent = {}) {
+      if (!client.prepare || intent.translateTarget) return;
       try {
         await metered("cache", null, () => client.prepare({ systemPrompt: SYSTEM_PROMPT }));
       } catch (error) {
@@ -80,21 +83,24 @@ export function createRefiner({
     },
 
     /**
-     * @param {{ mimeType: string, signal?: AbortSignal, audioId?: string }} options audioId：这是哪一次听写，记账时用
+     * @param {{ mimeType: string, signal?: AbortSignal, audioId?: string, translateTarget?: string | null }} options
+     *   audioId：这是哪一次听写，记账时用；translateTarget：翻译的那次要翻成哪种语言，不带就是普通整理
      * @returns {Promise<string>} 整理好的文字；没有人声时是空字符串
      */
-    async refine(audio, { mimeType, signal, audioId = null }) {
+    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null }) {
       try {
         // 只换一次：夹着时间戳要重来时用的是同一份
         const input = audioTypes.includes(mimeType)
           ? { audio, mimeType }
           : await timed(log, () => transcode(audio, mimeType));
+        const systemPrompt = translateTarget === null ? SYSTEM_PROMPT : audioTranslatePrompt(translateTarget);
+        const reminder = translateTarget === null ? TASK_REMINDER : audioTranslateReminder(translateTarget);
         const generateOnce = async () => {
           const reply = await metered("dictation", audioId, () =>
             client.generate({
               ...input,
-              systemPrompt: SYSTEM_PROMPT,
-              reminder: TASK_REMINDER,
+              systemPrompt,
+              reminder,
               signal: withTimeout(signal),
             }),
           );

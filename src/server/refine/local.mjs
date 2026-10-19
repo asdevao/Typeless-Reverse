@@ -1,10 +1,11 @@
 import { msg, problemOf } from "../../i18n/index.mjs";
 import { SPEECH_SAMPLE_RATE } from "../audio/pcm.mjs";
 import { toSpeech } from "../audio/transcode.mjs";
-import { ModelError } from "../providers/errors.mjs";
+import { ModelError } from "../providers/errors.mjs";;
 
 // 本地转写链路：录音 → 统一成 16 kHz 单声道 → 转写（第一跳，本机模型或云端模型）→ 纯文字模型润色（第二跳）→ 成品。
 // 和原生链路（refiner.mjs）平级，对外的接口一样（warmUp、prepare、refine），服务端不用知道走的是哪一条。
+// 翻译的那次（translateTarget）由润色那一跳换翻译的提示词；没有润色器（数据隐私模式）翻不了，原文照给并带一句说明。
 // 两跳各是一个策略：转写器是哪个模型由模型清单和转写进程管（asr/），润色交给哪一家由润色器管（polisher.mjs），
 // 这里只管把它们按顺序接起来。
 // 记账两跳各记一笔：润色那一笔由润色器记（花钱、有 token），本机转写这一笔在这里记（provider 是 local，不花钱），
@@ -58,7 +59,7 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
     /** 开口时没什么要先备的：模型一直装在转写进程里 */
     async prepare() {},
 
-    async refine(audio, { mimeType, signal, audioId = null }) {
+    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null }) {
       const startedAt = performance.now();
       let samples;
       try {
@@ -88,12 +89,22 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
           decode_ms: Math.round(decodedAt - startedAt),
           transcribe_ms: Math.round(transcribedAt - decodedAt),
           transcript_length: transcript.length,
+          translate: translateTarget !== null,
         });
+        // 数据隐私模式没有润色那一跳，翻不了：原文照给，带一句话说清原因（服务端把它随成品交给悬浮条）。
+        // 不是报错：他说的字一个不丢地贴出去了，只是没翻
+        if (translateTarget !== null && transcript.trim() !== "") {
+          return { text: transcript.trim(), notice: msg("translate.privateFallback") };
+        }
         return transcript.trim();
       }
       // 转写的这段时间里用户已经断开了：润色要花钱，不必再发
       signal?.throwIfAborted();
-      const refined = await polisher.polish(transcript, { signal, audioId });
+      const refined = await polisher.polish(transcript, {
+        signal,
+        audioId,
+        ...(translateTarget === null ? {} : { translateTarget }),
+      });
       // 只记长度和耗时：原文和成品都是用户说的话
       log.info("local_refined", {
         audio_id: audioId,
