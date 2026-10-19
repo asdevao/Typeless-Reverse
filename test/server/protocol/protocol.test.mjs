@@ -27,7 +27,34 @@ test("start_audio：只取用得到的字段，多余的字段不报错", () => 
   const message = parseClientMessage(
     JSON.stringify({ type: "start_audio", audio_id: "abc", audio_chunk_time: 3, mode: "voice_transcript" }),
   );
-  assert.deepEqual(message, { type: "start_audio", audioId: "abc" });
+  assert.deepEqual(message, { type: "start_audio", audioId: "abc", translateTarget: null });
+});
+
+test("start_audio：翻译的模式（voice_translation）带出目标语言，没写用默认的", () => {
+  const said = parseClientMessage(
+    JSON.stringify({ type: "start_audio", audio_id: "a1", mode: "voice_translation", translate_target: "ja" }),
+  );
+  assert.deepEqual(said, { type: "start_audio", audioId: "a1", translateTarget: "ja" });
+  const silent = parseClientMessage(JSON.stringify({ type: "start_audio", audio_id: "a2", mode: "voice_translation" }));
+  assert.equal(silent.translateTarget, "en");
+  // 普通听写带了目标语言也不算数：mode 说了才算
+  const plain = parseClientMessage(
+    JSON.stringify({ type: "start_audio", audio_id: "a3", mode: "voice_transcript", translate_target: "ja" }),
+  );
+  assert.equal(plain.translateTarget, null);
+});
+
+test("start_audio：不认识的模式、写错的目标语言分别报错", () => {
+  rejects(JSON.stringify({ type: "start_audio", audio_id: "a1", mode: "voice_command" }), "invalid_field");
+  rejects(JSON.stringify({ type: "start_audio", audio_id: "a1", mode: 1 }), "invalid_field");
+  rejects(
+    JSON.stringify({ type: "start_audio", audio_id: "a1", mode: "voice_translation", translate_target: 3 }),
+    "invalid_field",
+  );
+  rejects(
+    JSON.stringify({ type: "start_audio", audio_id: "a1", mode: "voice_translation", translate_target: "x".repeat(25) }),
+    "invalid_field",
+  );
 });
 
 test("set_audio_chunk_info：序号和字节数必须是正整数", () => {

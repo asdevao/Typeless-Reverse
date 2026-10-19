@@ -11,10 +11,22 @@ export class RecordingSession {
   #totalBytes = 0;
   #maxTotalBytes;
   #mimeType = null;
+  #translateTarget;
 
-  constructor(audioId, { maxTotalBytes }) {
+  /**
+   * @param {string} audioId
+   * @param {{ maxTotalBytes: number, translateTarget?: string | null }} options
+   *   translateTarget：翻译的那次要翻成哪种语言；普通听写是 null
+   */
+  constructor(audioId, { maxTotalBytes, translateTarget = null }) {
     this.audioId = audioId;
     this.#maxTotalBytes = maxTotalBytes;
+    this.#translateTarget = translateTarget;
+  }
+
+  /** 这次录音要不要翻译、翻成哪种；普通听写是 null */
+  get translateTarget() {
+    return this.#translateTarget;
   }
 
   get chunkCount() {

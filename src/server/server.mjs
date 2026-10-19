@@ -53,6 +53,12 @@ function closeServer(wss) {
   return new Promise((resolve, reject) => wss.close((error) => (error ? reject(error) : resolve())));
 }
 
+/**
+ * 整理的那一步交回的东西：大多数链路就是一段文字；要带一句话给用户时（现在只有 private 模式的翻译回退）
+ * 是 { text, notice }。在这里归一，下面只认一种形状
+ */
+const completedOf = (outcome) => (typeof outcome === "string" ? { text: outcome, notice: null } : outcome);
+
 function handleConnection(socket, { refiner, log, maxAudioBytes }) {
   /** 正在收音频的那一次录音；end_audio 之后清空，整理在后台继续 */
   let session = null;
@@ -83,11 +89,14 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
           // 客户端取消录音时不发 end_audio，直接开始下一次
           log.info("session_abandoned", { audio_id: session.audioId, chunks: session.chunkCount });
         }
-        session = new RecordingSession(message.audioId, { maxTotalBytes: maxAudioBytes });
+        session = new RecordingSession(message.audioId, {
+          maxTotalBytes: maxAudioBytes,
+          translateTarget: message.translateTarget,
+        });
         // 用户开口了：让模型那边先备好要用的东西（Gemini 建提示词缓存），说完整理时就用得上。
         // 不等它；备不好只是这一次贵一点，记一笔就算了
         Promise.resolve()
-          .then(() => refiner.prepare?.())
+          .then(() => refiner.prepare?.({ translateTarget: message.translateTarget }))
           .catch((error) => log.warn("prepare_failed", { audio_id: message.audioId, error: String(error?.message) }));
         send(ServerType.STARTED, { audio_id: message.audioId, start_time: Date.now() });
         break;
@@ -132,21 +141,27 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
     refining.add(abort);
     const startedAt = performance.now();
     try {
-      const refinedText = await refiner.refine(finished.merge(), {
-        mimeType: finished.mimeType,
-        signal: abort.signal,
-        audioId: finished.audioId,
-      });
+      const outcome = completedOf(
+        await refiner.refine(finished.merge(), {
+          mimeType: finished.mimeType,
+          signal: abort.signal,
+          audioId: finished.audioId,
+          translateTarget: finished.translateTarget,
+        }),
+      );
       // 日志只记长度：成品是用户说的话，不该留在日志里
       log.info("refined", {
         ...context,
         refine_ms: Math.round(performance.now() - startedAt),
-        text_length: refinedText.length,
+        text_length: outcome.text.length,
+        translate: finished.translateTarget !== null,
+        ...(outcome.notice ? { noticed: true } : {}),
       });
-      // 后五项在普通听写里实测都是 null，照原样带上，客户端按同一套字段解析
+      // 后五项在普通听写里实测都是 null，照原样带上，客户端按同一套字段解析。
+      // notice 是我们加的：整理那一步带一句话给用户（比如 private 模式翻不了，贴的是原文），没有是 null
       send(ServerType.COMPLETED, {
         audio_id: finished.audioId,
-        refined_text: refinedText,
+        refined_text: outcome.text,
         status: true,
         run_index: 1,
         web_metadata: null,
@@ -154,6 +169,7 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
         action: null,
         user_prompt: null,
         external_action: null,
+        notice: outcome.notice,
       });
     } catch (error) {
       if (abort.signal.aborted) {

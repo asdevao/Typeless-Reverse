@@ -92,6 +92,7 @@ test("一次完整的听写：消息顺序和成品字段与抓包一致；整�
     action: null,
     user_prompt: null,
     external_action: null,
+    notice: null,
   });
   assert.equal(completed.K, "audio_processing_completed");
 
@@ -236,6 +237,48 @@ test("一开始录音就让模型那边先备好（Gemini 建提示词缓存）�
   client.sendJson({ type: "end_audio", audio_id: "p1" });
   await client.next();
   assert.equal((await client.next()).V.refined_text, "整理好的文字");
+});
+
+test("翻译的那次录音（voice_translation）：整理时带上目标语言；开头先做的准备也带上", async () => {
+  const seen = [];
+  const port = await start({
+    async prepare(intent) {
+      seen.push({ prepare: intent });
+    },
+    async refine(audio, options) {
+      seen.push({ refine: options });
+      return "We'll meet tomorrow.";
+    },
+  });
+  const client = await connect(port);
+  client.sendJson({ type: "start_audio", audio_id: "t1", mode: "voice_translation", translate_target: "en" });
+  await client.next();
+  await sendChunk(client, "t1", 1, ogg("x"));
+  client.sendJson({ type: "end_audio", audio_id: "t1", mode: "voice_translation" });
+  await client.next();
+  const completed = await client.next();
+  assert.equal(completed.V.refined_text, "We'll meet tomorrow.");
+  assert.deepEqual(seen[0], { prepare: { translateTarget: "en" } });
+  assert.equal(seen[1].refine.translateTarget, "en");
+  assert.equal(seen[1].refine.audioId, "t1");
+});
+
+test("整理交回一句话给用户的提示（private 模式翻译回退原文）时，随成品一起带给客户端", async () => {
+  const problem = msg("translate.privateFallback");
+  const port = await start({
+    async refine() {
+      return { text: "明天开会", notice: problem };
+    },
+  });
+  const client = await connect(port);
+  client.sendJson({ type: "start_audio", audio_id: "t2", mode: "voice_translation" });
+  await client.next();
+  await sendChunk(client, "t2", 1, ogg("x"));
+  client.sendJson({ type: "end_audio", audio_id: "t2" });
+  await client.next();
+  const completed = await client.next();
+  assert.equal(completed.V.refined_text, "明天开会");
+  assert.deepEqual(completed.V.notice, problem);
 });
 
 test("整理的那一步不做准备（没有 prepare）也照常听写", async () => {

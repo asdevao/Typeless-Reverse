@@ -1,10 +1,18 @@
+import { DEFAULT_TRANSLATE_TARGET } from "../refine/translate-prompt.mjs";
+
 // 听写协议里本服务端用到的那一部分。
 // 消息名和字段名照抄 Typeless 抓包的实测结果（docs/05-network-protocol.md），
 // 这样仿刻的两端和逆向文档能一一对上。原版还有上下文、模式配置等消息，这里没有发送方，就不实现。
+// 原版听三种模式（voice_transcript / voice_command / voice_translation，docs/04-voice-pipeline.md），
+// 这里实现了听写和翻译两种；voice_command 没有实现，照实报错。
+// 翻译的目标语言（translate_target）只在这一个模块里认，清单和叫法在 refine/translate-prompt.mjs。
 
 /** 3 秒一块实测 14–15 KB，这里留足余量；也用作 WebSocket 单帧上限 */
 export const MAX_CHUNK_BYTES = 256 * 1024;
 const MAX_AUDIO_ID_LENGTH = 128;
+/** 目标语言的写法：像语言标签（en、zh、pt-BR），别让一段话混进来 */
+const LANGUAGE_TAG = /^[A-Za-z]{2,3}(-[A-Za-z]{2,8})?$/;
+const MAX_TARGET_LENGTH = 24;
 
 export const ClientType = Object.freeze({
   START: "start_audio",
@@ -54,7 +62,15 @@ function positiveInteger(message, field, max) {
 
 // 用 Map 而不是对象字面量：消息类型来自外部输入，不能让 "constructor" 这类原型属性名查到东西
 const PARSERS = new Map([
-  [ClientType.START, (message) => ({ type: ClientType.START, audioId: audioIdOf(message) })],
+  [
+    ClientType.START,
+    (message) => ({
+      type: ClientType.START,
+      audioId: audioIdOf(message),
+      // 普通听写是 null；翻译的那次是要翻成的语言。没写 mode 当普通听写（抓包里原版一直发这个字段）
+      translateTarget: translateTargetOf(message),
+    }),
+  ],
   [
     ClientType.CHUNK_INFO,
     (message) => ({
@@ -66,6 +82,24 @@ const PARSERS = new Map([
   ],
   [ClientType.END, (message) => ({ type: ClientType.END, audioId: audioIdOf(message) })],
 ]);
+
+/** start_audio 的 mode / translate_target → 要翻成哪种语言（不用翻是 null） */
+function translateTargetOf(message) {
+  const mode = message.mode ?? "voice_transcript";
+  if (mode === "voice_transcript") return null;
+  if (mode !== "voice_translation") {
+    throw new ProtocolError(
+      "invalid_field",
+      `mode 只认 voice_transcript / voice_translation，收到 ${String(mode).slice(0, 64)}`,
+    );
+  }
+  // 没写目标语言用默认的（en）：单独启动服务端调试时少写一个字段
+  const target = message.translate_target ?? DEFAULT_TRANSLATE_TARGET;
+  if (typeof target !== "string" || target.length > MAX_TARGET_LENGTH || !LANGUAGE_TAG.test(target)) {
+    throw new ProtocolError("invalid_field", `translate_target 要是语言标签（en、zh、pt-BR），收到 ${String(target).slice(0, 64)}`);
+  }
+  return target;
+}
 
 /** 解析并校验一条文本消息，只留下服务端用得到的字段 */
 export function parseClientMessage(text) {
