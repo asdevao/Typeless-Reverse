@@ -14,10 +14,19 @@ const MAX_DURATION_MS = 540_000;
 
 // 页面的 lang 跟着界面语言：提示是 aria-live 的，读屏软件按它挑用哪种语言念
 localize();
-const { serverUrl, hotkey: initialHotkey, translateHotkey, translateTarget, barControls, barHint } =
-  await window.speakmore.config();
+const {
+  serverUrl,
+  hotkey: initialHotkey,
+  translateHotkey: initialTranslateHotkey,
+  translateTarget: initialTranslateTarget,
+  barControls,
+  barHint,
+} = await window.speakmore.config();
 /** 现在的热键（id）。提示里写它的短名字，按界面语言写 */
 let hotkey = initialHotkey;
+// 翻译键和目标语言能在设置里当场换（主进程会推过来），留成可变的
+let translateHotkey = initialTranslateHotkey;
+let translateTarget = initialTranslateTarget;
 const voice = new VoiceSocket(serverUrl);
 const ui = createBarUi({
   document,
@@ -35,6 +44,14 @@ window.speakmore.onHotkeyChanged((next) => {
   hotkey = next;
   ui.setKeycap(keycapOf(hotkey));
 });
+window.speakmore.onTranslateHotkeyChanged((next) => {
+  translateHotkey = next;
+  ui.setTranslateKeycap(keycapOf(translateHotkey));
+});
+window.speakmore.onTranslateTargetChanged((next) => {
+  translateTarget = next;
+  ui.setTarget(t(`translate.targets.${translateTarget}`));
+});
 // 设置里换了语言：悬浮条不重新加载（可能正在听写），换掉翻译，下一句就是新的语言
 window.speakmore.onLocaleChanged((locale) => {
   setLocale(locale);
@@ -47,6 +64,8 @@ window.speakmore.onLocaleChanged((locale) => {
 let state = initialState;
 /** 正在进行的那一次：{ audioId, recording, cancelled, translate }。translate：是不是翻译的那次 */
 let session = null;
+/** 点了 ⌘ 的那一次：结束前抓好的选中文本（没抓到是 null） */
+let pendingCommandSelection = null;
 let holdTimer = null;
 let maxDurationTimer = null;
 
@@ -80,7 +99,16 @@ function start() {
   session = current;
   (async () => {
     // 翻译的那次在 start_audio 里说清要翻成哪种语言（服务端照它换翻译的提示词）
-    await voice.begin(current.audioId, current.translate ? { translateTarget } : {});
+    // 翻译的那次带目标语言；指令的那次带开始时抓好的选中文本（主进程在热键按下时抓的）
+    await voice.begin(
+      current.audioId,
+      current.translate
+        ? { translateTarget }
+        : current.command
+          ? { commandSelectedText: pendingCommandSelection ?? undefined }
+          : {},
+    );
+    pendingCommandSelection = null;
     const recording = await startRecording({
       onChunk: (chunk) => voice.sendChunk(chunk),
       onLevel: ui.level,
@@ -115,10 +143,26 @@ function cancel() {
   voice.abandon();
 }
 
+/** 指令的那次：点 ⌘ 时先把选中文本抓下来（焦点还在目标窗口，选区还活着），再走结束流程 */
+async function commandFinish() {
+  if (state.phase !== Phase.RECORDING) return;
+  try {
+    pendingCommandSelection = await window.speakmore.captureSelection();
+  } catch (error) {
+    // 抓不到选中文本（剪贴板被占、权限拦了）就按普通听写收场，别卡住这次录音
+    console.warn("抓取选中文本失败", error);
+    pendingCommandSelection = null;
+  }
+  dispatch({ type: "USER_COMMAND" });
+}
+
 async function stop() {
   clearTimeout(maxDurationTimer);
   const current = session;
   session = null;
+  // 点了 ⌘ 的那次：把抓好的选中文本随 end 带给服务端，换指令的提示词；普通听写是 null
+  const commandSelectedText = pendingCommandSelection ?? null;
+  pendingCommandSelection = null;
   let recorded = null;
   try {
     recorded = await current.recording.stop();
@@ -126,11 +170,25 @@ async function stop() {
       voice.abandon();
       throw new LocalizedError(msg("bar.noSignal"));
     }
-    const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds });
+    // 指令的答案生成更慢（问答可能要长答案）：超时单独放宽到 30 秒，对齐原版的指令专用超时
+    const timeoutMs = commandSelectedText === null ? undefined : 30_000;
+    const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, timeoutMs });
+    // 指令的那次按服务端定的交付方式分流（对齐原版：怎么投递服务端说了算）；听写和翻译照旧贴字
+    if (outcome.delivery === "reply") {
+      await window.speakmore.commandReply(outcome.text);
+      dispatch({ type: "RESULT", message: msg("bar.commandReplied") });
+      return;
+    }
+    if (outcome.delivery === "external") {
+      await window.speakmore.openExternalTarget(outcome.externalTarget);
+      dispatch({ type: "RESULT", message: msg("bar.commandOpened") });
+      return;
+    }
     const { notice } = await window.speakmore.deliver({
       audioId: current.audioId,
       text: outcome.text,
       durationSeconds: recorded.durationSeconds,
+      command: state.command === true,
       audio: await recorded.blob.arrayBuffer(),
     });
     // 服务端带话时（比如 private 模式翻不了、贴的是原文）它比"贴好了"那句更要紧
@@ -159,12 +217,15 @@ async function stop() {
 const INPUT_EVENTS = {
   hotkey: (event) => (event.down ? "KEY_DOWN" : "KEY_UP"),
   translate_hotkey: (event) => (event.down ? "TRANSLATE_KEY_DOWN" : "KEY_UP"),
+  command_hotkey: (event) => (event.down ? "COMMAND_KEY_DOWN" : "KEY_UP"),
   other_key: () => "OTHER_KEY",
   escape: () => "USER_CANCEL",
-  click: (event) => ({ cancel: "USER_CANCEL", confirm: "USER_CONFIRM" })[event.id],
+  click: (event) => ({ cancel: "USER_CANCEL", confirm: "USER_CONFIRM", command: "USER_COMMAND" })[event.id],
 };
 
 window.speakmore.onInput((event) => {
+  // ⌘ 的那一下要先抓选中文本（异步）再走结束流程，别的输入照旧直接进状态机
+  if (event.event === "click" && event.id === "command") return commandFinish();
   const type = Object.hasOwn(INPUT_EVENTS, event.event) ? INPUT_EVENTS[event.event](event) : undefined;
   if (type === undefined) {
     console.warn("不认识的输入事件", event);

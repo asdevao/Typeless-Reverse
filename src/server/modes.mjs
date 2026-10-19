@@ -56,7 +56,7 @@ export const MODES = Object.freeze([
       return cloud && cloud.vendor !== polish.id ? [findCloudTranscriber(cloud.vendor), polish] : [polish];
     },
     describe: (route) => `${route.transcriber} → ${formatChatChoice(route.polish)}`,
-    async create({ route, keys, transcriber, log, onCall, decode, fetch }) {
+    async create({ route, keys, transcriber, log, onCall, decode, fetch, dictionary }) {
       const cloud = cloudTranscriberOf(route.transcriber);
       if (!cloud && !transcriber) throw new Error(`本地转写链路要先装好转写器（${route.transcriber}）`);
       const firstHop = cloud
@@ -75,6 +75,7 @@ export const MODES = Object.freeze([
         transcriber: firstHop,
         polisher,
         log,
+        dictionary,
         // 云端转写自己记账，本机转写这一笔由 local.mjs 记
         model: cloud ? null : route.transcriber,
         onCall,
@@ -90,7 +91,7 @@ export const MODES = Object.freeze([
     // 不要任何一家的 key
     keyVendors: () => [],
     describe: (route) => route.transcriber,
-    async create({ route, transcriber, log, onCall, decode }) {
+    async create({ route, transcriber, log, onCall, decode, dictionary }) {
       // 设置那一层已经只认本机模型（storage/settings.mjs），这里再守一道：数据隐私模式绝不往外发录音
       if (cloudTranscriberOf(route.transcriber)) {
         throw new Error(`数据隐私模式只用本机模型，不能交给云端（${route.transcriber}）`);
@@ -100,6 +101,7 @@ export const MODES = Object.freeze([
         transcriber,
         polisher: null,
         log,
+        dictionary,
         model: route.transcriber,
         onCall,
         ...(decode ? { decode } : {}),

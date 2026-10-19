@@ -19,10 +19,12 @@ function checkRecording({ audioId, durationSeconds, audio }) {
  * @param {string} deps.recordingsDir
  * @param {{ add: Function }} deps.history
  * @param {(text: string) => Promise<{ ok: boolean }>} deps.paste
+ * @param {(text: string, html: string) => Promise<{ ok: boolean }>} [deps.pasteRich] 富文本贴：剪贴板写
+ *   text + html 双格式后模拟 Ctrl+V。指令会话用它；没接（undefined）时退回纯文本 paste
  * @param {(text: string) => void} deps.writeClipboard
  * @param {{ warn: Function, error: Function }} deps.log
  */
-export function createDelivery({ recordingsDir, history, paste, writeClipboard, log, now = () => new Date() }) {
+export function createDelivery({ recordingsDir, history, paste, pasteRich, writeClipboard, log, now = () => new Date() }) {
   const record = (payload, fields) => {
     checkRecording(payload);
     mkdirSync(recordingsDir, { recursive: true });
@@ -45,14 +47,17 @@ export function createDelivery({ recordingsDir, history, paste, writeClipboard, 
   return {
     /**
      * 成品回来了：先落盘，再贴。贴不进去时把文字放进剪贴板，用户不会丢字。
+     * @param {object} payload
+     * @param {{ html?: string }} [options] html：指令会话的富文本版本（润色体转 HTML）。带了就走双格式贴
      * @returns {Promise<{ notice: object | null }>} notice 是要在悬浮条上告诉用户的话（msg，悬浮条按界面语言翻）
      */
-    async completed(payload) {
+    async completed(payload, { html } = {}) {
       if (typeof payload.text !== "string") throw new TypeError("text 不是字符串");
       record(payload, { status: "completed", refinedText: payload.text, error: null });
       if (payload.text === "") return { notice: msg("delivery.silent") };
       try {
-        const result = await paste(payload.text);
+        const rich = html !== undefined && html !== null && typeof pasteRich === "function";
+        const result = rich ? await pasteRich(payload.text, html) : await paste(payload.text);
         if (result.ok) return { notice: null };
         log.warn("paste_not_permitted", { audio_id: payload.audioId, reason: result.reason });
         // 小帮手贴不进去的几种原因（native/main.swift、native/windows/main_windows.go）：

@@ -33,6 +33,10 @@ contextBridge.exposeInMainWorld("speakmore", {
   reportFailure: (payload) => ipcRenderer.invoke("dictation:failed", payload),
 
   onHotkeyChanged: (callback) => ipcRenderer.on("bar:hotkey", (_event, hotkey) => callback(hotkey)),
+  onTranslateHotkeyChanged: (callback) =>
+    ipcRenderer.on("bar:translate-hotkey", (_event, translateHotkey) => callback(translateHotkey)),
+  onTranslateTargetChanged: (callback) =>
+    ipcRenderer.on("bar:translate-target", (_event, translateTarget) => callback(translateTarget)),
   onBarHint: (callback) => ipcRenderer.on("bar:hint", (_event, value) => callback(value)),
 
   // 主窗口：首页、历史记录
@@ -73,7 +77,17 @@ contextBridge.exposeInMainWorld("speakmore", {
   recheckPermissions: () => ipcRenderer.invoke("setup:recheck"),
   setOpenAtLogin: (enabled) => ipcRenderer.invoke("setup:set-open-at-login", enabled),
   setHotkey: (hotkey) => ipcRenderer.invoke("setup:set-hotkey", hotkey),
+  setTranslateHotkey: (translateHotkey) => ipcRenderer.invoke("setup:set-translate-hotkey", translateHotkey),
+  setTranslateTarget: (translateTarget) => ipcRenderer.invoke("setup:set-translate-target", translateTarget),
+  commandReply: (answer) => ipcRenderer.invoke("command:reply", answer),
+  openExternalTarget: (target) => ipcRenderer.invoke("command:open-external", target),
+  dictList: () => ipcRenderer.invoke("dict:list"),
+  dictAdd: (wrong, correct) => ipcRenderer.invoke("dict:add", wrong, correct),
+  dictRemove: (wrong) => ipcRenderer.invoke("dict:remove", wrong),
+  dictImportCsv: () => ipcRenderer.invoke("dict:import-csv"),
   setBarHint: (value) => ipcRenderer.invoke("setup:set-bar-hint", value),
+  setHistoryRetention: (value) => ipcRenderer.invoke("setup:set-history-retention", value),
+  historyRetry: (audioId) => ipcRenderer.invoke("history:retry", audioId),
 
   // 首次引导
   captureHotkey: (capturing) => ipcRenderer.send("onboarding:capture-hotkey", capturing),

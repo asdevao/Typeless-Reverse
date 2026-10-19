@@ -43,40 +43,61 @@ export function createSettings({ refresh }) {
     choices.map(([value, label]) => new Option(label, value, false, value === current));
 
   function renderGeneral(setup) {
+    // 临时诊断：记录渲染收到的 setup 键（排查 undefined 用，查完撤）
+    console.warn("renderGeneral setup keys:", Object.keys(setup ?? {}).join(","));
+    // 全部防御式读取：任何键缺失就渲染空控件，不炸整页（渲染层的 setup 理论上恒有这些键）
     $("hotkey").replaceChildren(
       ...options(
-        setup.hotkey.choices.map((id) => [id, t(`hotkeys.${id}.name`)]),
-        setup.hotkey.value,
+        (setup.hotkey?.choices ?? []).map((id) => [id, t(`hotkeys.${id}.name`)]),
+        setup.hotkey?.value,
+      ),
+    );
+    $("translate-hotkey").replaceChildren(
+      ...options(
+        (setup.translateHotkey?.choices ?? []).map((id) => [id, t(`hotkeys.${id}.name`)]),
+        setup.translateHotkey?.value,
+      ),
+    );
+    $("translate-target").replaceChildren(
+      ...options(
+        (setup.translateTarget?.choices ?? []).map((id) => [id, t(`translate.targets.${id}`)]),
+        setup.translateTarget?.value,
       ),
     );
     $("theme").replaceChildren(
       ...options(
-        setup.theme.choices.map((id) => [id, t(`themes.${id}.name`)]),
-        setup.theme.value,
+        (setup.theme?.choices ?? []).map((id) => [id, t(`themes.${id}.name`)]),
+        setup.theme?.value,
       ),
     );
     // 跟随系统，再列出每种语言（名字用它自己的语言写）
     $("language").replaceChildren(
       ...options(
         [[SYSTEM_LOCALE, t("language.system")], ...LOCALES.map(({ id, name }) => [id, name])],
-        setup.language.value,
+        setup.language?.value,
       ),
     );
     $("model-source").replaceChildren(
       ...options(
-        setup.local.source.choices.map((id) => [id, t(`modelSources.${id}`)]),
-        setup.local.source.value,
+        (setup.local?.source?.choices ?? []).map((id) => [id, t(`modelSources.${id}`)]),
+        setup.local?.source?.value,
       ),
     );
     $("acceleration").replaceChildren(
       ...options(
-        setup.local.acceleration.choices.map((id) => [id, t(`accelerations.${id}`)]),
-        setup.local.acceleration.value,
+        (setup.acceleration?.choices ?? []).map((id) => [id, t(`accelerations.${id}`)]),
+        setup.acceleration?.value,
+      ),
+    );
+    $("history-retention").replaceChildren(
+      ...options(
+        (setup.historyRetentionDays?.choices ?? []).map((id) => [id, t(`preferences.retention.${id}`)]),
+        setup.historyRetentionDays?.value,
       ),
     );
     $("bar-hint").checked = setup.barHint === "on";
-    $("open-at-login").checked = setup.openAtLogin.enabled;
-    $("open-at-login-row").hidden = !setup.openAtLogin.supported;
+    $("open-at-login").checked = setup.openAtLogin?.enabled === true;
+    $("open-at-login-row").hidden = setup.openAtLogin?.supported !== true;
   }
 
   function showNote(id, message, tone = "") {
@@ -92,6 +113,36 @@ export function createSettings({ refresh }) {
       showNote("hotkey-note", result.note ?? null);
     } catch (error) {
       showNote("hotkey-note", t("preferences.hotkeyFailed", { reason: describeError(error) }), "problem");
+    }
+    await refresh();
+  });
+
+  $("translate-hotkey").addEventListener("change", async (event) => {
+    showNote("translate-hotkey-note", null);
+    try {
+      const result = await window.speakmore.setTranslateHotkey(event.target.value);
+      showNote("translate-hotkey-note", result.note ?? null);
+    } catch (error) {
+      showNote(
+        "translate-hotkey-note",
+        t("preferences.translateHotkeyFailed", { reason: describeError(error) }),
+        "problem",
+      );
+    }
+    await refresh();
+  });
+
+  $("translate-target").addEventListener("change", async (event) => {
+    showNote("translate-target-note", null);
+    try {
+      const result = await window.speakmore.setTranslateTarget(event.target.value);
+      showNote("translate-target-note", result.note ?? null);
+    } catch (error) {
+      showNote(
+        "translate-target-note",
+        t("preferences.translateTargetFailed", { reason: describeError(error) }),
+        "problem",
+      );
     }
     await refresh();
   });
@@ -141,6 +192,18 @@ export function createSettings({ refresh }) {
       showNote("acceleration-note", result.note ?? null);
     } catch (error) {
       showNote("general-problem", t("preferences.accelerationFailed", { reason: describeError(error) }), "problem");
+    }
+    await refresh();
+  });
+
+  $("history-retention").addEventListener("change", async (event) => {
+    showNote("general-problem", null);
+    showNote("history-retention-note", null);
+    try {
+      const result = await window.speakmore.setHistoryRetention(event.target.value);
+      showNote("history-retention-note", result.note ?? null);
+    } catch (error) {
+      showNote("general-problem", t("preferences.historyRetentionFailed", { reason: describeError(error) }), "problem");
     }
     await refresh();
   });

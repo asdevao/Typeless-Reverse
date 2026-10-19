@@ -168,6 +168,20 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
      WHERE purpose = 'dictation' AND audio_id IS NOT NULL AND created_at >= :since
      GROUP BY audio_id, provider, model ORDER BY ms`,
   );
+  const getById = db.prepare(
+    `SELECT id, status, refined_text AS refinedText, error, duration,
+            audio_local_path AS audioLocalPath, created_at AS createdAt FROM history WHERE id = :id`,
+  );
+  const updateRefined = db.prepare(
+    `UPDATE history SET refined_text = :refinedText, status = 'completed', error = NULL WHERE id = :id`,
+  );
+  // 保留期清理两步走：先删条目的记账（按 audio_id 挂在 model_calls），再删条目本身并带回录音路径
+  const purgeCalls = db.prepare(
+    `DELETE FROM model_calls WHERE audio_id IN (SELECT id FROM history WHERE created_at < :cutoff)`,
+  );
+  const purgeOldHistory = db.prepare(
+    `DELETE FROM history WHERE created_at < :cutoff RETURNING audio_local_path AS audioLocalPath`,
+  );
 
   return {
     /** @param {{ id: string, status: "completed" | "failed", refinedText: string, error: string | null, duration: number, audioLocalPath: string | null, createdAt: string }} entry */
@@ -191,6 +205,25 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
      */
     stats({ since = "" } = {}) {
       return { ...summarize.get({ since }) };
+    },
+    /** 重试/回放用：按 id 取一条；没有是 null */
+    get(audioId) {
+      return getById.get({ id: audioId }) ?? null;
+    },
+    /** 重试成功后：更新成品文字，失败的那次转回 completed */
+    updateRefinedText(audioId, refinedText) {
+      updateRefined.run({ id: audioId, refinedText });
+    },
+    /**
+     * 保留期清理：删掉 cutoff（ISO 8601）之前的所有条目和它们的记账，
+     * 返回被删条目的录音路径列表（调用方负责删文件）
+     */
+    purgeOlderThan(cutoffIso) {
+      const removed = db.transaction(() => {
+        purgeCalls.run({ cutoff: cutoffIso });
+        return purgeOldHistory.all({ cutoff: cutoffIso });
+      })();
+      return removed.map((row) => row.audioLocalPath).filter((path) => path !== null);
     },
     /**
      * 所有完成了的听写，老的在前，只带首页统计要的几项（src/usage/insights.mjs）：字数、哪天说的要从文字和时间里数。

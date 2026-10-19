@@ -104,6 +104,8 @@ export default {
       barHint: "悬浮条上方那行操作提示（再按一下 … 完成 · esc 取消）显示不显示：on 显示，off 不显示",
       theme: "界面用哪套主题",
       language: "界面用哪种语言；system 是跟随系统",
+      historyRetentionDays:
+        "听写历史保留多久：forever 永久，数字是天数。到期的条目连录音一起删（启动时和每 6 小时清一遍）",
     },
     unknown: "没有 {name} 这项设置。能改的有：{names}",
     notText: "要是一段文字",
@@ -144,6 +146,10 @@ export default {
     modelMissing: "本地模型 {model} 还没下载：在设置的“模型”页下载，或运行 speakmore transcriber download {id}",
     undecodable: "录音解不开：{reason}",
     transcribeFailed: "本地转写失败：{reason}",
+  },
+  command: {
+    privateFallback: "数据隐私模式没有润色模型，执行不了指令：贴的是转写原文",
+    replyTitle: "SpeakMore 指令结果",
   },
   translate: {
     // 数据隐私模式没有润色的模型，翻不了：原文照贴，带这一句说清原因
@@ -308,6 +314,8 @@ export default {
     translateRecording: "再按一下 {key} 完成翻译 · {esc} 取消",
     translateRecordingNoEsc: "再按一下 {key} 完成翻译",
     translateFinishing: "翻译成{target}中",
+    commandReplied: "答案已弹出通知，并复制到剪贴板",
+    commandOpened: "已在系统默认程序中打开",
     noHold: "不支持按住说话：按一下开始，再按一下结束",
     noMicPermission: "缺麦克风权限：系统设置 › 隐私与安全性 › 麦克风",
     noMicrophone: "找不到麦克风",
@@ -336,7 +344,13 @@ export default {
     envRemove: "环境变量 {variable} 优先 · 删掉它才生效",
   },
 
+  dictionary: {
+    title: "个人词典",
+    hint: "转写里的专有名词按这张表自动纠正（说出来的 → 要写成的）。只在本机，不上传。",
+    empty: "还没有词条。在上面的两栏里填一条，或用 CSV 批量导入。",
+  },
   hub: {
+    dictionary: "词典",
     pages: "页面",
     home: "首页",
     models: "模型",
@@ -531,6 +545,15 @@ export default {
   },
 
   home: {
+    share: {
+      copy: "复制统计",
+      copied: "已复制",
+      copyFailed: "复制失败",
+      title: "我用 SpeakMore 语音输入：",
+      words: "累计说了 {words} 个字",
+      saved: "省下约 {time} 的打字时间",
+      streak: "连续使用 {current} 天（累计 {active} 天）",
+    },
     title: "说话，别打字",
     words: "字数",
     saved: "省时",
@@ -570,6 +593,7 @@ export default {
     estimate: "按各家官方标准价估算",
     unpriced: "{models} 无标价，{count} 次未计入",
     dictate: "按一下说话",
+    translate: "按一下翻译",
     // 标题右边的识别方式选单（renderer/hub/mode-picker.mjs）；三种方式的名字在 plaza.modes
     mode: {
       label: "识别方式",
@@ -618,14 +642,42 @@ export default {
     general: "通用",
     permissions: "权限",
     about: "关于",
-    hotkey: "快捷键",
+      hotkey: "快捷键",
+      translateHotkey: "翻译热键",
+      translateTarget: "翻译目标语言",
+      historyRetention: "历史保留",
+      historyRetentionFailed: "没改成：{reason}",
+      retention: {
+        forever: "永久保留",
+        "1": "保留 1 天",
+        "7": "保留 1 周",
+        "30": "保留 30 天",
+        "90": "保留 90 天",
+        "365": "保留 1 年",
+      },
+      dictionary: "词典",
+      dictionaryHint: "听写转写出的专有名词会按这张表自动纠正（“说成的”改写成“要写成的”）。只在本机生效，不上传。",
+      dictWrong: "说出来的",
+      dictCorrect: "要写成的",
+      dictWrongPlaceholder: "说成了，比如：瑞艾克特",
+      dictCorrectPlaceholder: "要写成的，比如：React",
+      dictAdd: "加入词典",
+      dictImport: "导入 CSV",
+      dictDelete: "删除",
+      dictNeedBoth: "两栏都填上再加",
+      dictAdded: "已加入词典：{wrong} → {correct}",
+      dictFailed: "没改成：{reason}",
+      dictImported: "从 CSV 导入 {count} 条，现在共 {total} 条",
+      dictEmpty: "还没有词条。在上面两栏填好后点“加入词典”，或用 CSV 批量导入。",
     theme: "主题",
     language: "语言",
     modelSource: "本地模型下载源",
     acceleration: "本机模型加速",
     barHint: "悬浮条操作提示",
     openAtLogin: "开机启动",
-    hotkeyFailed: "没改成：{reason}",
+      hotkeyFailed: "没改成：{reason}",
+      translateHotkeyFailed: "翻译热键没换成：{reason}",
+      translateTargetFailed: "翻译目标没改成：{reason}",
     themeFailed: "主题没换成：{reason}",
     languageFailed: "语言没换成：{reason}",
     loginFailed: "开机启动没设上：{reason}",
@@ -767,6 +819,18 @@ export default {
   },
 
   cli: {
+    dict: {
+      empty: "词典是空的。加一条：speakmore dict add <错误写法> <正确写法>",
+      count: "共 {count} 条",
+      added: "已加入词典：{wrong} → {correct}",
+      removed: "已从词典移除：{wrong}",
+      notFound: "词典里没有这一条：{wrong}",
+      imported: "从 CSV 导入 {count} 条，词典现在共 {total} 条",
+      usageAdd: "用法：speakmore dict add <错误写法> <正确写法>",
+      usageRemove: "用法：speakmore dict remove <错误写法>",
+      usageImport: "用法：speakmore dict import-csv <csv 文件路径>",
+      unknownAction: "不认识的词典操作：{action}（能用的：list / add / remove / import-csv）",
+    },
     help: `SpeakMore：按一下热键说话，整理好的文字贴进当前输入框。
 
   speakmore                     启动（已经在运行就只显示状态）。第一次会问你要一把 API key（默认用 Gemini）
@@ -1202,7 +1266,7 @@ speakmore help     全部命令`,
 
   // Windows 上说法不同的那几句，名字照抄通用的（见 src/i18n/index.mjs 开头）。"本机"这类不分系统的不写
   windows: {
-    cli: {
+  cli: {
       daemon: {
         stuckNoPid:
           "SpeakMore 卡住了不答话，也认不出它的进程号。在“任务管理器”的“详细信息”里找到 electron.exe，结束它。",

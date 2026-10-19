@@ -39,6 +39,7 @@ test("没有文件也没有环境变量时全用默认值", () => {
     hotkey: { value: DEFAULT_HOTKEY, source: "default" },
     translateHotkey: { value: DEFAULT_TRANSLATE_HOTKEY, source: "default" },
     translateTarget: { value: "en", source: "default" },
+    historyRetentionDays: { value: "forever", source: "default" },
     mode: { value: "native", source: "default" },
     model: { value: "gemini/gemini-3.6-flash", source: "default" },
     thinking: { value: "MINIMAL", source: "default" },

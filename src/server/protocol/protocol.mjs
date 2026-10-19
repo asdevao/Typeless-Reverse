@@ -18,6 +18,7 @@ export const ClientType = Object.freeze({
   START: "start_audio",
   CHUNK_INFO: "set_audio_chunk_info",
   END: "end_audio",
+  SET: "set_command_selected_text",
 });
 
 export const ServerType = Object.freeze({
@@ -69,6 +70,8 @@ const PARSERS = new Map([
       audioId: audioIdOf(message),
       // 普通听写是 null；翻译的那次是要翻成的语言。没写 mode 当普通听写（抓包里原版一直发这个字段）
       translateTarget: translateTargetOf(message),
+      // 指令的那次：悬浮条在按下指令键时抓好的选中文本；普通听写是 null
+      commandSelectedText: startCommandSelectedTextOf(message),
     }),
   ],
   [
@@ -80,8 +83,23 @@ const PARSERS = new Map([
       size: positiveInteger(message, "size", MAX_CHUNK_BYTES),
     }),
   ],
-  [ClientType.END, (message) => ({ type: ClientType.END, audioId: audioIdOf(message) })],
+  [ClientType.END, (message) => ({ type: ClientType.END, audioId: audioIdOf(message), commandSelectedText: commandSelectedTextOf(message) })],
 ]);
+
+const MAX_COMMAND_TEXT_LENGTH = 100_000;
+
+/** end_audio 上带的选中文本（指令的那次）：没带就是 null */
+function commandSelectedTextOf(message) {
+  const value = message.command_selected_text;
+  if (value === undefined) return null;
+  if (typeof value !== "string" || value.length === 0 || value.length > MAX_COMMAND_TEXT_LENGTH) {
+    throw new ProtocolError(
+      "invalid_field",
+      `command_selected_text 要是不超过 ${MAX_COMMAND_TEXT_LENGTH} 字的非空文本，收到 ${String(value).slice(0, 64)}`,
+    );
+  }
+  return value;
+}
 
 /** start_audio 的 mode / translate_target → 要翻成哪种语言（不用翻是 null） */
 function translateTargetOf(message) {
@@ -99,6 +117,20 @@ function translateTargetOf(message) {
     throw new ProtocolError("invalid_field", `translate_target 要是语言标签（en、zh、pt-BR），收到 ${String(target).slice(0, 64)}`);
   }
   return target;
+}
+
+/** start_audio 的 mode / command_selected_text → 指令的那次要用的选中文本（不是指令就是 null） */
+function startCommandSelectedTextOf(message) {
+  const mode = message.mode ?? "voice_transcript";
+  const value = message.command_selected_text;
+  if (mode !== "voice_command" || value === undefined) return null;
+  if (typeof value !== "string" || value.length === 0 || value.length > MAX_COMMAND_TEXT_LENGTH) {
+    throw new ProtocolError(
+      "invalid_field",
+      `command_selected_text 要是不超过 ${MAX_COMMAND_TEXT_LENGTH} 字的非空文本，收到 ${String(value).slice(0, 64)}`,
+    );
+  }
+  return value;
 }
 
 /** 解析并校验一条文本消息，只留下服务端用得到的字段 */

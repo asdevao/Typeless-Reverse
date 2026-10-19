@@ -77,6 +77,6 @@ export function hintFor(view, { keycap, cancellable, shown = true, translate = f
 /** 这个样子下，条上哪几个按钮点得动 */
 export function controlsIn(view) {
   if (view === View.STARTING) return ["cancel"];
-  if (view === View.RECORDING) return ["cancel", "confirm"];
+  if (view === View.RECORDING) return ["cancel", "command", "confirm"];
   return [];
 }

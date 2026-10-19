@@ -32,7 +32,7 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   const { body } = document;
   const hint = document.getElementById("hint");
   const message = document.getElementById("message");
-  const buttons = { cancel: document.getElementById("cancel"), confirm: document.getElementById("confirm") };
+  const buttons = { cancel: document.getElementById("cancel"), confirm: document.getElementById("confirm"), command: document.getElementById("command") };
   const window = document.defaultView;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 

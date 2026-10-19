@@ -7,6 +7,7 @@ import { LocalizedError, msg, problemOf } from "../i18n/index.mjs";
 import { findModel } from "../models/catalog.mjs";
 import { startTranscriber } from "../server/asr/start.mjs";
 import { createModeRefiner, describeRoute, keyVendorOf, usesLocalModel } from "../server/modes.mjs";
+import { applyHotwords } from "../storage/dictionary.mjs";
 import { startServer, WS_PATH } from "../server/server.mjs";
 
 /**
@@ -35,6 +36,8 @@ export async function startService({
   onLocalModel = () => {},
   acceleration: initialAcceleration = "auto",
   createRefiner = createModeRefiner,
+  /** 个人词典的热词表（storage/dictionary.mjs 的条目）。每次听写现读，改了词典当场生效 */
+  dictionary = () => [],
   startLocal = startTranscriber,
 }) {
   /** 正在走的路线。换一条当场换上（setRoute），要的 key 之后由 key 管理装上（useKey） */
@@ -137,23 +140,26 @@ export async function startService({
   };
 
   const build = (nextRoute, apiKey, keys) =>
-    createRefiner({ route: nextRoute, apiKey, keys, transcriber, log, onCall: onModelCall });
+    createRefiner({ route: nextRoute, apiKey, keys, transcriber, log, onCall: onModelCall, dictionary });
 
   followRoute();
 
   const server = await startServer({
     port: 0,
     log,
-    refiner: {
-      async refine(audio, options) {
-        if (!refiner) throw noKey();
-        return refiner.refine(audio, options);
+      refiner: {
+        async refine(audio, options) {
+          if (!refiner) throw noKey();
+          // 词典热词替换：native 链路的成品出来后过一遍（local 链路在转写后已做过，这里是幂等的第二遍）
+          const text = await refiner.refine(audio, options);
+          const hotwords = dictionary();
+          return hotwords.length > 0 ? applyHotwords(text, hotwords) : text;
+        },
+        /** 开口时先做的准备（Gemini 建提示词缓存）。还没有 key 时没什么可准备的 */
+        async prepare(intent) {
+          await refiner?.prepare?.(intent);
+        },
       },
-      /** 开口时先做的准备（Gemini 建提示词缓存）。还没有 key 时没什么可准备的 */
-      async prepare(intent) {
-        await refiner?.prepare?.(intent);
-      },
-    },
   });
 
   return {

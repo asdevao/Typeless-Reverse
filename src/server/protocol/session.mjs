@@ -12,21 +12,33 @@ export class RecordingSession {
   #maxTotalBytes;
   #mimeType = null;
   #translateTarget;
+  #commandSelectedText = null;
 
   /**
    * @param {string} audioId
-   * @param {{ maxTotalBytes: number, translateTarget?: string | null }} options
-   *   translateTarget：翻译的那次要翻成哪种语言；普通听写是 null
+   * @param {{ maxTotalBytes: number, translateTarget?: string | null, commandSelectedText?: string | null }} options
+   *   translateTarget：翻译的那次要翻成哪种语言；普通听写是 null。
+   *   commandSelectedText：指令的那次开始前抓好的选中文本；普通听写是 null
    */
-  constructor(audioId, { maxTotalBytes, translateTarget = null }) {
+  constructor(audioId, { maxTotalBytes, translateTarget = null, commandSelectedText = null }) {
     this.audioId = audioId;
     this.#maxTotalBytes = maxTotalBytes;
     this.#translateTarget = translateTarget;
+    this.#commandSelectedText = commandSelectedText;
   }
 
   /** 这次录音要不要翻译、翻成哪种；普通听写是 null */
   get translateTarget() {
     return this.#translateTarget;
+  }
+
+  /** 指令的那次：结束前把选中的文本挂上来；普通听写是 null */
+  get commandSelectedText() {
+    return this.#commandSelectedText;
+  }
+
+  setCommandSelectedText(text) {
+    this.#commandSelectedText = text;
   }
 
   get chunkCount() {

@@ -74,9 +74,9 @@ test("取消不了的时候（没有辅助功能权限，截不住 esc）提示�
   ]);
 });
 
-test("哪个样子下哪个按钮点得动：打开麦克风时只能取消，正在听时取消和完成都行，别的时候都点不动", () => {
+test("哪个样子下哪个按钮点得动：打开麦克风时只能取消，正在听时取消、指令和完成都行，别的时候都点不动", () => {
   assert.deepEqual(controlsIn(View.STARTING), ["cancel"]);
-  assert.deepEqual(controlsIn(View.RECORDING), ["cancel", "confirm"]);
+  assert.deepEqual(controlsIn(View.RECORDING), ["cancel", "command", "confirm"]);
   for (const view of [View.FINISHING, View.DONE, View.NOTICE, View.ERROR, View.HIDDEN]) {
     assert.deepEqual(controlsIn(view), [], view);
   }

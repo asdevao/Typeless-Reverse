@@ -70,6 +70,8 @@ export function resolvePaths(env = process.env, userHome = homedir(), platform =
     currentFile: join(home, "current"),
 
     settingsFile: join(home, "settings.json"),
+    /** 个人词典：专有名词的"错误写法 → 正确写法"，转写完自动替换（storage/dictionary.mjs） */
+    dictionaryFile: join(home, "dictionary.json"),
     historyDb: join(home, "data", "history.db"),
     recordingsDir: join(home, "data", "Recordings"),
     /** 本地转写的模型，一个模型一个目录（models/store.mjs） */

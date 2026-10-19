@@ -1,7 +1,8 @@
 import { msg, problemOf } from "../../i18n/index.mjs";
 import { SPEECH_SAMPLE_RATE } from "../audio/pcm.mjs";
 import { toSpeech } from "../audio/transcode.mjs";
-import { ModelError } from "../providers/errors.mjs";;
+import { ModelError } from "../providers/errors.mjs";
+import { applyHotwords } from "../../storage/dictionary.mjs";;
 
 // 本地转写链路：录音 → 统一成 16 kHz 单声道 → 转写（第一跳，本机模型或云端模型）→ 纯文字模型润色（第二跳）→ 成品。
 // 和原生链路（refiner.mjs）平级，对外的接口一样（warmUp、prepare、refine），服务端不用知道走的是哪一条。
@@ -23,7 +24,7 @@ import { ModelError } from "../providers/errors.mjs";;
  * @param {(record: object) => void} [options.onCall] 记账，样子同 meter.mjs 的 onCall
  * @param {typeof toSpeech} [options.decode] 测试时换成假的
  */
-export function createLocalRefiner({ transcriber, polisher, log, model, onCall = () => {}, decode = toSpeech }) {
+export function createLocalRefiner({ transcriber, polisher, log, model, onCall = () => {}, decode = toSpeech, dictionary = () => [] }) {
   /** 两跳之外的失败（解不开录音、本地转写出错）也报成 ModelError，服务端按同一套规矩告诉用户 */
   const failed = (problem, error) =>
     new ModelError({ kind: "other", problem, detail: String(error?.message ?? error), origin: error?.stack });
@@ -59,7 +60,7 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
     /** 开口时没什么要先备的：模型一直装在转写进程里 */
     async prepare() {},
 
-    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null }) {
+    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null, commandSelectedText = null }) {
       const startedAt = performance.now();
       let samples;
       try {
@@ -81,6 +82,10 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
       }
       const transcribedAt = performance.now();
       if (model) record(audioId, Math.round(transcribedAt - decodedAt));
+      // 词典热词替换：用户教过的专有名词（"瑞艾克特"→React）在进润色/贴出之前先改回来。
+      // 放在私有/润色分流之前：数据隐私模式下也生效（替换是纯本地操作，不外发任何东西）
+      const hotwords = dictionary();
+      if (hotwords.length > 0) transcript = applyHotwords(transcript, hotwords);
       if (!polisher) {
         // 只记长度和耗时：原文是用户说的话
         log.info("local_transcribed", {
@@ -95,6 +100,10 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
         // 不是报错：他说的字一个不丢地贴出去了，只是没翻
         if (translateTarget !== null && transcript.trim() !== "") {
           return { text: transcript.trim(), notice: msg("translate.privateFallback") };
+        }
+        // 指令的那次没有润色器也一样执行不了：按普通听写贴出去，说清楚指令没跑
+        if (commandSelectedText !== null && transcript.trim() !== "") {
+          return { text: transcript.trim(), notice: msg("command.privateFallback") };
         }
         return transcript.trim();
       }

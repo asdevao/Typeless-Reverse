@@ -1,4 +1,5 @@
 import { localize, t } from "../shared/i18n.mjs";
+import { createDictionary } from "./dictionary.mjs";
 import { createHistory } from "./history.mjs";
 import { createHome } from "./home.mjs";
 import { createModePicker } from "./mode-picker.mjs";
@@ -12,12 +13,13 @@ import { createSettings, fixTarget } from "./settings.mjs";
 // 数据都在主进程：有新记录、记了新的账时它通知这里重读；能不能用、还差什么变了时也一样。
 
 const $ = (id) => document.getElementById(id);
-const ROUTES = ["home", "models", "history"];
+const ROUTES = ["home", "models", "history", "dictionary"];
 
 // 页面上写死的字先按界面语言填上，下面各块再画自己的
 localize();
 
 const home = createHome();
+const dictionary = createDictionary();
 const history = createHistory();
 const settings = createSettings({ refresh: refreshSetup });
 const models = createModels({
@@ -56,6 +58,7 @@ function navigate(route) {
   document.querySelector(".content").removeAttribute("data-scrolled");
   if (name === "models") models.shown();
   if (name === "home") home.shown();
+  if (name === "dictionary") dictionary.shown();
   // 记在地址里：换语言时页面重新加载，回到的还是这一页。打开时带的 pane 也一并去掉，免得重新加载时设置又弹出来
   window.history.replaceState(null, "", `?route=${name}`);
 }

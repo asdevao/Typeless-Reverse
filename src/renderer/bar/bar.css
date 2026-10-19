@@ -139,6 +139,15 @@ body[data-shown="false"] .shell {
   background: var(--bar-go);
 }
 
+.command {
+  color: var(--bar-ink);
+  background: var(--bar-ghost);
+}
+
+body[data-view="starting"] .command {
+  opacity: 0.35;
+}
+
 body[data-controls="false"] .control {
   display: none;
 }

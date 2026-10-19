@@ -53,6 +53,27 @@ export function createHistory() {
   const dayTemplate = $("history-day");
   const rowTemplate = $("history-row");
 
+  /** 一次只播一条：点别处的 ▶ 会把上一次的播放器收掉 */
+  let playing = null;
+
+  function toggleAudio(node, row) {
+    const existing = node.querySelector("audio");
+    if (existing) {
+      existing.pause();
+      existing.remove();
+      playing = null;
+      return;
+    }
+    for (const audio of document.querySelectorAll(".entry audio")) audio.pause();
+    if (playing !== null) playing.querySelector("audio")?.pause();
+    const audio = document.createElement("audio");
+    audio.controls = true;
+    audio.autoplay = true;
+    audio.src = `speakmore-audio://${row.id}.webm`;
+    node.querySelector(".entry-text").after(audio);
+    playing = node;
+  }
+
   function renderRow(row) {
     const node = rowTemplate.content.firstElementChild.cloneNode(true);
     const time = node.querySelector("time");
@@ -89,6 +110,25 @@ export function createHistory() {
         }, 1500);
       });
     }
+
+    // 录音回放：有录音文件的条目给 ▶，点按切换一行内嵌播放器（一次只播一条）
+    const play = node.querySelector(".play");
+    play.hidden = row.audioLocalPath === null;
+    play.addEventListener("click", () => toggleAudio(node, row));
+
+    // 失败的条目给 ↻：把存下的录音按当前链路再跑一遍（结果贴出、这条历史更新）
+    const retry = node.querySelector(".retry");
+    retry.hidden = row.status !== "failed" || row.audioLocalPath === null;
+    retry.addEventListener("click", async () => {
+      retry.disabled = true;
+      try {
+        await window.speakmore.historyRetry(row.id);
+      } catch (error) {
+        retry.title = error instanceof Error ? error.message : String(error);
+      } finally {
+        retry.disabled = false;
+      }
+    });
 
     const details = node.querySelector(".details");
     details.title = detailsOf(row);

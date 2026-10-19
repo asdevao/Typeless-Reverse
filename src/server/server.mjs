@@ -8,6 +8,7 @@ import {
   parseClientMessage,
   ServerType,
 } from "./protocol/protocol.mjs";
+import { parseCommandDelivery } from "./refine/command-prompt.mjs";
 import { RecordingSession } from "./protocol/session.mjs";
 
 export const WS_PATH = "/ws/rt_voice_flow";
@@ -92,6 +93,7 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
         session = new RecordingSession(message.audioId, {
           maxTotalBytes: maxAudioBytes,
           translateTarget: message.translateTarget,
+          commandSelectedText: message.commandSelectedText,
         });
         // 用户开口了：让模型那边先备好要用的东西（Gemini 建提示词缓存），说完整理时就用得上。
         // 不等它；备不好只是这一次贵一点，记一笔就算了
@@ -103,8 +105,14 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
       case ClientType.CHUNK_INFO:
         requireSession(message.audioId).announceChunk(message);
         break;
+      case ClientType.SET:
+        // 指令的那次：选中文本随这条消息补挂（悬浮条在 Space 按下后抓的）
+        requireSession(message.audioId).setCommandSelectedText(message.text);
+        break;
       case ClientType.END: {
         const finished = requireSession(message.audioId);
+        // 指令的那次：end 上带着悬浮条点"指令"按钮时抓好的选中文本
+        if (message.commandSelectedText !== null) finished.setCommandSelectedText(message.commandSelectedText);
         session = null;
         // 整理要等上游一两秒，不能卡住这条连接上后面的消息
         finish(finished).catch((error) => failConnection(error));
@@ -147,8 +155,14 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
           signal: abort.signal,
           audioId: finished.audioId,
           translateTarget: finished.translateTarget,
+          commandSelectedText: finished.commandSelectedText,
         }),
       );
+      // 指令的那次：模型首行的标记决定交付方式（对齐原版"怎么投递由服务端决定"的设计）。
+      // 普通听写和翻译没有标记，照旧走贴字
+      const verdict =
+        finished.commandSelectedText === null ? null : parseCommandDelivery(outcome.text);
+      const text = verdict === null ? outcome.text : verdict.text;
       // 日志只记长度：成品是用户说的话，不该留在日志里
       log.info("refined", {
         ...context,
@@ -158,17 +172,18 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
         ...(outcome.notice ? { noticed: true } : {}),
       });
       // 后五项在普通听写里实测都是 null，照原样带上，客户端按同一套字段解析。
-      // notice 是我们加的：整理那一步带一句话给用户（比如 private 模式翻不了，贴的是原文），没有是 null
+      // notice 是我们加的：整理那一步带一句话给用户（比如 private 模式翻不了，贴的是原文），没有是 null。
+      // delivery / external_action 只有指令会话可能有值（reply 弹通知、external 打开链接），原版同款字段
       send(ServerType.COMPLETED, {
         audio_id: finished.audioId,
-        refined_text: outcome.text,
+        refined_text: text,
         status: true,
         run_index: 1,
         web_metadata: null,
-        delivery: null,
+        delivery: verdict === null ? null : verdict.delivery,
         action: null,
         user_prompt: null,
-        external_action: null,
+        external_action: verdict?.delivery === "external" ? { target: verdict.target } : null,
         notice: outcome.notice,
       });
     } catch (error) {

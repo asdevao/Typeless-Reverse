@@ -32,21 +32,24 @@ export const Action = Object.freeze({
  * translate：这次是翻译的那次（翻译热键开始的）。开始时记下，回到空闲或出错时清掉。
  * message：出错原因或给用户的提示，只在 error 和带提示回到 idle 时有。
  */
-export const initialState = Object.freeze({ phase: Phase.IDLE, held: false, translate: false, message: null });
+export const initialState = Object.freeze({ phase: Phase.IDLE, held: false, translate: false, command: false, message: null });
 
-const idle = (message = null) => ({ phase: Phase.IDLE, held: false, translate: false, message });
+const idle = (message = null) => ({ phase: Phase.IDLE, held: false, translate: false, command: false, message });
 const unchanged = (state) => ({ state, actions: [] });
 
 export function transition(state, event) {
   const { phase, held } = state;
   switch (event.type) {
     case "KEY_DOWN":
-    case "TRANSLATE_KEY_DOWN": {
-      // 翻译热键只决定"开始的那一次"是不是翻译：结束、取消用哪个键都行（translate 照开始时的算）
+    case "TRANSLATE_KEY_DOWN":
+    case "COMMAND_KEY_DOWN": {
+      // 翻译热键只决定"开始的那一次"是不是翻译：结束、取消用哪个键都行（translate 照开始时的算）。
+      // 指令热键同理：command 照开始时的算，结束时点 ✓ 也还是指令的那次
       const translate = event.type === "TRANSLATE_KEY_DOWN";
+      const command = event.type === "COMMAND_KEY_DOWN";
       if (phase === Phase.IDLE || phase === Phase.ERROR) {
         return {
-          state: { phase: Phase.STARTING, held: true, translate, message: null },
+          state: { phase: Phase.STARTING, held: true, translate, command, message: null },
           actions: [Action.START, Action.ARM_HOLD_TIMER],
         };
       }
@@ -63,10 +66,16 @@ export function transition(state, event) {
       if (!held) return unchanged(state);
       return { state: { ...state, held: false }, actions: [Action.CLEAR_HOLD_TIMER] };
 
-    case "OTHER_KEY":
-      // 热键还按着就来了别的键，说明用户按的是组合键（比如 Option+字母），不是听写
+    case "OTHER_KEY": {
+      // 热键还按着就来了别的键：默认是组合键，取消听写。
+      // 例外：听写键按住时按了 Space——这是指令会话的开始（对齐原版 RightAlt+Space 的 askAnything）。
+      // 清掉长按计时，说多久都行；结束后还是老规矩（再按一下热键或点 ✓）
       if (!held) return unchanged(state);
+      if (!state.translate && event.vk === 0x20 && (phase === Phase.STARTING || phase === Phase.RECORDING)) {
+        return { state: { ...state, command: true }, actions: [Action.CLEAR_HOLD_TIMER] };
+      }
       return { state: idle(), actions: [Action.CANCEL, Action.CLEAR_HOLD_TIMER] };
+    }
 
     case "LONG_HOLD":
       if (!held) return unchanged(state);
@@ -82,6 +91,12 @@ export function transition(state, event) {
       if (phase !== Phase.RECORDING) return unchanged(state);
       return { state: { ...state, phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
 
+    case "USER_COMMAND":
+      // 点条上的 ⌘：结束这次录音，并把它按指令会话处理（选中文本由宿主在点之前抓好）。
+      // 只有正在录音时点才算数：其他阶段点了当没看见
+      if (phase !== Phase.RECORDING) return unchanged(state);
+      return { state: { ...state, phase: Phase.FINISHING, held: false, command: true, message: null }, actions: [Action.STOP] };
+
     case "MIC_READY":
       return phase === Phase.STARTING ? unchanged({ ...state, phase: Phase.RECORDING }) : unchanged(state);
 
@@ -96,7 +111,7 @@ export function transition(state, event) {
     case "FAILED": {
       if (phase === Phase.IDLE || phase === Phase.ERROR) return unchanged(state);
       // 出错就散场了：翻译的标记一并清掉，条上的提示回到听写的那套
-      const next = { phase: Phase.ERROR, held: false, translate: false, message: event.message };
+      const next = { phase: Phase.ERROR, held: false, translate: false, command: false, message: event.message };
       // 等成品时出错，录音已经停了；其余阶段要把麦克风和定时器收掉
       const actions = phase === Phase.FINISHING ? [] : [Action.CANCEL, Action.CLEAR_HOLD_TIMER];
       return { state: next, actions };

@@ -109,6 +109,8 @@ export default {
       barHint: "Whether the hint line above the voice bar (press … to finish · esc to cancel) shows: on or off",
       theme: "Which theme the windows use",
       language: "Interface language; system follows your Mac",
+      historyRetentionDays:
+        "How long to keep dictation history: forever keeps everything, a number is days. Expired entries are deleted along with their recordings (on startup and every 6 hours)",
     },
     unknown: "There's no setting called {name}. You can change: {names}",
     notText: "must be text",
@@ -150,6 +152,10 @@ export default {
       "The local model {model} isn't downloaded: download it on the Models page in Settings, or run speakmore transcriber download {id}",
     undecodable: "Couldn't read the recording: {reason}",
     transcribeFailed: "Local transcription failed: {reason}",
+  },
+  command: {
+    privateFallback: "Private mode has no polish model, so the instruction can't run: pasting the transcript",
+    replyTitle: "SpeakMore command result",
   },
   translate: {
     // Private mode has no polishing model to translate with: the raw transcript is pasted, with this note
@@ -318,6 +324,8 @@ export default {
     translateRecording: "Press {key} to finish translating · {esc} to cancel",
     translateRecordingNoEsc: "Press {key} to finish translating",
     translateFinishing: "Translating to {target}",
+    commandReplied: "Answer shown in a notification and copied to the clipboard",
+    commandOpened: "Opened in the default app",
     noHold: "No need to hold: press once to start, again to finish",
     noMicPermission: "No microphone access: System Settings › Privacy & Security › Microphone",
     noMicrophone: "No microphone found",
@@ -347,7 +355,13 @@ export default {
     envRemove: "The {variable} env var takes priority · remove it to apply",
   },
 
+  dictionary: {
+    title: "Dictionary",
+    hint: "Proper nouns from your dictation are corrected per this table (spoken as → written as). Local only — nothing is uploaded.",
+    empty: "No entries yet. Fill in the two fields above, or import a CSV.",
+  },
   hub: {
+    dictionary: "Dictionary",
     pages: "Pages",
     home: "Home",
     models: "Models",
@@ -541,6 +555,15 @@ export default {
   },
 
   home: {
+    share: {
+      copy: "Copy stats",
+      copied: "Copied",
+      copyFailed: "Copy failed",
+      title: "My SpeakMore voice dictation:",
+      words: "{words} words dictated",
+      saved: "About {time} of typing saved",
+      streak: "{current}-day streak ({active} days total)",
+    },
     title: "Speak, don't type",
     words: "Words",
     saved: "Time saved",
@@ -580,6 +603,7 @@ export default {
     estimate: "Estimated at list prices",
     unpriced: "{models} unpriced; {count} not counted",
     dictate: "Press to talk",
+    translate: "Press to translate",
     // The recognition mode menu next to the title (renderer/hub/mode-picker.mjs); mode names live in plaza.modes
     mode: {
       label: "Recognition",
@@ -629,6 +653,32 @@ export default {
     permissions: "Permissions",
     about: "About",
     hotkey: "Shortcut",
+    translateHotkey: "Translation shortcut",
+    translateTarget: "Translation target language",
+    historyRetention: "History retention",
+    historyRetentionFailed: "Not changed: {reason}",
+    retention: {
+      forever: "Keep forever",
+      "1": "Keep for 1 day",
+      "7": "Keep for 1 week",
+      "30": "Keep for 30 days",
+      "90": "Keep for 90 days",
+      "365": "Keep for 1 year",
+    },
+    dictionary: "Dictionary",
+    dictionaryHint: "Proper nouns from your dictation are corrected per this table (\"spoken as\" → \"written as\"). Local only — nothing is uploaded.",
+    dictWrong: "Spoken as",
+    dictCorrect: "Written as",
+    dictWrongPlaceholder: "Spoken as, e.g. Racret",
+    dictCorrectPlaceholder: "Written as, e.g. React",
+    dictAdd: "Add entry",
+    dictImport: "Import CSV",
+    dictDelete: "Delete",
+    dictNeedBoth: "Fill in both fields first",
+    dictAdded: "Added: {wrong} → {correct}",
+    dictFailed: "Not changed: {reason}",
+    dictImported: "Imported {count} from CSV; {total} entries now",
+    dictEmpty: "No entries yet. Fill in the two fields and press Add, or import a CSV.",
     theme: "Theme",
     language: "Language",
     modelSource: "Model download source",
@@ -636,6 +686,8 @@ export default {
     barHint: "Hints above the voice bar",
     openAtLogin: "Launch at login",
     hotkeyFailed: "Not changed: {reason}",
+    translateHotkeyFailed: "Translation shortcut not changed: {reason}",
+    translateTargetFailed: "Translation target not changed: {reason}",
     themeFailed: "Theme not changed: {reason}",
     languageFailed: "Language not changed: {reason}",
     loginFailed: "Couldn't set launch at login: {reason}",
@@ -781,6 +833,18 @@ export default {
   },
 
   cli: {
+    dict: {
+      empty: "The dictionary is empty. Add one: speakmore dict add <wrong> <correct>",
+      count: "{count} entries",
+      added: "Added to the dictionary: {wrong} → {correct}",
+      removed: "Removed from the dictionary: {wrong}",
+      notFound: "No such entry in the dictionary: {wrong}",
+      imported: "Imported {count} entries from CSV; the dictionary now has {total}",
+      usageAdd: "Usage: speakmore dict add <wrong> <correct>",
+      usageRemove: "Usage: speakmore dict remove <wrong>",
+      usageImport: "Usage: speakmore dict import-csv <csv file>",
+      unknownAction: "Unknown dictionary action: {action} (available: list / add / remove / import-csv)",
+    },
     help: `SpeakMore: press a hotkey, speak, and polished text is pasted into the current text box.
 
   speakmore                     Start (just shows status if already running). First run asks for an API key (Gemini by default)
@@ -1252,7 +1316,7 @@ speakmore help     all commands`,
 
   // Windows 上说法不同的那几句，名字照抄通用的（见 src/i18n/index.mjs 开头）
   windows: {
-    cli: {
+  cli: {
       daemon: {
         stuckNoPid:
           "SpeakMore is stuck and not answering, and its process can't be identified. In Task Manager's Details tab, find electron.exe and end it.",

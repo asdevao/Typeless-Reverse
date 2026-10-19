@@ -3,6 +3,7 @@ import { chatEndpoint, findChatVendor, PROTOCOLS, requestFor } from "../chat/ven
 import { toModelError } from "../providers/errors.mjs";
 import { createMeter } from "./meter.mjs";
 import { textFromModelOutput } from "./output.mjs";
+import { commandInput, polishCommandPrompt } from "./command-prompt.mjs";
 import { POLISH_PROMPT, polishInput } from "./polish-prompt.mjs";
 import { polishTranslateInput, polishTranslatePrompt } from "./translate-prompt.mjs";
 
@@ -58,12 +59,22 @@ export function createPolisher({
      *   不带（null）就是普通的整理润色
      * @returns {Promise<string>} 成品文字；原文是空的、或者模型判断没有要输入的内容时是空字符串
      */
-    async polish(transcript, { signal, audioId = null, translateTarget = null } = {}) {
+    async polish(transcript, { signal, audioId = null, translateTarget = null, commandSelectedText = null } = {}) {
       // 没转出字（静音、只有噪声）就不必花这一次请求
       if (transcript.trim() === "") return "";
-      // 翻译的那次换成翻译的提示词，其余（记账、收尾）和润色同一条路
-      const system = translateTarget === null ? prompt : polishTranslatePrompt(translateTarget);
-      const user = translateTarget === null ? polishInput(transcript) : polishTranslateInput(transcript, translateTarget);
+      // 指令的那次换成指令的提示词，翻译的那次换成翻译的提示词，其余（记账、收尾）和润色同一条路
+      const system =
+        commandSelectedText !== null
+          ? polishCommandPrompt()
+          : translateTarget === null
+            ? prompt
+            : polishTranslatePrompt(translateTarget);
+      const user =
+        commandSelectedText !== null
+          ? commandInput(transcript, commandSelectedText)
+          : translateTarget === null
+            ? polishInput(transcript)
+            : polishTranslateInput(transcript, translateTarget);
       try {
         const reply = await metered("dictation", audioId, () =>
           client.complete({ system, user, signal: withTimeout(signal) }),

@@ -43,6 +43,7 @@ test("程序、你的东西、运行时产生的，各在各的位置", () => {
     currentFile: "current",
     // 你的东西
     settingsFile: "settings.json",
+    dictionaryFile: "dictionary.json",
     historyDb: "data/history.db",
     recordingsDir: "data/Recordings",
     // 用到时自动下载的本地模型

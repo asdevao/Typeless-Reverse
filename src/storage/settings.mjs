@@ -113,6 +113,18 @@ export const SETTINGS = {
     },
     label: (value) => msg(`translate.targets.${value}`),
   },
+  historyRetentionDays: {
+    env: "SPEAKMORE_HISTORY_RETENTION_DAYS",
+    // 历史保留：forever 永久；数字是保留天数。清理在主进程（app/main.mjs 的 cleanupHistoryRetention）
+    default: "forever",
+    choices: ["forever", "1", "7", "30", "90", "365"],
+    parse(value) {
+      const id = String(value);
+      if (!choices.includes(id)) throw oneOf(choices);
+      return id;
+    },
+    label: (value) => msg(`preferences.retention.${value}`),
+  },
   mode: {
     env: "SPEAKMORE_MODE",
     // 两条链路平级（server/modes.mjs）。原生是 0.6 以前唯一的一条，没选过的人照旧

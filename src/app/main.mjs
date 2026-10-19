@@ -1,13 +1,19 @@
-import { existsSync, rmSync, writeFileSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { Readable } from "node:stream";
+import { pathToFileURL } from "node:url";
 import {
   app,
   BrowserWindow,
   clipboard,
+  dialog,
   ipcMain,
   Menu,
+  Notification,
   nativeImage,
   nativeTheme,
+  net,
+  protocol,
   safeStorage,
   screen,
   shell,
@@ -22,8 +28,18 @@ import { createLocalModels, freeBytesAt } from "../models/library.mjs";
 import { presetsFor } from "../models/presets.mjs";
 import { CHAT_VENDORS, formatChatChoice } from "../server/chat/vendors.mjs";
 import { describeRoute, keyVendorOf, MODES } from "../server/modes.mjs";
+import { TRANSLATE_TARGETS } from "../server/refine/translate-prompt.mjs";
 import { formatModelChoice, PROVIDERS } from "../server/providers/index.mjs";
 import { findVendor, VENDORS } from "../server/vendors.mjs";
+import { captureSelectedText, pressCtrlV } from "./selection.mjs";
+import { mdLikeToHtml } from "./rich-text.mjs";
+import {
+  addEntry,
+  loadDictionary,
+  parseDictionaryCsv,
+  removeEntry,
+  saveDictionary,
+} from "../storage/dictionary.mjs";
 import { adoptAppKeys } from "../storage/app-keys.mjs";
 import { openHistory } from "../storage/history.mjs";
 import { migrateLegacyData } from "../storage/legacy.mjs";
@@ -89,6 +105,7 @@ try {
 let hotkey = SETTINGS.hotkey.value;
 /** 翻译用哪个键（说母语、贴译文）。和听写热键相同时翻译键不生效（两个小帮手会抢同一个键），只在改设置重启后重新看 */
 let translateHotkey = SETTINGS.translateHotkey.value;
+let translateTarget = SETTINGS.translateTarget.value;
 /**
  * 启动时用谁家的 key：原生链路是收音频的那家，本地转写链路是润色的那家；数据隐私模式不用 key，是 null。
  * 正在用的以 keys.provider 为准
@@ -221,7 +238,50 @@ async function main() {
   adoptAppKeys({ paths: PATHS, log });
 
   const startedAt = new Date().toISOString();
+  // 录音回放：把 Recordings 下的录音通过只读协议喂给主窗口的 <audio>。id 校验防止路径穿越
+  protocol.handle("speakmore-audio", (request) => {
+    const id = new URL(request.url).hostname.replace(/\.webm$/, "");
+    if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(id)) {
+      return new Response("bad id", { status: 400 });
+    }
+    const file = join(PATHS.recordingsDir, `${id}.webm`);
+    if (!existsSync(file)) return new Response("not found", { status: 404 });
+    const { size } = statSync(file);
+    const stream = createReadStream(file);
+    // 流上挂个 error 监听免得未处理事件炸进程；响应断了由 Electron 收尾
+    stream.on("error", () => {});
+    return new Response(Readable.toWeb(stream), {
+      headers: { "content-type": "audio/webm", "content-length": String(size) },
+    });
+  });
+
   const history = openHistory(PATHS.historyDb);
+
+  // 保留期清理：启动时跑一遍，之后每 6 小时一次（设置 historyRetentionDays；forever 不删）。
+  // 删的是过期条目和它们的记账；录音文件一并清掉
+  const RETENTION_DAYS = { forever: null, "1": 1, "7": 7, "30": 30, "90": 90, "365": 365 };
+  async function cleanupHistoryRetention() {
+    try {
+      const { value } = resolveSettings({ file: PATHS.settingsFile, env: process.env }).historyRetentionDays;
+      const days = RETENTION_DAYS[value];
+      if (days === undefined || days === null) return 0;
+      const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
+      const removedPaths = history.purgeOlderThan(cutoff);
+      for (const path of removedPaths) rmSync(path, { force: true });
+      if (removedPaths.length > 0) {
+        log.info("history_retention_purged", { count: removedPaths.length, days });
+        historyChanged();
+      }
+      return removedPaths.length;
+    } catch (error) {
+      // 清理失败不连累听写：记日志，下一轮定时器再试
+      log.error("history_retention_failed", { error: String(error?.stack ?? error) });
+      return 0;
+    }
+  }
+  cleanupHistoryRetention();
+  setInterval(() => cleanupHistoryRetention(), 6 * 60 * 60_000).unref();
+
   // 模型广场上的标价、推荐组合的月成本：各家的价目模块启动时加载一次
   const prices = await loadPriceBook();
   // 每家一把 key，各存一个文件。正在用的那家之外的也要在：speakmore key openai、model check 要用
@@ -248,6 +308,7 @@ async function main() {
   const service = EXTERNAL_SERVER_URL
     ? null
     : await startService({
+      dictionary: () => loadDictionary(PATHS.dictionaryFile),
         log,
         route: ROUTE,
         modelsDir: PATHS.modelsDir,
@@ -624,6 +685,15 @@ async function main() {
     recordingsDir: PATHS.recordingsDir,
     history,
     paste: (text) => helper.paste(text),
+    // 富文本贴：剪贴板写 text + html 双格式（目标应用粘贴时自动挑支持的），再模拟 Ctrl+V；完事把剪贴板还原成贴之前的样子
+    pasteRich: async (text, html) => {
+      const previous = { text: clipboard.readText(), html: clipboard.readHTML() };
+      clipboard.write({ text, html });
+      pressCtrlV();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      clipboard.write(previous.html === "" ? { text: previous.text } : { text: previous.text, html: previous.html });
+      return { ok: true };
+    },
     writeClipboard: (text) => clipboard.writeText(text),
     log,
   });
@@ -651,12 +721,67 @@ async function main() {
     hotkey,
     // 悬浮条翻译的那次要用：哪个键、翻成哪种（都是 id，页面按界面语言写名字）
     translateHotkey,
-    translateTarget: SETTINGS.translateTarget.value,
+    translateTarget,
     barControls,
     barHint: currentBarHint(),
   }));
+  handle("dictation:capture-selection", () => captureSelectedText());
+  // 失败条目的重试：把存下来的录音按当前链路再跑一遍，成品更新进这条历史并贴出
+  handle("history:retry", async (_event, audioId) => {
+    if (typeof audioId !== "string" || !/^[0-9a-f-]{36}$/.test(audioId)) throw new TypeError("audioId 不是 UUID");
+    const row = history.get(audioId);
+    if (row === null) throw new TypeError(`历史里没有这一条：${audioId}`);
+    if (row.audioLocalPath === null || !existsSync(row.audioLocalPath)) {
+      throw new TypeError("这条的录音文件已经不在了，没法重试");
+    }
+    if (service === null) throw new TypeError("服务还没起来");
+    const raw = readFileSync(row.audioLocalPath);
+    const audio = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
+    const outcome = await service.refineAudio(audio, { mimeType: "audio/webm", audioId });
+    const text = typeof outcome === "string" ? outcome : outcome.text;
+    history.updateRefinedText(audioId, text);
+    historyChanged();
+    await helper.paste(text);
+    return { text };
+  });
+  // 设置页的个人词典：列表、增删、CSV 导入（文件选择框在主进程开，读文本交给词典模块解析）
+  handle("dict:list", () => loadDictionary(PATHS.dictionaryFile));
+  handle("dict:add", (_event, wrong, correct) => {
+    saveDictionary(PATHS.dictionaryFile, addEntry(loadDictionary(PATHS.dictionaryFile), wrong, correct));
+  });
+  handle("dict:remove", (_event, wrong) => {
+    saveDictionary(PATHS.dictionaryFile, removeEntry(loadDictionary(PATHS.dictionaryFile), wrong));
+  });
+  handle("dict:import-csv", async () => {
+    const picked = await dialog.showOpenDialog({
+      filters: [{ name: "CSV", extensions: ["csv", "txt"] }],
+      properties: ["openFile"],
+    });
+    if (picked.canceled || picked.filePaths.length === 0) return { canceled: true };
+    const imported = parseDictionaryCsv(readFileSync(picked.filePaths[0], "utf8"));
+    let merged = loadDictionary(PATHS.dictionaryFile);
+    for (const entry of imported) merged = addEntry(merged, entry.wrong, entry.correct);
+    saveDictionary(PATHS.dictionaryFile, merged);
+    return { imported: imported.length, total: merged.length };
+  });
+  // 指令的 reply 交付：答案弹系统通知 + 复制到剪贴板（通知看完就没了，剪贴板保证答案不丢）
+  handle("command:reply", (_event, answer) => {
+    if (typeof answer !== "string" || answer.trim() === "") throw new TypeError("要展示的答案是一段非空文字");
+    clipboard.writeText(answer);
+    new Notification({ title: msg("command.replyTitle"), body: answer.slice(0, 400) }).show();
+    return { copied: true };
+  });
+  // 指令的 external 交付：只放行网页和邮件链接，其余协议一律不开
+  handle("command:open-external", (_event, target) => {
+    if (typeof target !== "string") throw new TypeError("要打开的目标是一个网址");
+    const protocol = new URL(target).protocol;
+    if (!["http:", "https:", "mailto:"].includes(protocol)) throw new TypeError(`不放行 ${protocol} 协议的目标`);
+    shell.openExternal(target);
+  });
   handle("dictation:deliver", async (_event, payload) => {
-    const result = await delivery.completed(payload);
+    // 指令的那次（点过 ⌘）：成品转成 HTML，贴字走 text + html 双格式——目标应用支持就用它的排版
+    const html = payload.command === true ? mdLikeToHtml(payload.text) : undefined;
+    const result = await delivery.completed(payload, { html });
     // 只记长度：成品是用户说的话，不进日志
     log.info("delivered", { audio_id: payload.audioId, text_length: payload.text.length, notice: result.notice });
     historyChanged();
@@ -672,7 +797,7 @@ async function main() {
   handle("history:list", () => history.list());
   handle("usage:report", () => usageReport(history, { now: new Date() }));
   handle("insights:get", () => insights(history.dictations(), { now: new Date() }));
-  handle("app:info", () => ({ version: app.getVersion(), hotkey }));
+  handle("app:info", () => ({ version: app.getVersion(), hotkey, translateHotkey, translateTarget }));
   handle("app:open-homepage", () => shell.openExternal(HOMEPAGE));
   handle("clipboard:write", (_event, text) => {
     if (typeof text !== "string") throw new TypeError("要复制的不是文字");
@@ -688,6 +813,12 @@ async function main() {
       summary: summarizeSetup(setup),
       // 叫什么由页面按界面语言写，这里只给 id
       hotkey: { value: hotkey, choices: HOTKEY_IDS },
+      translateHotkey: { value: translateHotkey, choices: HOTKEY_IDS },
+      historyRetentionDays: {
+        value: resolveSettings({ file: PATHS.settingsFile, env: process.env }).historyRetentionDays.value,
+        choices: ["forever", "1", "7", "30", "90", "365"],
+      },
+      translateTarget: { value: translateTarget, choices: TRANSLATE_TARGETS },
       theme: { value: theme.id, choices: THEMES.map(({ id }) => id) },
       barHint: currentBarHint(),
       language: { value: languageSetting, locale },
@@ -890,6 +1021,9 @@ async function main() {
     setupChanged();
   });
   handle("setup:set-hotkey", (_event, wanted) => setHotkey(wanted));
+  handle("setup:set-translate-hotkey", (_event, wanted) => setTranslateHotkey(wanted));
+  handle("setup:set-history-retention", (_event, wanted) => setHistoryRetention(wanted));
+  handle("setup:set-translate-target", (_event, wanted) => setTranslateTarget(wanted));
   handle("setup:set-theme", (_event, wanted) => {
     saveSetting(PATHS.settingsFile, "theme", wanted);
     reloadTheme();
@@ -1013,6 +1147,47 @@ async function main() {
     if (translateHelper === null) launchTranslateHelper();
   }
 
+  /** 换翻译热键：存下来，只听这一个键的小帮手整个换掉（撞键的起停 syncTranslateHelper 里处理） */
+  function setTranslateHotkey(wanted) {
+    if (!HOTKEY_IDS.includes(wanted)) throw new TypeError(`不认识的翻译热键：${wanted}`);
+    saveSetting(PATHS.settingsFile, "translateHotkey", wanted);
+    if (wanted !== translateHotkey) {
+      translateHotkey = wanted;
+      log.info("translate_hotkey_changed", { translateHotkey });
+      syncTranslateHelper();
+      tellBar("bar:translate-hotkey", translateHotkey);
+      setupChanged();
+    }
+    const variable = overridingEnv("translateHotkey", process.env);
+    return variable === null ? {} : { note: msg("notes.envNextLaunch", { variable }) };
+  }
+
+  /** 换历史保留：存下来，当场按新的保留期清一遍（forever/更长保留期的选择不会删任何东西） */
+  function setHistoryRetention(wanted) {
+    if (!["forever", "1", "7", "30", "90", "365"].includes(wanted)) {
+      throw new TypeError(`不认识的历史保留：${wanted}`);
+    }
+    saveSetting(PATHS.settingsFile, "historyRetentionDays", wanted);
+    cleanupHistoryRetention();
+    const variable = overridingEnv("historyRetentionDays", process.env);
+    return variable === null ? {} : { note: msg("notes.envNextLaunch", { variable }) };
+  }
+
+  /** 换翻译的目标语言：存下来，悬浮条和下一次翻译立刻按新的来 */
+  function setTranslateTarget(wanted) {
+    const target = String(wanted).trim().toLowerCase();
+    if (!TRANSLATE_TARGETS.includes(target)) throw new TypeError(`不认识的翻译目标语言：${wanted}`);
+    saveSetting(PATHS.settingsFile, "translateTarget", target);
+    if (target !== translateTarget) {
+      translateTarget = target;
+      log.info("translate_target_changed", { translateTarget });
+      tellBar("bar:translate-target", translateTarget);
+      setupChanged();
+    }
+    const variable = overridingEnv("translateTarget", process.env);
+    return variable === null ? {} : { note: msg("notes.envNextLaunch", { variable }) };
+  }
+
   // ---------- 菜单栏、主窗口和首次引导 ----------
 
   /**
@@ -1042,6 +1217,10 @@ async function main() {
     // 第一次打开时去哪一页写在地址里：页面加载完之前发消息是收不到的
     const query = Object.fromEntries(Object.entries(target).filter(([, value]) => value));
     window.loadFile(join(sourceDir, "renderer", "hub", "hub.html"), { query });
+    // 临时诊断：把渲染层的报错转进主日志（排查页面异常用，查完撤）
+    window.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+      log.warn("hub_console", { level, message: String(message).slice(0, 300), line, source: String(sourceId).slice(-80) });
+    });
     window.on("focus", () => {
       // 切回来时重读一遍：窗口开着过了夜，"今天"要换成新的一天；用户去系统设置里改完权限再切回来，状态跟着刷新
       window.webContents.send("history:changed");
@@ -1191,7 +1370,7 @@ async function main() {
       // 翻译的那一键（说母语、贴译文）。旧版本的命令行不认这两项，报不报都不碍事
       translateHotkey,
       translateHotkeyLabel: say(`hotkeys.${translateHotkey}.name`),
-      translateTarget: SETTINGS.translateTarget.value,
+      translateTarget,
       // 连着单独启动的服务端时，用哪个模型由那边定
       provider: service ? (keys.provider?.id ?? null) : null,
       // 每家的 key 在哪。装成应用的那个各存各的，命令行要靠这一项才知道

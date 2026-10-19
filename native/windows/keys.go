@@ -13,6 +13,7 @@ const (
 	vkEscape   = 0x1B
 	vkLControl = 0xA2
 	vkRControl = 0xA3
+	vkRShift   = 0xA1
 	vkRMenu    = 0xA5 // 右 Alt
 	// 没有分配给任何键的键码。按住右 Alt 再松开，很多应用会把焦点交给菜单栏（Office 还会亮出按键提示）；
 	// 按下热键时插一下这个键，系统就当成"Alt 加别的键"，松开时不再去开菜单。AutoHotkey 用的也是它
@@ -25,8 +26,9 @@ const altGrFakeCtrlScan = 0x21D
 // 能选的热键：设置里的名字 → 虚拟键码。macOS 那几个（右 Option、右 Command、fn）在 Windows 上没有对应的键：
 // 右 Win 松开会弹开始菜单，fn 系统根本看不到
 var hotkeys = map[string]uint32{
-	"right_alt":  vkRMenu,
-	"right_ctrl": vkRControl,
+	"right_alt":   vkRMenu,
+	"right_ctrl":  vkRControl,
+	"right_shift": vkRShift,
 }
 
 // 一个键盘事件
@@ -102,7 +104,8 @@ func (s *keyState) onKey(in keyInput) outcome {
 	}
 	if in.down && s.hotkeyDown && !s.reportedOther {
 		s.reportedOther = true
-		return outcome{events: []event{{"event": "other_key"}}}
+		// 带上键码：悬浮条用它识别"热键按住时按了 Space"的指令组合（对齐原版 askAnything 的 RightAlt+Space）
+		return outcome{events: []event{{"event": "other_key", "key": in.vk}}}
 	}
 	return outcome{}
 }

@@ -16,6 +16,8 @@ export class VoiceSocket {
   #current = null;
   /** 翻译的那次要翻成哪种语言；普通听写是 null（start_audio / end_audio 的 mode 都要带） */
   #translateTarget = null;
+  /** 指令的那次要用的选中文本；普通听写是 null（start_audio 的 command_selected_text 要带） */
+  #commandSelectedText = null;
 
   constructor(url) {
     this.#url = url;
@@ -52,12 +54,15 @@ export class VoiceSocket {
   /**
    * 开始一次录音。连不上会在这里抛出
    * @param {string} audioId
-   * @param {{ translateTarget?: string }} [options] 翻译的那次：要翻成哪种语言
+   * @param {{ translateTarget?: string, commandSelectedText?: string }} [options]
+   *   translateTarget：翻译的那次：要翻成哪种语言。
+   *   commandSelectedText：指令的那次：开始前抓好的选中文本（随 start_audio 带给服务端）
    */
-  async begin(audioId, { translateTarget = null } = {}) {
+  async begin(audioId, { translateTarget = null, commandSelectedText = null } = {}) {
     const socket = await this.#connected();
     this.#current = { audioId, nextIndex: 1, sending: Promise.resolve(), failure: null, settle: null };
     this.#translateTarget = translateTarget;
+    this.#commandSelectedText = commandSelectedText;
     socket.send(
       JSON.stringify({
         type: "start_audio",
@@ -65,10 +70,27 @@ export class VoiceSocket {
         audio_chunk_time: CHUNK_SECONDS,
         audio_metadata: { audio_format: "webm", audio_codec: "opus", audio_channels: 1, need_merge: true },
         // 原版听多种模式（docs/04-voice-pipeline.md）；翻译的目标语言跟着 mode 一起带过去
-        mode: translateTarget === null ? "voice_transcript" : "voice_translation",
+        mode:
+          commandSelectedText === null
+            ? translateTarget === null
+              ? "voice_transcript"
+              : "voice_translation"
+            : "voice_command",
         ...(translateTarget === null ? {} : { translate_target: translateTarget }),
+        ...(commandSelectedText === null ? {} : { command_selected_text: commandSelectedText }),
       }),
     );
+  }
+
+  /**
+   * 指令会话中途补发选中文本（主进程在 Space 按下后抓的）。服务端把它挂到这次录音上，
+   * 整理时换指令的提示词。没有进行中的录音、或文本为空时忽略
+   * @param {string} text
+   */
+  setCommandSelection(text) {
+    const current = this.#current;
+    if (!current || text === null || text === undefined || text === "") return;
+    this.#socket.send(JSON.stringify({ type: "set_command_selected_text", audio_id: current.audioId, text }));
   }
 
   /**
@@ -94,10 +116,11 @@ export class VoiceSocket {
 
   /**
    * 结束录音，等成品文字。
-   * @returns {Promise<{ text: string, notice: object | null }>} text 是成品；notice 是服务端带的一句话
-   *   （一句 msg，比如 private 模式翻不了时说的原因），没有是 null。没有人声时 text 是空字符串
+   * @returns {Promise<{ text: string, notice: object | null, delivery: string | null, externalTarget: string | null }>}
+   *   text 是成品；notice 是服务端带的一句话（一句 msg，比如 private 模式翻不了时说的原因），没有是 null。
+   *   没有人声时 text 是空字符串。delivery / externalTarget 只有指令会话可能有值
    */
-  async finish({ durationSeconds, timeoutMs = REFINE_TIMEOUT_MS }) {
+  async finish({ durationSeconds, timeoutMs = REFINE_TIMEOUT_MS } = {}) {
     const current = this.#current;
     if (!current) throw new Error("还没有开始录音就结束了");
     await current.sending;
@@ -113,7 +136,12 @@ export class VoiceSocket {
         type: "end_audio",
         audio_id: current.audioId,
         total_duration: durationSeconds,
-        mode: this.#translateTarget === null ? "voice_transcript" : "voice_translation",
+        mode:
+          this.#commandSelectedText === null
+            ? this.#translateTarget === null
+              ? "voice_transcript"
+              : "voice_translation"
+            : "voice_command",
       }),
     );
     const timer = setTimeout(
@@ -153,7 +181,13 @@ export class VoiceSocket {
     if (!current || (value.audio_id && value.audio_id !== current.audioId)) return;
     switch (kind) {
       case "audio_processing_completed":
-        current.settle?.resolve({ text: value.refined_text, notice: value.notice ?? null });
+        // delivery / external_action：指令会话的交付方式（reply 弹通知、external 打开链接），普通听写是 null
+        current.settle?.resolve({
+          text: value.refined_text,
+          notice: value.notice ?? null,
+          delivery: value.delivery ?? null,
+          externalTarget: value.external_action?.target ?? null,
+        });
         break;
       case "audio_processing_error":
       case "error":

@@ -25,6 +25,7 @@ import { resolveSettings } from "../storage/settings.mjs";
 import { THEMES } from "../themes/index.mjs";
 import { askSecret, Cancelled } from "./ask-secret.mjs";
 import { config, settings, theme } from "./commands/config.mjs";
+import { dict } from "./commands/dict.mjs";
 import { DEFAULT_HISTORY_LIMIT, history } from "./commands/history.mjs";
 import { key } from "./commands/key.mjs";
 import { restart, start, status, stop } from "./commands/lifecycle.mjs";
@@ -67,6 +68,7 @@ const COMMANDS = {
   transcriber,
   polish,
   config,
+  dict,
   theme,
   history,
   usage,

@@ -38,7 +38,12 @@ test("开始、按序发块、结束，拿到成品；服务端收到的是各�
   // 第一块故意大一些：取字节数更慢，不排队的话第二块会抢到前面
   socket.sendChunk(webm("A".repeat(200_000)));
   socket.sendChunk(new Blob(["BBB"]));
-  assert.deepEqual(await socket.finish({ durationSeconds: 4.2 }), { text: "成品", notice: null });
+  assert.deepEqual(await socket.finish({ durationSeconds: 4.2 }), {
+    text: "成品",
+    notice: null,
+    delivery: null,
+    externalTarget: null,
+  });
   assert.equal(received.mimeType, "audio/webm");
   assert.ok(received.text.endsWith(`${"A".repeat(10)}BBB`));
 });
@@ -48,7 +53,12 @@ test("同一条连接上连着做两次", async () => {
   for (const audioId of ["a1", "a2"]) {
     await socket.begin(audioId);
     socket.sendChunk(webm("xy"));
-    assert.deepEqual(await socket.finish({ durationSeconds: 1 }), { text: "6", notice: null });
+    assert.deepEqual(await socket.finish({ durationSeconds: 1 }), {
+      text: "6",
+      notice: null,
+      delivery: null,
+      externalTarget: null,
+    });
   }
 });
 
@@ -64,6 +74,8 @@ test("翻译的那次：start_audio 里说清是 voice_translation、翻成哪�
   assert.deepEqual(await socket.finish({ durationSeconds: 1 }), {
     text: "We'll meet tomorrow.",
     notice: { key: "translate.privateFallback" },
+    delivery: null,
+    externalTarget: null,
   });
   assert.equal(seen.translateTarget, "ja");
 });
@@ -136,5 +148,10 @@ test("放弃一次录音后，它迟到的成品不会算到下一次头上", as
   releases[0]();
   await new Promise((resolve) => setTimeout(resolve, 20));
   releases[1]();
-  assert.deepEqual(await second, { text: "7", notice: null });
+  assert.deepEqual(await second, {
+    text: "7",
+    notice: null,
+    delivery: null,
+    externalTarget: null,
+  });
 });

@@ -580,6 +580,19 @@
   margin-top: 1.5rem;
 }
 
+/* 词典页：添加行三栏并排（说成的 → 要写成的 → 加入按钮） */
+.dict-form {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  max-width: 720px;
+}
+
+.dict-arrow {
+  opacity: 0.55;
+}
+
 .empty-state {
   padding: 4rem 0 2rem;
   text-align: center;

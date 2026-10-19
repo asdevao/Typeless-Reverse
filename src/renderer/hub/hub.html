@@ -96,6 +96,11 @@
                 <svg class="icon" aria-hidden="true"><use href="#i-history" /></svg><span data-i18n="hub.history">History</span>
               </button>
             </li>
+            <li>
+              <button type="button" class="nav-item" data-route="dictionary">
+                <svg class="icon" aria-hidden="true"><use href="#i-copy" /></svg><span data-i18n="hub.dictionary">Dictionary</span>
+              </button>
+            </li>
           </ul>
         </nav>
         <div class="sidebar-foot">
@@ -153,6 +158,10 @@
                   <p class="stat-label" data-i18n="home.time">Dictation time</p>
                 </div>
               </div>
+
+              <p class="recheck-row">
+                <button type="button" class="button ghost small" id="copy-stats" data-i18n="home.share.copy">Copy stats</button>
+              </p>
 
               <div class="card activity">
                 <div class="streaks">
@@ -228,6 +237,10 @@
                 <kbd class="dictate-key" id="home-keycap"></kbd>
                 <p class="dictate-title" data-i18n="home.dictate">Press to talk</p>
               </div>
+              <div class="dictate">
+                <kbd class="dictate-key" id="home-translate-keycap"></kbd>
+                <p class="dictate-title" id="home-translate-title"></p>
+              </div>
               <p class="version" id="home-version"></p>
             </aside>
           </div>
@@ -269,6 +282,24 @@
           <p class="empty-state" id="history-empty" hidden></p>
           <div id="history-days"></div>
         </section>
+
+        <!-- 词典：专有名词热词表（说成的 → 要写成的），转写完自动纠正。CLI（speakmore dict）和这里改的是同一份 -->
+        <section class="page" data-route="dictionary" aria-labelledby="dictionary-title" hidden>
+          <h1 class="page-title" id="dictionary-title" data-i18n="dictionary.title">Dictionary</h1>
+          <p class="setting-note" id="dict-hint"></p>
+          <div class="dict-form">
+            <input type="text" class="select" id="dict-wrong" data-i18n-placeholder="preferences.dictWrongPlaceholder" />
+            <span class="dict-arrow" aria-hidden="true">→</span>
+            <input type="text" class="select" id="dict-correct" data-i18n-placeholder="preferences.dictCorrectPlaceholder" />
+            <button type="button" class="button" id="dict-add" data-i18n="preferences.dictAdd">Add entry</button>
+          </div>
+          <p class="recheck-row">
+            <button type="button" class="button" id="dict-import" data-i18n="preferences.dictImport">Import CSV</button>
+          </p>
+          <p class="problem load-error" id="dict-error" role="alert" hidden></p>
+          <p class="empty-state" id="dict-empty" hidden></p>
+          <ul class="entries" id="dict-entries"></ul>
+        </section>
       </main>
     </div>
 
@@ -286,6 +317,8 @@
           <button type="button" class="icon-button copy" data-i18n-aria-label="history.copy" data-i18n-title="history.copy">
             <svg class="icon" aria-hidden="true"><use href="#i-copy" /></svg>
           </button>
+          <button type="button" class="icon-button play" hidden>▶</button>
+          <button type="button" class="icon-button retry" hidden>↻</button>
           <button type="button" class="icon-button details">
             <svg class="icon" aria-hidden="true"><use href="#i-info" /></svg>
           </button>
@@ -320,6 +353,16 @@
           </div>
           <p class="setting-note" id="hotkey-note" role="status" hidden></p>
           <div class="setting">
+            <label class="setting-title" for="translate-hotkey" data-i18n="preferences.translateHotkey">Translation shortcut</label>
+            <select class="select" id="translate-hotkey"></select>
+          </div>
+          <p class="setting-note" id="translate-hotkey-note" role="status" hidden></p>
+          <div class="setting">
+            <label class="setting-title" for="translate-target" data-i18n="preferences.translateTarget">Translation target language</label>
+            <select class="select" id="translate-target"></select>
+          </div>
+          <p class="setting-note" id="translate-target-note" role="status" hidden></p>
+          <div class="setting">
             <label class="setting-title" for="theme" data-i18n="preferences.theme">Theme</label>
             <select class="select" id="theme"></select>
           </div>
@@ -347,6 +390,11 @@
             <input type="checkbox" class="switch" id="bar-hint" />
           </div>
           <p class="setting-note" id="bar-hint-note" role="status" hidden></p>
+          <div class="setting">
+            <label class="setting-title" for="history-retention" data-i18n="preferences.historyRetention">History retention</label>
+            <select class="select" id="history-retention"></select>
+          </div>
+          <p class="setting-note" id="history-retention-note" role="status" hidden></p>
           <!-- 从终端启动时登记不了开机启动，整行不显示 -->
           <div class="setting" id="open-at-login-row">
             <label class="setting-title" for="open-at-login" data-i18n="preferences.openAtLogin">Launch at login</label>

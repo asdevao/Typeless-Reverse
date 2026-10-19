@@ -234,6 +234,28 @@ export function createHome() {
   // 窗口拉宽拉窄时，能放下的周数跟着变
   new ResizeObserver(() => renderHeatmap()).observe($("heatmap-cells"));
 
+  // 复制统计：把首页的数字整理成一段可直接分享的文本进剪贴板
+  $("copy-stats").addEventListener("click", async () => {
+    if (latest === null) return;
+    const summary = [
+      t("home.share.title"),
+      t("home.share.words", { words: formatCount(latest.words) }),
+      t("home.share.saved", { time: formatSeconds(latest.savedSeconds) }),
+      t("home.share.streak", { current: latest.currentStreak, active: latest.activeDays }),
+    ].join("\n");
+    const button = $("copy-stats");
+    try {
+      await window.speakmore.copyText(summary);
+      button.textContent = t("home.share.copied");
+    } catch (error) {
+      console.error("复制统计失败", error);
+      button.textContent = t("home.share.copyFailed");
+    }
+    setTimeout(() => {
+      button.textContent = t("home.share.copy");
+    }, 1500);
+  });
+
   return {
     /**
      * @param {{ insights: object, usage: object, app: { version: string, hotkey: string } }} data
@@ -245,6 +267,9 @@ export function createHome() {
       usage = report;
       renderSpend();
       $("home-keycap").textContent = keycapOf(app.hotkey);
+      // 翻译卡：键帽 + 标题（目标语言跟设置走，名字按界面语言写）
+      $("home-translate-keycap").textContent = keycapOf(app.translateHotkey);
+      $("home-translate-title").textContent = `${t("home.translate")} → ${t(`translate.targets.${app.translateTarget}`)}`;
       $("home-version").textContent = `v${app.version}`;
     },
 
