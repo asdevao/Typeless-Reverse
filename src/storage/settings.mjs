@@ -18,6 +18,7 @@ import {
   formatModelChoice,
   parseModelChoice,
 } from "../server/providers/index.mjs";
+import { DEFAULT_TRANSLATE_TARGET, TRANSLATE_TARGETS } from "../server/refine/translate-prompt.mjs";
 import { DEFAULT_THEME, findTheme, THEMES } from "../themes/index.mjs";
 
 // 用户能改的几项设置，存在数据目录的 settings.json 里。
@@ -87,6 +88,30 @@ export const SETTINGS = {
       return value;
     },
     label: hotkeyName,
+  },
+  translateHotkey: {
+    env: "SPEAKMORE_TRANSLATE_HOTKEY",
+    // 翻译热键（说母语、贴译文）。默认右 Ctrl：和听写的右 Alt 一左一右不冲突。macOS 上同位置的键叫 right_control。
+    // 这一项不校验和 hotkey 不同：单独改其中一项时另一项是什么还不知道（也允许先改成一样的再改回去），
+    // 相同时翻译键不生效，由启动那里的守卫说清楚（app/main.mjs）
+    default: HOTKEY_IDS.includes("right_ctrl") ? "right_ctrl" : "right_control",
+    choices: HOTKEY_IDS,
+    parse(value) {
+      if (!HOTKEY_IDS.includes(value)) throw oneOf(HOTKEY_IDS);
+      return value;
+    },
+    label: hotkeyName,
+  },
+  translateTarget: {
+    env: "SPEAKMORE_TRANSLATE_TARGET",
+    default: DEFAULT_TRANSLATE_TARGET,
+    choices: TRANSLATE_TARGETS,
+    parse(value) {
+      const id = value.trim().toLowerCase();
+      if (!TRANSLATE_TARGETS.includes(id)) throw oneOf(TRANSLATE_TARGETS);
+      return id;
+    },
+    label: (value) => msg(`translate.targets.${value}`),
   },
   mode: {
     env: "SPEAKMORE_MODE",

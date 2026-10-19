@@ -37,6 +37,8 @@ const OTHER_HOTKEY = HOTKEY_IDS.at(-1);
 test("没有文件也没有环境变量时全用默认值", () => {
   assert.deepEqual(resolveSettings({ file, env: {} }), {
     hotkey: { value: DEFAULT_HOTKEY, source: "default" },
+    translateHotkey: { value: DEFAULT_TRANSLATE_HOTKEY, source: "default" },
+    translateTarget: { value: "en", source: "default" },
     mode: { value: "native", source: "default" },
     model: { value: "gemini/gemini-3.6-flash", source: "default" },
     thinking: { value: "MINIMAL", source: "default" },
@@ -51,6 +53,32 @@ test("没有文件也没有环境变量时全用默认值", () => {
     theme: { value: "ink", source: "default" },
     language: { value: "system", source: "default" },
   });
+});
+
+/** 翻译热键默认选哪个：和听写热键（第一个）不同、位置对应右 Ctrl 的那一个 */
+const DEFAULT_TRANSLATE_HOTKEY = HOTKEY_IDS.includes("right_ctrl") ? "right_ctrl" : "right_control";
+
+test("翻译热键：和听写热键同一批键里选，大小写照原样；翻译的目标语言认清单里的，大小写不论", () => {
+  assert.notEqual(DEFAULT_TRANSLATE_HOTKEY, DEFAULT_HOTKEY);
+  assert.deepEqual(saveSetting(file, "translateHotkey", OTHER_HOTKEY), OTHER_HOTKEY);
+  assert.deepEqual(resolveSettings({ file, env: {} }).translateHotkey, { value: OTHER_HOTKEY, source: "file" });
+  assert.throws(() => saveSetting(file, "translateHotkey", "caps_lock"), said(new RegExp(HOTKEY_IDS.join(" / "))));
+
+  assert.equal(saveSetting(file, "translateTarget", "JA"), "ja");
+  assert.deepEqual(resolveSettings({ file, env: {} }).translateTarget, { value: "ja", source: "file" });
+  assert.throws(() => saveSetting(file, "translateTarget", "klingon"), said(/en \/ zh \/ ja/));
+  // 各项也能从环境变量给
+  assert.deepEqual(resolveSettings({ file, env: { SPEAKMORE_TRANSLATE_HOTKEY: DEFAULT_HOTKEY } }).translateHotkey, {
+    value: DEFAULT_HOTKEY,
+    source: "env",
+  });
+  assert.deepEqual(resolveSettings({ file, env: { SPEAKMORE_TRANSLATE_TARGET: "fr" } }).translateTarget, {
+    value: "fr",
+    source: "env",
+  });
+  // 目标语言的名字两种语言都说得出来（悬浮条上写）
+  assert.equal(zh.text(SETTINGS.translateTarget.label("en")), "英语");
+  assert.equal(en.text(SETTINGS.translateTarget.label("en")), "English");
 });
 
 test("存下来的值下次读得到，没动过的仍是默认值", () => {
