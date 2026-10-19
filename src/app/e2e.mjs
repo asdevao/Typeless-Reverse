@@ -4,10 +4,13 @@ import { writeFileSync } from "node:fs";
 // 模拟"按一下热键、说几秒、再按一下"，以及在该贴字的时候只记下文字、不真的去贴。
 // 麦克风由 Chromium 的假设备提供（scripts/dev/e2e.mjs 传的启动参数），整条链路其余部分都是真的。
 // 走 local 模式时，先等本地模型下载、装好再按热键（数据目录是新的，模型真的要从下载源下一遍），记下各花了多久。
+// 设 SPEAKMORE_E2E_TRANSLATE=1 时按的是翻译键：同一套录音上传，服务端按翻译处理（voice_translation）。
 
 const OUT_PATH = process.env.SPEAKMORE_E2E_OUT;
 const RECORD_MS = Number(process.env.SPEAKMORE_E2E_RECORD_MS ?? 7_500);
 const GIVE_UP_MS = RECORD_MS + 40_000;
+// 翻译的那一遍（SPEAKMORE_E2E_TRANSLATE=1）：按的是翻译键，悬浮条把它当翻译的那次发给服务端
+const HOTKEY_EVENT = process.env.SPEAKMORE_E2E_TRANSLATE === "1" ? "translate_hotkey" : "hotkey";
 
 const pasted = [];
 let finish = null;
@@ -82,9 +85,9 @@ export async function run({ bar, history, localModel, downloadModel, quit }) {
     await new Promise((resolve) => bar.webContents.once("did-finish-load", resolve));
   }
   const press = async () => {
-    bar.webContents.send("input", { event: "hotkey", down: true });
+    bar.webContents.send("input", { event: HOTKEY_EVENT, down: true });
     await sleep(120);
-    bar.webContents.send("input", { event: "hotkey", down: false });
+    bar.webContents.send("input", { event: HOTKEY_EVENT, down: false });
   };
   await sleep(500);
   await press();

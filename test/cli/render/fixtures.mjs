@@ -34,6 +34,8 @@ export const ready = {
 };
 export const settings = {
   hotkey: { value: hotkey, source: "default" },
+  translateHotkey: { value: HOTKEY_IDS.includes("right_ctrl") ? "right_ctrl" : "right_control", source: "default" },
+  translateTarget: { value: "en", source: "default" },
   mode: { value: "native", source: "default" },
   model: { value: "gemini/gemini-3.6-flash", source: "default" },
   thinking: { value: "MINIMAL", source: "default" },

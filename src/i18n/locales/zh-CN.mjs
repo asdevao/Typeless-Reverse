@@ -85,6 +85,9 @@ export default {
   settings: {
     describe: {
       hotkey: "按哪个键开始和结束说话",
+      translateHotkey:
+        "按哪个键开始和结束一次翻译（说母语，贴出译成 translateTarget 那种语言的文字）；不能和听写热键（hotkey）相同，相同时翻译键不生效",
+      translateTarget: "翻译的那次翻成哪种语言",
       mode: "识别走哪条路：native 是录音直接交给收音频的模型，local 是本机的小模型先转成文字、再交给任意大模型润色，private 是只用本机模型转写、什么都不上传",
       model: "用哪一家的哪个模型整理，写成 厂商/模型；只写厂商就用它的默认模型。换模型用 speakmore model",
       thinking: "Gemini 的思考档位，越高越慢。别家的模型用不上",
@@ -141,6 +144,23 @@ export default {
     modelMissing: "本地模型 {model} 还没下载：在设置的“模型”页下载，或运行 speakmore transcriber download {id}",
     undecodable: "录音解不开：{reason}",
     transcribeFailed: "本地转写失败：{reason}",
+  },
+  translate: {
+    // 数据隐私模式没有润色的模型，翻不了：原文照贴，带这一句说清原因
+    privateFallback: "现在是数据隐私模式，没有模型可翻，贴出的是原文；翻译要用 local 或 native 模式",
+    // 能翻成哪几种（refine/translate-prompt.mjs 的清单），名字按界面语言写
+    targets: {
+      en: "英语",
+      zh: "中文",
+      ja: "日语",
+      ko: "韩语",
+      fr: "法语",
+      de: "德语",
+      es: "西班牙语",
+      ru: "俄语",
+      it: "意大利语",
+      pt: "葡萄牙语",
+    },
   },
   modelSources: {
     cn: "国内源（SpeakMore 的 CDN）",
@@ -284,12 +304,18 @@ export default {
     recording: "再按一下 {key} 完成 · {esc} 取消",
     recordingNoEsc: "再按一下 {key} 完成",
     finishing: "整理中",
+    translateOpening: "打开麦克风（翻译）…",
+    translateRecording: "再按一下 {key} 完成翻译 · {esc} 取消",
+    translateRecordingNoEsc: "再按一下 {key} 完成翻译",
+    translateFinishing: "翻译成{target}中",
     noHold: "不支持按住说话：按一下开始，再按一下结束",
     noMicPermission: "缺麦克风权限：系统设置 › 隐私与安全性 › 麦克风",
     noMicrophone: "找不到麦克风",
     noSignal: "麦克风没信号：查输入设备、是否静音",
     recordError: "录音出错：{reason}",
     helperStopped: "按键监听停了，{hotkey}失效：重启 SpeakMore 试试",
+    translateHelperStopped: "翻译按键监听停了，{hotkey}失效：重启 SpeakMore 试试",
+    translateHotkeyConflicts: "翻译键和听写键都是{hotkey}，翻译键不生效：speakmore config set translateHotkey <键> 换一个",
   },
 
   tray: {
@@ -1047,6 +1073,8 @@ export default {
       key: "key",
       permissions: "权限",
       hotkey: "热键",
+      translate: "翻译",
+      translateLine: "{hotkey} → {target}",
       model: "模型",
       theme: "主题",
       language: "语言",

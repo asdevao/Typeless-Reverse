@@ -22,6 +22,10 @@ test("设置逐项列出现在的值、从哪来、能填什么，后面是文�
     plain,
   );
   assert.match(text, /hotkey\s+fn\s+地球仪（fn）键/);
+  // 翻译的两项也逐项列出：键和目标语言，跟着听写热键那一批键
+  assert.match(text, /translateHotkey\s+(right_ctrl|right_control)/);
+  assert.match(text, /translateTarget\s+en\s+英语 · 默认/);
+  assert.match(text, /en \/ zh \/ ja/);
   // 能填哪几个按本机这个系统的写
   assert.match(text, new RegExp(HOTKEY_IDS.join(" \\/ ")));
   // 用的是改名前的环境变量：照实写它的名字

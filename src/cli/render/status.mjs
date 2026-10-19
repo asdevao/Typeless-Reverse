@@ -234,6 +234,15 @@ export function renderStatus({ status, version, settings, stats }, { color, t, p
     [t("cli.status.permissions"), cells.join("   ")],
     [t("cli.status.hotkey"), hotkeyTitle(status, t)],
   );
+  // 翻译的那一键（0.9.4 及以前的后台不报）。目标语言的名字按界面语言写；这台命令行不认识的 id 照原样
+  if (status.translateHotkey != null) {
+    const translateKey = HOTKEY_IDS.includes(status.translateHotkey)
+      ? t(`hotkeys.${status.translateHotkey}.name`)
+      : (status.translateHotkeyLabel ?? status.translateHotkey);
+    const named = t(`translate.targets.${status.translateTarget}`);
+    const target = named.includes("translate.targets") ? status.translateTarget : named;
+    entries.splice(3, 0, [t("cli.status.translate"), t("cli.status.translateLine", { hotkey: translateKey, target })]);
+  }
   // 旧版本的后台应用不报这两项
   if (status.theme != null) entries.push([t("cli.status.theme"), themeTitle(t, status.theme)]);
   if (status.language != null) entries.push([t("cli.status.language"), languageTitle(status, t)]);

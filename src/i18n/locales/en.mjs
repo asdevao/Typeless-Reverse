@@ -86,6 +86,9 @@ export default {
   settings: {
     describe: {
       hotkey: "Which key starts and stops dictation",
+      translateHotkey:
+        "Which key starts and stops a translation (speak your language, get text in translateTarget); must differ from the dictation hotkey (hotkey)—when equal, the translation key does nothing",
+      translateTarget: "Which language translation sessions translate into",
       mode: "Which way to recognize speech: native sends the recording to a model that takes audio; local transcribes on this Mac first, then has any LLM polish the text; private only transcribes on this Mac and uploads nothing",
       model:
         "Which provider and model refines your words, as provider/model; a provider alone uses its default. Switch with speakmore model",
@@ -147,6 +150,23 @@ export default {
       "The local model {model} isn't downloaded: download it on the Models page in Settings, or run speakmore transcriber download {id}",
     undecodable: "Couldn't read the recording: {reason}",
     transcribeFailed: "Local transcription failed: {reason}",
+  },
+  translate: {
+    // Private mode has no polishing model to translate with: the raw transcript is pasted, with this note
+    privateFallback:
+      "Private mode has no model to translate with, so the raw transcript was pasted; translation needs local or native mode",
+    targets: {
+      en: "English",
+      zh: "Chinese",
+      ja: "Japanese",
+      ko: "Korean",
+      fr: "French",
+      de: "German",
+      es: "Spanish",
+      ru: "Russian",
+      it: "Italian",
+      pt: "Portuguese",
+    },
   },
   modelSources: {
     cn: "China mirror (SpeakMore CDN)",
@@ -294,12 +314,19 @@ export default {
     recording: "Press {key} to finish · {esc} to cancel",
     recordingNoEsc: "Press {key} to finish",
     finishing: "Refining",
+    translateOpening: "Opening microphone (translation)…",
+    translateRecording: "Press {key} to finish translating · {esc} to cancel",
+    translateRecordingNoEsc: "Press {key} to finish translating",
+    translateFinishing: "Translating to {target}",
     noHold: "No need to hold: press once to start, again to finish",
     noMicPermission: "No microphone access: System Settings › Privacy & Security › Microphone",
     noMicrophone: "No microphone found",
     noSignal: "The microphone isn't picking anything up: check the input device and mute",
     recordError: "Recording error: {reason}",
     helperStopped: "Key listener stopped; {hotkey} won't work. Try restarting SpeakMore",
+    translateHelperStopped: "Translation key listener stopped; {hotkey} won't work. Try restarting SpeakMore",
+    translateHotkeyConflicts:
+      "The translate key and the dictation key are both {hotkey}, so translating is off. Change one: speakmore config set translateHotkey <key>",
   },
 
   tray: {
@@ -1087,6 +1114,8 @@ export default {
       key: "Key",
       permissions: "Permissions",
       hotkey: "Hotkey",
+      translate: "Translate",
+      translateLine: "{hotkey} → {target}",
       model: "Model",
       theme: "Theme",
       language: "Language",

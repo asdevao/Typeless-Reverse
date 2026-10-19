@@ -87,6 +87,8 @@ try {
 }
 /** 现在用哪个键。设置里可以当场换（setup:set-hotkey），换的时候重启小帮手 */
 let hotkey = SETTINGS.hotkey.value;
+/** 翻译用哪个键（说母语、贴译文）。和听写热键相同时翻译键不生效（两个小帮手会抢同一个键），只在改设置重启后重新看 */
+let translateHotkey = SETTINGS.translateHotkey.value;
 /**
  * 启动时用谁家的 key：原生链路是收音频的那家，本地转写链路是润色的那家；数据隐私模式不用 key，是 null。
  * 正在用的以 keys.provider 为准
@@ -301,6 +303,8 @@ async function main() {
   log.info("started", {
     version: app.getVersion(),
     hotkey,
+    translateHotkey,
+    translateTarget: SETTINGS.translateTarget.value,
     route: describeRoute(ROUTE),
     thinking: ROUTE.mode === "native" ? thinkingFor(PROVIDER) : null,
     theme: SETTINGS.theme.value,
@@ -551,9 +555,68 @@ async function main() {
     }
   }
 
+  // ---------- 翻译热键的小帮手 ----------
+  // 同一个可执行文件再起一个、听翻译那个键（native 小帮手一次只认一个键）。它报的 hotkey 事件换成
+  // translate_hotkey 发给悬浮条：录音、上传都同一条路，差的只是给服务端的消息。
+  // 它停了只影响翻译（听写不受连累），所以不进 setup 的状态，只记日志、在条上说一声。
+
+  let translateHelper = null;
+  /** 每启动一个翻译小帮手加一；旧的那个退出时发来的事件靠它认出来并丢掉 */
+  let translateHelperGeneration = 0;
+
+  function launchTranslateHelper() {
+    if (e2e) {
+      translateHelper = e2e.fakeHelper;
+      return;
+    }
+    // 和听写热键撞了就不起：两个钩子会把一次按键报成两次，翻译和听写都乱。说清楚怎么办
+    if (translateHotkey === hotkey) {
+      log.warn("translate_hotkey_conflicts", { hotkey, translateHotkey });
+      notify(msg("bar.translateHotkeyConflicts", { hotkey: hotkeyName(hotkey) }));
+      return;
+    }
+    const generation = ++translateHelperGeneration;
+    translateHelper = startHelper(helperPaths(app.getAppPath()).binary, {
+      args: ["--key", translateHotkey, "--no-prompt"],
+      onEvent: (event) => {
+        if (generation !== translateHelperGeneration) return;
+        onTranslateHelperEvent(event);
+      },
+      log,
+    });
+  }
+
+  function onTranslateHelperEvent(event) {
+    switch (event.event) {
+      case "ready":
+        log.info("translate_helper_ready", { hotkey: translateHotkey });
+        break;
+      case "hotkey":
+        log.info("key_event", { event: "translate_hotkey", down: event.down });
+        {
+          const { blocker } = summarizeSetup(currentSetup());
+          if (blocker === null) tellBar("input", { event: "translate_hotkey", down: event.down });
+          else if (event.down) notify(blocker);
+        }
+        break;
+      case "other_key":
+        // 翻译键按着又按了别的键：组合键，不是翻译
+        tellBar("input", { event: "other_key" });
+        break;
+      case "exit":
+        log.error("translate_helper_exited", { code: event.code, signal: event.signal });
+        notify(msg("bar.translateHelperStopped", { hotkey: hotkeyName(translateHotkey) }));
+        break;
+      default:
+        log.warn("translate_helper_unknown_event", { event: event.event });
+    }
+  }
+
   // 端到端测试时不启动小帮手：不听真键盘，也绝不往用户当前的窗口里贴字
   if (e2e) helper = e2e.fakeHelper;
   else launchHelper({ prompt: true });
+  // 翻译键的小帮手：e2e 时同样用假的（它的事件由测试自己编）
+  launchTranslateHelper();
 
   // ---------- 页面要主进程代办的事 ----------
 
@@ -583,7 +646,15 @@ async function main() {
     });
   }
 
-  handle("config:get", () => ({ serverUrl, hotkey, barControls, barHint: currentBarHint() }));
+  handle("config:get", () => ({
+    serverUrl,
+    hotkey,
+    // 悬浮条翻译的那次要用：哪个键、翻成哪种（都是 id，页面按界面语言写名字）
+    translateHotkey,
+    translateTarget: SETTINGS.translateTarget.value,
+    barControls,
+    barHint: currentBarHint(),
+  }));
   handle("dictation:deliver", async (_event, payload) => {
     const result = await delivery.completed(payload);
     // 只记长度：成品是用户说的话，不进日志
@@ -918,8 +989,28 @@ async function main() {
       historyChanged();
       setupChanged();
     }
+    // 听写键换成了和翻译键相同/不再相同时，翻译小帮手跟着起或停
+    syncTranslateHelper();
     const variable = overridingEnv("hotkey", process.env);
     return variable === null ? {} : { note: msg("notes.envNextLaunch", { variable }) };
+  }
+
+  /**
+   * 翻译小帮手现在该在不在：听写热键和翻译热键撞了就不在（launchTranslateHelper 说过原因）；
+   * 之前因为撞了没起的，听写键换开了就补上
+   */
+  function syncTranslateHelper() {
+    if (e2e) return;
+    if (translateHotkey === hotkey) {
+      if (translateHelper !== null) {
+        translateHelperGeneration++;
+        translateHelper.stop();
+        translateHelper = null;
+        log.warn("translate_helper_stopped", { reason: "和听写热键相同", hotkey });
+      }
+      return;
+    }
+    if (translateHelper === null) launchTranslateHelper();
   }
 
   // ---------- 菜单栏、主窗口和首次引导 ----------
@@ -1055,11 +1146,13 @@ async function main() {
     // 先让小帮手的事件作废：它接下来的退出是我们自己关的，不该再报"按键监听停了"
     helperGeneration++;
     helper.stop();
+    translateHelperGeneration++;
+    translateHelper?.stop();
     history.close();
     localModels.close();
     // 应用正在退出，这两样关不干净也不拦着；记一笔方便排查
-    service?.close().catch((error) => log.warn("service_close_failed", { error: String(error) }));
-    control?.close().catch((error) => log.warn("control_close_failed", { error: String(error) }));
+    service?.close().catch((error) => log.warn("service_close_failed", { error: String(error?.message ?? error) }));
+    control?.close().catch((error) => log.warn("control_close_failed", { error: String(error?.message ?? error) }));
   });
 
   // ---------- 命令行要主进程代办的事 ----------
@@ -1095,6 +1188,10 @@ async function main() {
       hotkey,
       // 0.5 及以前的命令行靠它说热键叫什么
       hotkeyLabel: say(`hotkeys.${hotkey}.name`),
+      // 翻译的那一键（说母语、贴译文）。旧版本的命令行不认这两项，报不报都不碍事
+      translateHotkey,
+      translateHotkeyLabel: say(`hotkeys.${translateHotkey}.name`),
+      translateTarget: SETTINGS.translateTarget.value,
       // 连着单独启动的服务端时，用哪个模型由那边定
       provider: service ? (keys.provider?.id ?? null) : null,
       // 每家的 key 在哪。装成应用的那个各存各的，命令行要靠这一项才知道
