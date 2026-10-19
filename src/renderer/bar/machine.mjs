@@ -3,6 +3,8 @@
 // 按一下热键开始，再按一下结束；按住超过 600 ms 取消（这一版不支持按住说话）。
 // 说话的时候可以取消（按 esc 或点悬浮条上的 ✕），点 ✓ 等于再按一下热键。
 // 原版的热键是 fn，这里是哪个键由主进程决定，状态机不关心。
+// 翻译热键（TRANSLATE_KEY_DOWN）走法同热键，只是开始的那一次在状态里记下 translate：
+// 录音、上传都一样，差的只是给服务端的消息和条上的提示。翻译的那次里听写热键照样能结束它。
 
 import { msg } from "../../i18n/index.mjs";
 
@@ -27,30 +29,35 @@ export const Action = Object.freeze({
 /**
  * held：热键从"开始这次录音的那一下"起一直没松开。松开之前还不确定是单击，
  * 可能是长按，也可能是热键加别的键的组合键。
+ * translate：这次是翻译的那次（翻译热键开始的）。开始时记下，回到空闲或出错时清掉。
  * message：出错原因或给用户的提示，只在 error 和带提示回到 idle 时有。
  */
-export const initialState = Object.freeze({ phase: Phase.IDLE, held: false, message: null });
+export const initialState = Object.freeze({ phase: Phase.IDLE, held: false, translate: false, message: null });
 
-const idle = (message = null) => ({ phase: Phase.IDLE, held: false, message });
+const idle = (message = null) => ({ phase: Phase.IDLE, held: false, translate: false, message });
 const unchanged = (state) => ({ state, actions: [] });
 
 export function transition(state, event) {
   const { phase, held } = state;
   switch (event.type) {
     case "KEY_DOWN":
+    case "TRANSLATE_KEY_DOWN": {
+      // 翻译热键只决定"开始的那一次"是不是翻译：结束、取消用哪个键都行（translate 照开始时的算）
+      const translate = event.type === "TRANSLATE_KEY_DOWN";
       if (phase === Phase.IDLE || phase === Phase.ERROR) {
         return {
-          state: { phase: Phase.STARTING, held: true, message: null },
+          state: { phase: Phase.STARTING, held: true, translate, message: null },
           actions: [Action.START, Action.ARM_HOLD_TIMER],
         };
       }
       // 不看 held：万一上一次松开的事件丢了，再按一下也要能结束，不能卡在录音里
       if (phase === Phase.RECORDING) {
-        return { state: { phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
+        return { state: { ...state, phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
       }
       // 麦克风还没就绪就按了第二下：什么都没录到，直接作罢
       if (phase === Phase.STARTING && !held) return { state: idle(), actions: [Action.CANCEL] };
       return unchanged(state);
+    }
 
     case "KEY_UP":
       if (!held) return unchanged(state);
@@ -71,15 +78,16 @@ export function transition(state, event) {
       return { state: idle(), actions: [Action.CANCEL, Action.CLEAR_HOLD_TIMER] };
 
     case "USER_CONFIRM":
+      // 点条上的 ✓ 等于再按一下开始的那个键：翻译的那次照旧是翻译（translate 跟着 state 走）
       if (phase !== Phase.RECORDING) return unchanged(state);
-      return { state: { phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
+      return { state: { ...state, phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
 
     case "MIC_READY":
       return phase === Phase.STARTING ? unchanged({ ...state, phase: Phase.RECORDING }) : unchanged(state);
 
     case "MAX_DURATION":
       if (phase !== Phase.RECORDING) return unchanged(state);
-      return { state: { phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
+      return { state: { ...state, phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
 
     case "RESULT":
       // message 在这里是给用户的提示，比如"没有听到声音""已复制，请按 ⌘V"
@@ -87,7 +95,8 @@ export function transition(state, event) {
 
     case "FAILED": {
       if (phase === Phase.IDLE || phase === Phase.ERROR) return unchanged(state);
-      const next = { phase: Phase.ERROR, held: false, message: event.message };
+      // 出错就散场了：翻译的标记一并清掉，条上的提示回到听写的那套
+      const next = { phase: Phase.ERROR, held: false, translate: false, message: event.message };
       // 等成品时出错，录音已经停了；其余阶段要把麦克风和定时器收掉
       const actions = phase === Phase.FINISHING ? [] : [Action.CANCEL, Action.CLEAR_HOLD_TIMER];
       return { state: next, actions };

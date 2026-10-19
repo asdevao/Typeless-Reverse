@@ -38,7 +38,7 @@ test("开始、按序发块、结束，拿到成品；服务端收到的是各�
   // 第一块故意大一些：取字节数更慢，不排队的话第二块会抢到前面
   socket.sendChunk(webm("A".repeat(200_000)));
   socket.sendChunk(new Blob(["BBB"]));
-  assert.equal(await socket.finish({ durationSeconds: 4.2 }), "成品");
+  assert.deepEqual(await socket.finish({ durationSeconds: 4.2 }), { text: "成品", notice: null });
   assert.equal(received.mimeType, "audio/webm");
   assert.ok(received.text.endsWith(`${"A".repeat(10)}BBB`));
 });
@@ -48,8 +48,24 @@ test("同一条连接上连着做两次", async () => {
   for (const audioId of ["a1", "a2"]) {
     await socket.begin(audioId);
     socket.sendChunk(webm("xy"));
-    assert.equal(await socket.finish({ durationSeconds: 1 }), "6");
+    assert.deepEqual(await socket.finish({ durationSeconds: 1 }), { text: "6", notice: null });
   }
+});
+
+test("翻译的那次：start_audio 里说清是 voice_translation、翻成哪种语言，整理时服务端看得到", async () => {
+  let seen = null;
+  let notice = null;
+  const socket = await start(async (audio, options) => {
+    seen = options;
+    return { text: "We'll meet tomorrow.", notice: { key: "translate.privateFallback" } };
+  });
+  await socket.begin("t1", { translateTarget: "ja" });
+  socket.sendChunk(webm("x"));
+  assert.deepEqual(await socket.finish({ durationSeconds: 1 }), {
+    text: "We'll meet tomorrow.",
+    notice: { key: "translate.privateFallback" },
+  });
+  assert.equal(seen.translateTarget, "ja");
 });
 
 test("服务端整理失败时，finish 抛出带原因的错误", async () => {
@@ -120,5 +136,5 @@ test("放弃一次录音后，它迟到的成品不会算到下一次头上", as
   releases[0]();
   await new Promise((resolve) => setTimeout(resolve, 20));
   releases[1]();
-  assert.equal(await second, "7");
+  assert.deepEqual(await second, { text: "7", notice: null });
 });

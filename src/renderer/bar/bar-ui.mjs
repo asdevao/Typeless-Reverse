@@ -51,6 +51,12 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   let controls = false;
   /** 条上方的操作提示显示不显示（设置里的 barHint） */
   let hintShown = true;
+  /** 现在这一次是不是翻译的（提示换翻译的那几句） */
+  let translate = false;
+  /** 翻译键的短名字（结束翻译那次用它） */
+  let translateKeycap = null;
+  /** 目标语言的名字，按界面语言翻好的一段字 */
+  let target = "";
   const wave = createWave({ bars: WAVE_BARS });
   /** 正在听时每帧画一次声波；不在听是 null */
   let waveFrame = null;
@@ -90,7 +96,7 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   }
 
   function drawHint() {
-    const parts = hintFor(view, { keycap, cancellable: controls, shown: hintShown }, t);
+    const parts = hintFor(view, { keycap, cancellable: controls, shown: hintShown, translate, translateKeycap, target }, t);
     hint.replaceChildren(
       ...parts.map((part) =>
         typeof part === "string" ? part : Object.assign(document.createElement("kbd"), { textContent: part.key }),
@@ -184,6 +190,22 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
     setKeycap(next) {
       keycap = next;
       if (view !== View.HIDDEN) drawHint();
+    },
+
+    /** 现在这一次是不是翻译的：提示换翻译的那几句（bar.mjs 在状态机换了状态后调） */
+    setTranslate(on) {
+      translate = on === true;
+      if (view !== View.HIDDEN) drawHint();
+    },
+
+    /** 翻译键的短名字 */
+    setTranslateKeycap(next) {
+      translateKeycap = next;
+    },
+
+    /** 目标语言的名字（按界面语言翻好的一段字） */
+    setTarget(name) {
+      target = name;
     },
 
     /**

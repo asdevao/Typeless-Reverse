@@ -44,23 +44,31 @@ export function viewOf(state, previousPhase) {
 /**
  * 条上方的那行提示。
  * @param {string} view
- * @param {{ keycap: string, cancellable: boolean, shown?: boolean }} options keycap：热键的短名字；
- *   cancellable：esc 截不截得住；shown：设置里开着操作提示（barHint），关了哪个样子都不写
+ * @param {{ keycap: string, cancellable: boolean, shown?: boolean, translate?: boolean, translateKeycap?: string, target?: string }} options
+ *   keycap：热键的短名字；cancellable：esc 截不截得住；shown：设置里开着操作提示（barHint），关了哪个样子都不写。
+ *   translate：这次是翻译的那次（提示换翻译的那几句，写翻译键的短名字和目标语言）；target：目标语言的名字（已按界面语言翻好）
  * @param {Function} t 界面语言的翻译函数（src/i18n）。键在句子里的位置由各语言自己定
  * @returns {Array<string | { key: string }>} 一段一段的：文字，或者一个要标成键名的键
  */
-export function hintFor(view, { keycap, cancellable, shown = true }, t) {
+export function hintFor(view, { keycap, cancellable, shown = true, translate = false, translateKeycap = keycap, target = "" }, t) {
   if (!shown) return [];
+  // 结束这次录音用哪个键就写哪个：翻译的那次写翻译键
+  const stopKey = { key: translate ? translateKeycap : keycap };
   switch (view) {
     case View.STARTING:
-      return [t("bar.opening")];
-    case View.RECORDING:
-      return t.parts(cancellable ? "bar.recording" : "bar.recordingNoEsc", {
-        key: { key: keycap },
-        esc: { key: "esc" },
-      });
+      return [t(translate ? "bar.translateOpening" : "bar.opening")];
+    case View.RECORDING: {
+      const said = translate
+        ? cancellable
+          ? "bar.translateRecording"
+          : "bar.translateRecordingNoEsc"
+        : cancellable
+          ? "bar.recording"
+          : "bar.recordingNoEsc";
+      return t.parts(said, { key: stopKey, esc: { key: "esc" } });
+    }
     case View.FINISHING:
-      return [t("bar.finishing")];
+      return [translate ? t("bar.translateFinishing", { target }) : t("bar.finishing")];
     default:
       return [];
   }

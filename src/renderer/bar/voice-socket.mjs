@@ -14,6 +14,8 @@ export class VoiceSocket {
   #socket = null;
   /** 当前这次录音：{ audioId, nextIndex, sending, failure, settle } */
   #current = null;
+  /** 翻译的那次要翻成哪种语言；普通听写是 null（start_audio / end_audio 的 mode 都要带） */
+  #translateTarget = null;
 
   constructor(url) {
     this.#url = url;
@@ -47,17 +49,24 @@ export class VoiceSocket {
     return socket;
   }
 
-  /** 开始一次录音。连不上会在这里抛出 */
-  async begin(audioId) {
+  /**
+   * 开始一次录音。连不上会在这里抛出
+   * @param {string} audioId
+   * @param {{ translateTarget?: string }} [options] 翻译的那次：要翻成哪种语言
+   */
+  async begin(audioId, { translateTarget = null } = {}) {
     const socket = await this.#connected();
     this.#current = { audioId, nextIndex: 1, sending: Promise.resolve(), failure: null, settle: null };
+    this.#translateTarget = translateTarget;
     socket.send(
       JSON.stringify({
         type: "start_audio",
         audio_id: audioId,
         audio_chunk_time: CHUNK_SECONDS,
         audio_metadata: { audio_format: "webm", audio_codec: "opus", audio_channels: 1, need_merge: true },
-        mode: "voice_transcript",
+        // 原版听多种模式（docs/04-voice-pipeline.md）；翻译的目标语言跟着 mode 一起带过去
+        mode: translateTarget === null ? "voice_transcript" : "voice_translation",
+        ...(translateTarget === null ? {} : { translate_target: translateTarget }),
       }),
     );
   }
@@ -85,7 +94,8 @@ export class VoiceSocket {
 
   /**
    * 结束录音，等成品文字。
-   * @returns {Promise<string>} 没有人声时是空字符串
+   * @returns {Promise<{ text: string, notice: object | null }>} text 是成品；notice 是服务端带的一句话
+   *   （一句 msg，比如 private 模式翻不了时说的原因），没有是 null。没有人声时 text 是空字符串
    */
   async finish({ durationSeconds, timeoutMs = REFINE_TIMEOUT_MS }) {
     const current = this.#current;
@@ -103,7 +113,7 @@ export class VoiceSocket {
         type: "end_audio",
         audio_id: current.audioId,
         total_duration: durationSeconds,
-        mode: "voice_transcript",
+        mode: this.#translateTarget === null ? "voice_transcript" : "voice_translation",
       }),
     );
     const timer = setTimeout(
@@ -143,7 +153,7 @@ export class VoiceSocket {
     if (!current || (value.audio_id && value.audio_id !== current.audioId)) return;
     switch (kind) {
       case "audio_processing_completed":
-        current.settle?.resolve(value.refined_text);
+        current.settle?.resolve({ text: value.refined_text, notice: value.notice ?? null });
         break;
       case "audio_processing_error":
       case "error":

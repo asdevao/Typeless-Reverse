@@ -14,7 +14,8 @@ const MAX_DURATION_MS = 540_000;
 
 // 页面的 lang 跟着界面语言：提示是 aria-live 的，读屏软件按它挑用哪种语言念
 localize();
-const { serverUrl, hotkey: initialHotkey, barControls, barHint } = await window.speakmore.config();
+const { serverUrl, hotkey: initialHotkey, translateHotkey, translateTarget, barControls, barHint } =
+  await window.speakmore.config();
 /** 现在的热键（id）。提示里写它的短名字，按界面语言写 */
 let hotkey = initialHotkey;
 const voice = new VoiceSocket(serverUrl);
@@ -24,6 +25,9 @@ const ui = createBarUi({
   keycap: keycapOf(hotkey),
   t,
 });
+// 翻译的那次：提示里写翻译键的短名字和目标语言的名字（都按界面语言）
+ui.setTranslateKeycap(keycapOf(translateHotkey));
+ui.setTarget(t(`translate.targets.${translateTarget}`));
 ui.setControls(barControls);
 ui.setHintShown(barHint === "on");
 window.speakmore.onBarHint((value) => ui.setHintShown(value === "on"));
@@ -36,10 +40,12 @@ window.speakmore.onLocaleChanged((locale) => {
   setLocale(locale);
   ui.setTranslator(t, t.text(state.message));
   ui.setKeycap(keycapOf(hotkey));
+  ui.setTranslateKeycap(keycapOf(translateHotkey));
+  ui.setTarget(t(`translate.targets.${translateTarget}`));
 });
 
 let state = initialState;
-/** 正在进行的那一次：{ audioId, recording, cancelled } */
+/** 正在进行的那一次：{ audioId, recording, cancelled, translate }。translate：是不是翻译的那次 */
 let session = null;
 let holdTimer = null;
 let maxDurationTimer = null;
@@ -49,7 +55,10 @@ function dispatch(event) {
   const result = transition(state, event);
   state = result.state;
   // 状态没动（比如空闲时松开热键）就不重画
-  if (state !== previous) ui.show(viewOf(state, previous.phase), t.text(state.message));
+  if (state !== previous) {
+    ui.setTranslate(state.translate);
+    ui.show(viewOf(state, previous.phase), t.text(state.message));
+  }
   for (const action of result.actions) ACTIONS[action]();
 }
 
@@ -67,10 +76,11 @@ const ACTIONS = {
 const describe = problemOf;
 
 function start() {
-  const current = { audioId: crypto.randomUUID(), recording: null, cancelled: false };
+  const current = { audioId: crypto.randomUUID(), recording: null, cancelled: false, translate: state.translate };
   session = current;
   (async () => {
-    await voice.begin(current.audioId);
+    // 翻译的那次在 start_audio 里说清要翻成哪种语言（服务端照它换翻译的提示词）
+    await voice.begin(current.audioId, current.translate ? { translateTarget } : {});
     const recording = await startRecording({
       onChunk: (chunk) => voice.sendChunk(chunk),
       onLevel: ui.level,
@@ -116,14 +126,15 @@ async function stop() {
       voice.abandon();
       throw new LocalizedError(msg("bar.noSignal"));
     }
-    const text = await voice.finish({ durationSeconds: recorded.durationSeconds });
+    const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds });
     const { notice } = await window.speakmore.deliver({
       audioId: current.audioId,
-      text,
+      text: outcome.text,
       durationSeconds: recorded.durationSeconds,
       audio: await recorded.blob.arrayBuffer(),
     });
-    dispatch({ type: "RESULT", message: notice });
+    // 服务端带话时（比如 private 模式翻不了、贴的是原文）它比"贴好了"那句更要紧
+    dispatch({ type: "RESULT", message: outcome.notice ?? notice });
   } catch (error) {
     console.error("这次听写失败", error);
     const message = describe(error);
@@ -144,9 +155,10 @@ async function stop() {
 
 // ---------- 来自主进程的事件 ----------
 
-/** 小帮手报上来的事 → 状态机的事件。click 的 id 是条上被点的那个按钮 */
+/** 小帮手报上来的事 → 状态机的事件。click 的 id 是条上被点的那个按钮；翻译热键的按下走 TRANSLATE_KEY_DOWN */
 const INPUT_EVENTS = {
   hotkey: (event) => (event.down ? "KEY_DOWN" : "KEY_UP"),
+  translate_hotkey: (event) => (event.down ? "TRANSLATE_KEY_DOWN" : "KEY_UP"),
   other_key: () => "OTHER_KEY",
   escape: () => "USER_CANCEL",
   click: (event) => ({ cancel: "USER_CANCEL", confirm: "USER_CONFIRM" })[event.id],

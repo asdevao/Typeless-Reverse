@@ -32,7 +32,7 @@ test("单击开始，再单击结束，收到成品回到空闲", () => {
 
 test("松开比麦克风就绪早，也照常进入录音", () => {
   const { state } = run("KEY_DOWN", "KEY_UP", "MIC_READY");
-  assert.deepEqual(state, { phase: Phase.RECORDING, held: false, message: null });
+  assert.deepEqual(state, { phase: Phase.RECORDING, held: false, translate: false, message: null });
 });
 
 test("按住超过时限：取消，并告诉用户不支持按住说话", () => {
@@ -88,12 +88,12 @@ test("录音到上限自动结束", () => {
 
 test("成品可以带一句提示回到空闲", () => {
   const { state } = run("KEY_DOWN", "MIC_READY", "KEY_UP", "KEY_DOWN", { type: "RESULT", message: "没有听到声音" });
-  assert.deepEqual(state, { phase: Phase.IDLE, held: false, message: "没有听到声音" });
+  assert.deepEqual(state, { phase: Phase.IDLE, held: false, translate: false, message: "没有听到声音" });
 });
 
 test("出错：录音阶段要收掉麦克风，等成品阶段不用；之后按热键能重新开始", () => {
   const starting = run("KEY_DOWN", { type: "FAILED", message: "麦克风打不开" });
-  assert.deepEqual(starting.state, { phase: Phase.ERROR, held: false, message: "麦克风打不开" });
+  assert.deepEqual(starting.state, { phase: Phase.ERROR, held: false, translate: false, message: "麦克风打不开" });
   assert.deepEqual(starting.steps.at(-1), [Action.CANCEL, Action.CLEAR_HOLD_TIMER]);
 
   const finishing = run("KEY_DOWN", "MIC_READY", "KEY_UP", "KEY_DOWN", { type: "FAILED", message: "服务端没有回应" });
@@ -129,7 +129,7 @@ test("取消只在说话的时候管用：等成品时取消不了，空闲和�
 
 test("点完成等于再按一下热键：结束录音、要成品；麦克风没就绪或已经在等成品时点了不算", () => {
   const { state, steps } = run("KEY_DOWN", "MIC_READY", "KEY_UP", "USER_CONFIRM");
-  assert.deepEqual(state, { phase: Phase.FINISHING, held: false, message: null });
+  assert.deepEqual(state, { phase: Phase.FINISHING, held: false, translate: false, message: null });
   assert.deepEqual(steps.at(-1), [Action.STOP]);
 
   const starting = run("KEY_DOWN", "KEY_UP", "USER_CONFIRM");
@@ -145,4 +145,42 @@ test("空闲时来的成品和报错都忽略；不认识的事件直接报错",
   assert.deepEqual(run("RESULT").state, initialState);
   assert.deepEqual(run({ type: "FAILED", message: "x" }).state, initialState);
   assert.throws(() => transition(initialState, { type: "NOPE" }), /不认识的事件/);
+});
+
+test("翻译键（TRANSLATE_KEY_DOWN）开始的是翻译的那一次：状态里记下翻译，走法同热键", () => {
+  const { state, steps } = run("TRANSLATE_KEY_DOWN", "MIC_READY", "KEY_UP");
+  assert.deepEqual(state, { phase: Phase.RECORDING, held: false, translate: true, message: null });
+  assert.deepEqual(steps[0], [Action.START, Action.ARM_HOLD_TIMER]);
+
+  // 再按翻译键（或听写热键）都结束；等成品时状态还带着翻译，悬浮条照它写"翻译中"
+  const stopped = transition(state, { type: "TRANSLATE_KEY_DOWN" });
+  assert.deepEqual(stopped.state, { phase: Phase.FINISHING, held: false, translate: true, message: null });
+  assert.deepEqual(stopped.actions, [Action.STOP]);
+  const byDictation = transition(state, { type: "KEY_DOWN" });
+  assert.equal(byDictation.state.phase, Phase.FINISHING);
+  assert.equal(byDictation.state.translate, true);
+});
+
+test("翻译的那次拿到成品或失败后回到空闲，状态里不再带着翻译", () => {
+  const done = run("TRANSLATE_KEY_DOWN", "MIC_READY", "KEY_UP", "TRANSLATE_KEY_DOWN", "RESULT");
+  assert.equal(done.state.phase, Phase.IDLE);
+  assert.equal(done.state.translate, false);
+  const failed = run("TRANSLATE_KEY_DOWN", "MIC_READY", "KEY_UP", "TRANSLATE_KEY_DOWN", {
+    type: "FAILED",
+    message: "服务端没有回应",
+  });
+  assert.equal(failed.state.phase, Phase.ERROR);
+  assert.equal(failed.state.translate, false);
+  // 出错之后按听写热键重新开始的是普通听写
+  const retry = transition(failed.state, { type: "KEY_DOWN" });
+  assert.equal(retry.state.translate, false);
+});
+
+test("翻译键上的其余事件和热键同样对待：松开、长按取消、组合键取消", () => {
+  assert.deepEqual(run("TRANSLATE_KEY_DOWN", "KEY_UP").state.phase, Phase.STARTING);
+  const held = run("TRANSLATE_KEY_DOWN", "MIC_READY", "LONG_HOLD");
+  assert.equal(held.state.phase, Phase.IDLE);
+  assert.match(zh.text(held.state.message), /不支持按住说话/);
+  const combo = run("TRANSLATE_KEY_DOWN", "OTHER_KEY");
+  assert.deepEqual(combo.state, initialState);
 });
