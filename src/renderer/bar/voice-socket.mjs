@@ -18,6 +18,8 @@ export class VoiceSocket {
   #translateTarget = null;
   /** 指令的那次要用的选中文本；普通听写是 null（start_audio 的 command_selected_text 要带） */
   #commandSelectedText = null;
+  /** 这次是不是指令会话：没有选区的指令问答也是 true */
+  #command = false;
 
   constructor(url) {
     this.#url = url;
@@ -54,28 +56,31 @@ export class VoiceSocket {
   /**
    * 开始一次录音。连不上会在这里抛出
    * @param {string} audioId
-   * @param {{ translateTarget?: string, commandSelectedText?: string }} [options]
+   * @param {{ translateTarget?: string, commandSelectedText?: string, command?: boolean }} [options]
    *   translateTarget：翻译的那次：要翻成哪种语言。
-   *   commandSelectedText：指令的那次：开始前抓好的选中文本（随 start_audio 带给服务端）
+   *   commandSelectedText：指令的那次：开始前抓好的选中文本（随 start_audio 带给服务端）。
+   *   command：这次是不是指令会话（没有选区的指令问答也带 true，mode 用 voice_command）
    */
-  async begin(audioId, { translateTarget = null, commandSelectedText = null } = {}) {
+  async begin(audioId, { translateTarget = null, commandSelectedText = null, command = false } = {}) {
     const socket = await this.#connected();
     this.#current = { audioId, nextIndex: 1, sending: Promise.resolve(), failure: null, settle: null };
     this.#translateTarget = translateTarget;
     this.#commandSelectedText = commandSelectedText;
+    this.#command = command || commandSelectedText !== null;
     socket.send(
       JSON.stringify({
         type: "start_audio",
         audio_id: audioId,
         audio_chunk_time: CHUNK_SECONDS,
         audio_metadata: { audio_format: "webm", audio_codec: "opus", audio_channels: 1, need_merge: true },
-        // 原版听多种模式（docs/04-voice-pipeline.md）；翻译的目标语言跟着 mode 一起带过去
+        // 原版听多种模式（docs/04-voice-pipeline.md）；翻译的目标语言跟着 mode 一起带过去。
+        // 指令会话没有选区也算指令（口述直接当问题，答案弹通知）
         mode:
-          commandSelectedText === null
-            ? translateTarget === null
+          this.#command
+            ? "voice_command"
+            : translateTarget === null
               ? "voice_transcript"
-              : "voice_translation"
-            : "voice_command",
+              : "voice_translation",
         ...(translateTarget === null ? {} : { translate_target: translateTarget }),
         ...(commandSelectedText === null ? {} : { command_selected_text: commandSelectedText }),
       }),
@@ -116,11 +121,14 @@ export class VoiceSocket {
 
   /**
    * 结束录音，等成品文字。
+   * @param {{ durationSeconds: number, timeoutMs?: number, commandSelectedText?: string | null, command?: boolean }} [options]
+   *   commandSelectedText：点 ⌘ 的那次结束时才抓好的选中文本（随 end_audio 带给服务端）。
+   *   command：这次是不是指令会话（组合键或 ⌘ 中途转的，start_audio 里还没说清）
    * @returns {Promise<{ text: string, notice: object | null, delivery: string | null, externalTarget: string | null }>}
    *   text 是成品；notice 是服务端带的一句话（一句 msg，比如 private 模式翻不了时说的原因），没有是 null。
    *   没有人声时 text 是空字符串。delivery / externalTarget 只有指令会话可能有值
    */
-  async finish({ durationSeconds, timeoutMs = REFINE_TIMEOUT_MS } = {}) {
+  async finish({ durationSeconds, timeoutMs = REFINE_TIMEOUT_MS, commandSelectedText = null, command = false } = {}) {
     const current = this.#current;
     if (!current) throw new Error("还没有开始录音就结束了");
     await current.sending;
@@ -131,17 +139,21 @@ export class VoiceSocket {
     const result = new Promise((resolve, reject) => {
       current.settle = { resolve, reject };
     });
+    // ⌘ 的那次选中文本到结束才抓好：先记下再发 end；组合键或 ⌘ 中途转的指令会话在这里把 mode 说清
+    if (commandSelectedText !== null) this.#commandSelectedText = commandSelectedText;
+    if (command) this.#command = true;
     this.#socket.send(
       JSON.stringify({
         type: "end_audio",
         audio_id: current.audioId,
         total_duration: durationSeconds,
         mode:
-          this.#commandSelectedText === null
-            ? this.#translateTarget === null
+          this.#command || this.#commandSelectedText !== null
+            ? "voice_command"
+            : this.#translateTarget === null
               ? "voice_transcript"
-              : "voice_translation"
-            : "voice_command",
+              : "voice_translation",
+        ...(this.#commandSelectedText === null ? {} : { command_selected_text: this.#commandSelectedText }),
       }),
     );
     const timer = setTimeout(

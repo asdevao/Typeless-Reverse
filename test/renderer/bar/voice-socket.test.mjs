@@ -80,6 +80,40 @@ test("翻译的那次：start_audio 里说清是 voice_translation、翻成哪�
   assert.equal(seen.translateTarget, "ja");
 });
 
+test("无选区的指令问答：start/end 都是 voice_command，服务端 refine 看到 command 标志，答案走 reply", async () => {
+  let seen = null;
+  const socket = await start(async (audio, options) => {
+    seen = options;
+    return { text: "[reply]\n周五。" };
+  });
+  await socket.begin("c1", { command: true });
+  socket.sendChunk(webm("x"));
+  assert.deepEqual(await socket.finish({ durationSeconds: 1, command: true }), {
+    text: "周五。",
+    notice: null,
+    delivery: "reply",
+    externalTarget: null,
+  });
+  assert.equal(seen.command, true);
+  assert.equal(seen.commandSelectedText, null);
+});
+
+test("点 ⌘ 的那次：选中文本随 end_audio 补挂，中途转的指令会话服务端也认", async () => {
+  let seen = null;
+  const socket = await start(async (audio, options) => {
+    seen = options;
+    return "改写好的内容";
+  });
+  await socket.begin("a1");
+  socket.sendChunk(webm("x"));
+  const outcome = await socket.finish({ durationSeconds: 1, commandSelectedText: "选中内容", command: true });
+  assert.equal(outcome.text, "改写好的内容");
+  // 无标记的输出按 replace 贴回：delivery 如实带回 "replace"，客户端只认 reply/external 才改道
+  assert.equal(outcome.delivery, "replace");
+  assert.equal(seen.commandSelectedText, "选中内容");
+  assert.equal(seen.command, true);
+});
+
 test("服务端整理失败时，finish 抛出带原因的错误", async () => {
   const socket = await start(async () => {
     throw new Error("上游 503");

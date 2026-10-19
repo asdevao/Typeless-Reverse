@@ -5,7 +5,7 @@ import { findProvider } from "../providers/index.mjs";
 import { createMeter } from "./meter.mjs";
 import { textFromModelOutput } from "./output.mjs";
 import { SYSTEM_PROMPT, TASK_REMINDER } from "./prompt.mjs";
-import { audioCommandPrompt, audioCommandReminder } from "./command-prompt.mjs";
+import { audioAskReminder, audioCommandPrompt, audioCommandReminder } from "./command-prompt.mjs";
 import { audioTranslatePrompt, audioTranslateReminder } from "./translate-prompt.mjs";
 
 // 原生链路：录音直接交给收音频的大模型，一次请求出成品。
@@ -88,24 +88,26 @@ export function createRefiner({
      *   audioId：这是哪一次听写，记账时用；translateTarget：翻译的那次要翻成哪种语言，不带就是普通整理
      * @returns {Promise<string>} 整理好的文字；没有人声时是空字符串
      */
-    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null, commandSelectedText = null }) {
+    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null, commandSelectedText = null, command = false }) {
       try {
         // 只换一次：夹着时间戳要重来时用的是同一份
         const input = audioTypes.includes(mimeType)
           ? { audio, mimeType }
           : await timed(log, () => transcode(audio, mimeType));
-        const systemPrompt =
-          commandSelectedText !== null
-            ? audioCommandPrompt(commandSelectedText)
-            : translateTarget === null
-              ? SYSTEM_PROMPT
-              : audioTranslatePrompt(translateTarget);
-        const reminder =
-          commandSelectedText !== null
+        // 指令的那次：有选区用指令提示词，没选区用问答提示词（口述本身就是问题）
+        const isCommand = command || commandSelectedText !== null;
+        const systemPrompt = isCommand
+          ? audioCommandPrompt(commandSelectedText)
+          : translateTarget === null
+            ? SYSTEM_PROMPT
+            : audioTranslatePrompt(translateTarget);
+        const reminder = isCommand
+          ? commandSelectedText !== null
             ? audioCommandReminder()
-            : translateTarget === null
-              ? TASK_REMINDER
-              : audioTranslateReminder(translateTarget);
+            : audioAskReminder()
+          : translateTarget === null
+            ? TASK_REMINDER
+            : audioTranslateReminder(translateTarget);
         const generateOnce = async () => {
           const reply = await metered("dictation", audioId, () =>
             client.generate({

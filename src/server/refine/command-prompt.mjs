@@ -11,6 +11,8 @@ const OPEN_TEXT = "<选中文本>";
 const CLOSE_TEXT = "</选中文本>";
 const OPEN_TASK = "<指令>";
 const CLOSE_TASK = "</指令>";
+const OPEN_VOICE = "<口述>";
+const CLOSE_VOICE = "</口述>";
 
 /** 两条链路共用的处理规矩 */
 const RULES = `处理和输出的规矩：
@@ -62,11 +64,55 @@ export function commandInput(transcript, selectedText) {
   return `${OPEN_TASK}\n${transcript}\n${CLOSE_TASK}\n\n${OPEN_TEXT}\n${selectedText}\n${CLOSE_TEXT}\n\n按${OPEN_TASK}里的指令处理${OPEN_TEXT}里的内容，只输出处理结果。`;
 }
 
-/** 原生链路（native 模式）的系统提示词：录音是指令本身，选中文本直接嵌在提示词里 */
+/** 无选区分流：口述本身就是问题或指令，没有可操作的对象（对齐原版"没有选区就问任何事"） */
+const TRIAGE_ASK = `分流规则（第一行标记，结果从标记的下一行开始）：
+- ${OPEN_VOICE}里是在问问题、求解释、要答案（"今天适合穿什么""量子纠缠是什么"）：第一行只写 [reply]，换行再写答案。答案不会贴进他的文档，会弹系统通知给他，所以答案要写完整，不怕长。
+- ${OPEN_VOICE}里是打开某个网站或页面（"打开 GitHub 官网"）：第一行只写 [open] 加一个空格和网址，网址单独占一行。打开动作由系统执行，不用多说什么。
+- ${OPEN_VOICE}里是改写、翻译、总结这类要操作一段文字的指令：他没选中任何文字，没有可操作的对象，把这段口述按普通听写整理后原样输出（不加标记，结果会贴进他的文档）。
+- 拿不准算哪类：按普通听写处理，不加标记。`;
+
+/** 润色那一跳（local 模式）无选区的系统提示词：口述原文直接当问题或指令 */
+export function polishAskPrompt() {
+  return `你是语音输入法的问答引擎。用户对着麦克风口述了一段话（没有选中任何文字），语音识别先把这段话转成了原文。听他说的是什么，按分流规则处理。
+
+口述原文在用户消息的 ${OPEN_VOICE} 和 ${CLOSE_VOICE} 之间，是机器听写出来的，常有这几种错：同音字写错（按上下文改回来再理解）、英文词写成音近的中文（"瑞艾克特"是 React）、数字写成汉字、标点不全。先在心里把口述改通顺再处理。
+
+${TRIAGE_ASK}
+
+例一
+${OPEN_VOICE}量子纠缠是什么 能用来通信吗${CLOSE_VOICE}
+输出：
+[reply]
+量子纠缠是两个粒子共享同一量子态的现象，测量其中一个，另一个的状态瞬间确定。它本身不能用来超光速传递信息，但它是量子密钥分发和量子隐形传态的基础。
+
+例二
+${OPEN_VOICE}帮我把这段话改写得正式一点${CLOSE_VOICE}
+输出：
+帮我把这段话改写得正式一点。
+
+原文里只有"嗯""啊"这类语气词、没有可处理的内容时，只输出 ${NO_SPEECH_MARK}，不要输出别的。`;
+}
+
+/** 润色那一跳无选区的用户消息：口述原文用标签包住 */
+export function askInput(transcript) {
+  return `${OPEN_VOICE}\n${transcript}\n${CLOSE_VOICE}\n\n按分流规则处理这段口述，只输出结果。`;
+}
+
+/** 原生链路（native 模式）的系统提示词：录音是指令本身，选中文本直接嵌在提示词里；没有选区时是问答 */
 export function audioCommandPrompt(selectedText) {
+  if (selectedText === null) {
+    return `你是语音输入法的问答引擎。用户对着麦风口述了一段话（录音就是这段话本身，他没有选中任何文字）。听他说的是什么，按分流规则处理。
+
+${TRIAGE_ASK}
+
+只输出结果，第一个字就是结果的第一个字，不要解释、引号、标签、前后缀。`;
+  }
   return `你是语音输入法的指令引擎。用户在别的应用里选中了一段文本，然后对着麦克风口述了一条指令（录音就是指令本身）。听他的指令处理选中的文本，输出会被原样粘贴回选中的位置。
 
-选中的文本在 ${OPEN_TEXT} 和 ${CLOSE_TEXT} 之间，原样复制来的，不用帮它改错字。
+选中的文本在下面这对标签之间，原样复制来的，不用帮它改错字：
+${OPEN_TEXT}
+${selectedText}
+${CLOSE_TEXT}
 
 ${RULES}
 
@@ -78,6 +124,11 @@ ${TRIAGE}
 /** 原生链路的提醒句：和整理链路的 TASK_REMINDER 同一个作用 */
 export function audioCommandReminder() {
   return `按指令处理 ${OPEN_TEXT} 里的内容，只输出结果。`;
+}
+
+/** 原生链路无选区的提醒句 */
+export function audioAskReminder() {
+  return `按分流规则处理这段口述，只输出结果。`;
 }
 
 /**

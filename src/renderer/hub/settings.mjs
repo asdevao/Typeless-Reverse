@@ -43,8 +43,6 @@ export function createSettings({ refresh }) {
     choices.map(([value, label]) => new Option(label, value, false, value === current));
 
   function renderGeneral(setup) {
-    // 临时诊断：记录渲染收到的 setup 键（排查 undefined 用，查完撤）
-    console.warn("renderGeneral setup keys:", Object.keys(setup ?? {}).join(","));
     // 全部防御式读取：任何键缺失就渲染空控件，不炸整页（渲染层的 setup 理论上恒有这些键）
     $("hotkey").replaceChildren(
       ...options(

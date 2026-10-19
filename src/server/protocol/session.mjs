@@ -13,18 +13,21 @@ export class RecordingSession {
   #mimeType = null;
   #translateTarget;
   #commandSelectedText = null;
+  #command = false;
 
   /**
    * @param {string} audioId
-   * @param {{ maxTotalBytes: number, translateTarget?: string | null, commandSelectedText?: string | null }} options
+   * @param {{ maxTotalBytes: number, translateTarget?: string | null, commandSelectedText?: string | null, command?: boolean }} options
    *   translateTarget：翻译的那次要翻成哪种语言；普通听写是 null。
-   *   commandSelectedText：指令的那次开始前抓好的选中文本；普通听写是 null
+   *   commandSelectedText：指令的那次开始前抓好的选中文本；普通听写是 null。
+   *   command：这次是不是指令会话（没有选区的指令问答也是 true）
    */
-  constructor(audioId, { maxTotalBytes, translateTarget = null, commandSelectedText = null }) {
+  constructor(audioId, { maxTotalBytes, translateTarget = null, commandSelectedText = null, command = false }) {
     this.audioId = audioId;
     this.#maxTotalBytes = maxTotalBytes;
     this.#translateTarget = translateTarget;
     this.#commandSelectedText = commandSelectedText;
+    this.#command = command;
   }
 
   /** 这次录音要不要翻译、翻成哪种；普通听写是 null */
@@ -37,8 +40,18 @@ export class RecordingSession {
     return this.#commandSelectedText;
   }
 
+  /** 这次是不是指令会话：开始时就是指令，或中途（组合键、点 ⌘）转成指令 */
+  get command() {
+    return this.#command;
+  }
+
   setCommandSelectedText(text) {
     this.#commandSelectedText = text;
+  }
+
+  /** 中途转成指令会话（悬浮条在 Space 按下或点 ⌘ 之后由 end_audio 说清） */
+  markCommand() {
+    this.#command = true;
   }
 
   get chunkCount() {

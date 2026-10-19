@@ -59,6 +59,50 @@ test("录音 → 统一格式 → 本地转写 → 润色；和原生链路一�
   assert.equal(polisher.warmUps, 1);
 });
 
+test("指令的那次把指令上下文带给润色器：有选区带文本，没选区只带 command 标志", async () => {
+  const log = recordingLog();
+  const withText = parts({ transcript: "翻成英语" });
+  await createLocalRefiner({ transcriber: withText.transcriber, polisher: withText.polisher, log, decode: withText.decode }).refine(
+    Buffer.from("x"),
+    { mimeType: "audio/webm", commandSelectedText: "原文内容", command: true },
+  );
+  assert.equal(withText.seen.polished[0].text, "翻成英语");
+  assert.equal(withText.seen.polished[0].options.commandSelectedText, "原文内容");
+  assert.equal(withText.seen.polished[0].options.command, true);
+
+  const bare = parts({ transcript: "今天星期几" });
+  await createLocalRefiner({ transcriber: bare.transcriber, polisher: bare.polisher, log, decode: bare.decode }).refine(
+    Buffer.from("x"),
+    { mimeType: "audio/webm", command: true },
+  );
+  assert.equal(bare.seen.polished[0].options.commandSelectedText, null);
+  assert.equal(bare.seen.polished[0].options.command, true);
+  assert.equal(bare.seen.polished[0].options.translateTarget, undefined);
+});
+
+test("private 模式的指令：有选区的处理和没选区的问答一样贴原文，带一句指令没跑的说明", async () => {
+  const log = recordingLog();
+  const withSelection = parts({ transcript: "翻成英语" });
+  const selected = await createLocalRefiner({
+    transcriber: withSelection.transcriber,
+    polisher: null,
+    log,
+    decode: withSelection.decode,
+  }).refine(Buffer.from("x"), { mimeType: "audio/webm", commandSelectedText: "原文内容" });
+  assert.equal(selected.text, "翻成英语");
+  assert.equal(selected.notice.key, "command.privateFallback");
+
+  const bare = parts({ transcript: "今天星期几" });
+  const asked = await createLocalRefiner({
+    transcriber: bare.transcriber,
+    polisher: null,
+    log,
+    decode: bare.decode,
+  }).refine(Buffer.from("x"), { mimeType: "audio/webm", command: true });
+  assert.equal(asked.text, "今天星期几");
+  assert.equal(asked.notice.key, "command.privateFallback");
+});
+
 test("每次记一条日志：两跳各花了多久、原文多长，不记原文和成品", async () => {
   const log = recordingLog();
   const { decode, transcriber, polisher } = parts({ transcript: "一二三" });

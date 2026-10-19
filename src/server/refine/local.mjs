@@ -60,7 +60,7 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
     /** 开口时没什么要先备的：模型一直装在转写进程里 */
     async prepare() {},
 
-    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null, commandSelectedText = null }) {
+    async refine(audio, { mimeType, signal, audioId = null, translateTarget = null, commandSelectedText = null, command = false }) {
       const startedAt = performance.now();
       let samples;
       try {
@@ -101,18 +101,23 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
         if (translateTarget !== null && transcript.trim() !== "") {
           return { text: transcript.trim(), notice: msg("translate.privateFallback") };
         }
-        // 指令的那次没有润色器也一样执行不了：按普通听写贴出去，说清楚指令没跑
-        if (commandSelectedText !== null && transcript.trim() !== "") {
+        // 指令的那次没有润色器也一样执行不了（有选区的指令和没选区的问答都算）：按普通听写贴出去，说清楚指令没跑
+        if ((command || commandSelectedText !== null) && transcript.trim() !== "") {
           return { text: transcript.trim(), notice: msg("command.privateFallback") };
         }
         return transcript.trim();
       }
       // 转写的这段时间里用户已经断开了：润色要花钱，不必再发
       signal?.throwIfAborted();
+      // 指令的那次把指令上下文带给润色器（有选区带选中文本、没选区只带 command 标志换问答提示词）
       const refined = await polisher.polish(transcript, {
         signal,
         audioId,
-        ...(translateTarget === null ? {} : { translateTarget }),
+        ...(command || commandSelectedText !== null
+          ? { commandSelectedText, command }
+          : translateTarget === null
+            ? {}
+            : { translateTarget }),
       });
       // 只记长度和耗时：原文和成品都是用户说的话
       log.info("local_refined", {

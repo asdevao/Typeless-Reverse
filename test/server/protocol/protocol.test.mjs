@@ -32,6 +32,7 @@ test("start_audio：只取用得到的字段，多余的字段不报错", () => 
     audioId: "abc",
     translateTarget: null,
     commandSelectedText: null,
+    command: false,
   });
 });
 
@@ -44,6 +45,7 @@ test("start_audio：翻译的模式（voice_translation）带出目标语言，�
     audioId: "a1",
     translateTarget: "ja",
     commandSelectedText: null,
+    command: false,
   });
   const silent = parseClientMessage(JSON.stringify({ type: "start_audio", audio_id: "a2", mode: "voice_translation" }));
   assert.equal(silent.translateTarget, "en");
@@ -54,8 +56,31 @@ test("start_audio：翻译的模式（voice_translation）带出目标语言，�
   assert.equal(plain.translateTarget, null);
 });
 
+test("start_audio：指令的模式（voice_command）带不带选中文本都算指令会话", () => {
+  // 没有选区：口述直接当问题（command 是 true，选中文本是 null）
+  const bare = parseClientMessage(JSON.stringify({ type: "start_audio", audio_id: "c1", mode: "voice_command" }));
+  assert.deepEqual(bare, {
+    type: "start_audio",
+    audioId: "c1",
+    translateTarget: null,
+    commandSelectedText: null,
+    command: true,
+  });
+  // 带选中文本：随 start 一起带到
+  const withText = parseClientMessage(
+    JSON.stringify({ type: "start_audio", audio_id: "c2", mode: "voice_command", command_selected_text: "选中的内容" }),
+  );
+  assert.equal(withText.commandSelectedText, "选中的内容");
+  assert.equal(withText.command, true);
+  // 带了空的选中文本：报错（要么不带，要么带非空文本）
+  rejects(
+    JSON.stringify({ type: "start_audio", audio_id: "c3", mode: "voice_command", command_selected_text: "" }),
+    "invalid_field",
+  );
+});
+
 test("start_audio：不认识的模式、写错的目标语言分别报错", () => {
-  rejects(JSON.stringify({ type: "start_audio", audio_id: "a1", mode: "voice_command" }), "invalid_field");
+  rejects(JSON.stringify({ type: "start_audio", audio_id: "a1", mode: "voice_cmmmand" }), "invalid_field");
   rejects(JSON.stringify({ type: "start_audio", audio_id: "a1", mode: 1 }), "invalid_field");
   rejects(
     JSON.stringify({ type: "start_audio", audio_id: "a1", mode: "voice_translation", translate_target: 3 }),
@@ -87,7 +112,14 @@ test("end_audio：要有 audio_id", () => {
     type: "end_audio",
     audioId: "abc",
     commandSelectedText: null,
+    command: false,
   });
+  // 组合键或 ⌘ 中途转成指令的会话：end_audio 用 mode 说清（选中文本有就带上）
+  const flipped = parseClientMessage(
+    JSON.stringify({ type: "end_audio", audio_id: "abc", total_duration: 1, mode: "voice_command" }),
+  );
+  assert.equal(flipped.command, true);
+  assert.equal(flipped.commandSelectedText, null);
   rejects(JSON.stringify({ type: "end_audio" }), "invalid_field");
   rejects(JSON.stringify({ type: "end_audio", audio_id: "" }), "invalid_field");
   rejects(JSON.stringify({ type: "end_audio", audio_id: "x".repeat(129) }), "invalid_field");

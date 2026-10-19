@@ -4,7 +4,7 @@ import { DEFAULT_TRANSLATE_TARGET } from "../refine/translate-prompt.mjs";
 // 消息名和字段名照抄 Typeless 抓包的实测结果（docs/05-network-protocol.md），
 // 这样仿刻的两端和逆向文档能一一对上。原版还有上下文、模式配置等消息，这里没有发送方，就不实现。
 // 原版听三种模式（voice_transcript / voice_command / voice_translation，docs/04-voice-pipeline.md），
-// 这里实现了听写和翻译两种；voice_command 没有实现，照实报错。
+// 三种都实现了：指令会话（voice_command）可以带选中文本，也可以不带（口述直接当问题，答案弹通知）。
 // 翻译的目标语言（translate_target）只在这一个模块里认，清单和叫法在 refine/translate-prompt.mjs。
 
 /** 3 秒一块实测 14–15 KB，这里留足余量；也用作 WebSocket 单帧上限 */
@@ -72,6 +72,8 @@ const PARSERS = new Map([
       translateTarget: translateTargetOf(message),
       // 指令的那次：悬浮条在按下指令键时抓好的选中文本；普通听写是 null
       commandSelectedText: startCommandSelectedTextOf(message),
+      // 这次是不是指令会话：voice_command 就是（没带选中文本也算，口述直接当问题）
+      command: (message.mode ?? "voice_transcript") === "voice_command",
     }),
   ],
   [
@@ -83,7 +85,7 @@ const PARSERS = new Map([
       size: positiveInteger(message, "size", MAX_CHUNK_BYTES),
     }),
   ],
-  [ClientType.END, (message) => ({ type: ClientType.END, audioId: audioIdOf(message), commandSelectedText: commandSelectedTextOf(message) })],
+  [ClientType.END, (message) => ({ type: ClientType.END, audioId: audioIdOf(message), commandSelectedText: commandSelectedTextOf(message), command: (message.mode ?? "voice_transcript") === "voice_command" })],
 ]);
 
 const MAX_COMMAND_TEXT_LENGTH = 100_000;
@@ -104,11 +106,12 @@ function commandSelectedTextOf(message) {
 /** start_audio 的 mode / translate_target → 要翻成哪种语言（不用翻是 null） */
 function translateTargetOf(message) {
   const mode = message.mode ?? "voice_transcript";
-  if (mode === "voice_transcript") return null;
+  // 指令会话不翻译；没带 mode 当普通听写
+  if (mode === "voice_transcript" || mode === "voice_command") return null;
   if (mode !== "voice_translation") {
     throw new ProtocolError(
       "invalid_field",
-      `mode 只认 voice_transcript / voice_translation，收到 ${String(mode).slice(0, 64)}`,
+      `mode 只认 voice_transcript / voice_translation / voice_command，收到 ${String(mode).slice(0, 64)}`,
     );
   }
   // 没写目标语言用默认的（en）：单独启动服务端调试时少写一个字段

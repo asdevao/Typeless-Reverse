@@ -95,17 +95,24 @@ const ACTIONS = {
 const describe = problemOf;
 
 function start() {
-  const current = { audioId: crypto.randomUUID(), recording: null, cancelled: false, translate: state.translate };
+  const current = {
+    audioId: crypto.randomUUID(),
+    recording: null,
+    cancelled: false,
+    translate: state.translate,
+    // 指令热键直接开始的指令会话（组合键转的指令要到 Space 那一刻状态机才置位，这里还看不到）
+    command: state.command === true,
+  };
   session = current;
   (async () => {
-    // 翻译的那次在 start_audio 里说清要翻成哪种语言（服务端照它换翻译的提示词）
-    // 翻译的那次带目标语言；指令的那次带开始时抓好的选中文本（主进程在热键按下时抓的）
+    // 翻译的那次在 start_audio 里说清要翻成哪种语言（服务端照它换翻译的提示词）；
+    // 指令热键开始的这次直接以指令会话开场（没有选区也算，口述当问题）
     await voice.begin(
       current.audioId,
       current.translate
         ? { translateTarget }
         : current.command
-          ? { commandSelectedText: pendingCommandSelection ?? undefined }
+          ? { command: true, commandSelectedText: pendingCommandSelection ?? undefined }
           : {},
     );
     pendingCommandSelection = null;
@@ -160,8 +167,9 @@ async function stop() {
   clearTimeout(maxDurationTimer);
   const current = session;
   session = null;
-  // 点了 ⌘ 的那次：把抓好的选中文本随 end 带给服务端，换指令的提示词；普通听写是 null
-  const commandSelectedText = pendingCommandSelection ?? null;
+  // 组合键或 ⌘ 转成的指令会话：状态机在 state.command 里记着；点 ⌘ 的那次把抓好的选中文本随 end 带给服务端
+  const isCommand = state.command === true;
+  const commandSelectedText = isCommand ? (pendingCommandSelection ?? null) : null;
   pendingCommandSelection = null;
   let recorded = null;
   try {
@@ -170,9 +178,10 @@ async function stop() {
       voice.abandon();
       throw new LocalizedError(msg("bar.noSignal"));
     }
-    // 指令的答案生成更慢（问答可能要长答案）：超时单独放宽到 30 秒，对齐原版的指令专用超时
-    const timeoutMs = commandSelectedText === null ? undefined : 30_000;
-    const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, timeoutMs });
+    // 指令的答案生成更慢（问答可能要长答案）：超时单独放宽到 30 秒，对齐原版的指令专用超时；
+    // 没选区的指令问答也一样要等长答案
+    const timeoutMs = isCommand ? 30_000 : undefined;
+    const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, command: isCommand, timeoutMs });
     // 指令的那次按服务端定的交付方式分流（对齐原版：怎么投递服务端说了算）；听写和翻译照旧贴字
     if (outcome.delivery === "reply") {
       await window.speakmore.commandReply(outcome.text);
@@ -226,6 +235,17 @@ const INPUT_EVENTS = {
 window.speakmore.onInput((event) => {
   // ⌘ 的那一下要先抓选中文本（异步）再走结束流程，别的输入照旧直接进状态机
   if (event.event === "click" && event.id === "command") return commandFinish();
+  // 组合键的 Space：状态机会把这次会话转成指令（条件同 machine.mjs 的 OTHER_KEY）；
+  // 趁焦点还在目标窗口，异步抓选中文本补挂给服务端。抓不到（没有选区）就当无选区的指令问答
+  if (
+    event.event === "other_key" &&
+    event.vk === 0x20 &&
+    state.held &&
+    !state.translate &&
+    (state.phase === Phase.STARTING || state.phase === Phase.RECORDING)
+  ) {
+    captureChordSelection();
+  }
   const type = Object.hasOwn(INPUT_EVENTS, event.event) ? INPUT_EVENTS[event.event](event) : undefined;
   if (type === undefined) {
     console.warn("不认识的输入事件", event);
@@ -233,6 +253,14 @@ window.speakmore.onInput((event) => {
   }
   dispatch({ type });
 });
+
+/** 组合键转指令时的选中文本抓取：fire-and-forget，抓到就补挂，抓不到拉倒（当无选区问答） */
+function captureChordSelection() {
+  window.speakmore
+    .captureSelection()
+    .then((text) => voice.setCommandSelection(text))
+    .catch((error) => console.warn("组合键抓取选中文本失败", error));
+}
 
 window.speakmore.onBarControls(ui.setControls);
 

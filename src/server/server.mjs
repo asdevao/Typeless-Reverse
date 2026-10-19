@@ -94,6 +94,7 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
           maxTotalBytes: maxAudioBytes,
           translateTarget: message.translateTarget,
           commandSelectedText: message.commandSelectedText,
+          command: message.command,
         });
         // 用户开口了：让模型那边先备好要用的东西（Gemini 建提示词缓存），说完整理时就用得上。
         // 不等它；备不好只是这一次贵一点，记一笔就算了
@@ -111,8 +112,9 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
         break;
       case ClientType.END: {
         const finished = requireSession(message.audioId);
-        // 指令的那次：end 上带着悬浮条点"指令"按钮时抓好的选中文本
+        // 指令的那次：end 上带着悬浮条点"指令"按钮时抓好的选中文本；组合键或 ⌘ 中途转的指令会话由 mode 说清
         if (message.commandSelectedText !== null) finished.setCommandSelectedText(message.commandSelectedText);
+        if (message.command) finished.markCommand();
         session = null;
         // 整理要等上游一两秒，不能卡住这条连接上后面的消息
         finish(finished).catch((error) => failConnection(error));
@@ -156,12 +158,12 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
           audioId: finished.audioId,
           translateTarget: finished.translateTarget,
           commandSelectedText: finished.commandSelectedText,
+          command: finished.command,
         }),
       );
-      // 指令的那次：模型首行的标记决定交付方式（对齐原版"怎么投递由服务端决定"的设计）。
-      // 普通听写和翻译没有标记，照旧走贴字
-      const verdict =
-        finished.commandSelectedText === null ? null : parseCommandDelivery(outcome.text);
+      // 指令的那次（有选区的处理、没选区的问答都算）：模型首行的标记决定交付方式
+      // （对齐原版"怎么投递由服务端决定"的设计）。普通听写和翻译没有标记，照旧走贴字
+      const verdict = finished.command ? parseCommandDelivery(outcome.text) : null;
       const text = verdict === null ? outcome.text : verdict.text;
       // 日志只记长度：成品是用户说的话，不该留在日志里
       log.info("refined", {
