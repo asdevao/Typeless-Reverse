@@ -690,13 +690,14 @@ async function main() {
     recordingsDir: PATHS.recordingsDir,
     history,
     paste: (text) => helper.paste(text),
-    // 富文本贴：剪贴板写 text + html 双格式（目标应用粘贴时自动挑支持的），再模拟 Ctrl+V；完事把剪贴板还原成贴之前的样子
+    // 富文本贴：剪贴板写 text + html 双格式（目标应用粘贴时自动挑支持的），再模拟 Ctrl+V；完事把剪贴板还原成贴之前的文字
     pasteRich: async (text, html) => {
-      const previous = { text: clipboard.readText(), html: clipboard.readHTML() };
+      // 还原只管文字段（和选区抓取同一个 v1 边界）：这个 Electron 的主进程剪贴板没有 readHTML
+      const previous = clipboard.readText();
       clipboard.write({ text, html });
       pressCtrlV();
       await new Promise((resolve) => setTimeout(resolve, 400));
-      clipboard.write(previous.html === "" ? { text: previous.text } : { text: previous.text, html: previous.html });
+      clipboard.writeText(previous);
       return { ok: true };
     },
     writeClipboard: (text) => clipboard.writeText(text),
