@@ -868,22 +868,27 @@ code.setting-value {
   color: var(--problem);
 }
 
-/* 麦克风调试的指示条：宽度跟着实时音量走（设置页"选择麦克风"，对齐原版） */
-.mic-meter {
-  height: 0.375rem;
+/* 麦克风调试的竖条排（对齐原版"选择麦克风"的指示条）：高度跟实时音量、说话时从中心向两侧起波 */
+.mic-bars {
+  display: flex;
+  align-items: center;
+  gap: var(--gap, 2px);
+  height: 1.5rem;
   margin-top: 0.5rem;
-  border-radius: var(--radius-control);
-  background: var(--fill-hover);
   overflow: hidden;
 }
 
-.mic-meter span {
-  display: block;
-  height: 100%;
-  width: 0;
-  border-radius: var(--radius-control);
+.mic-bars span {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--primary) 45%, transparent);
+  flex-shrink: 0;
+  transition: background-color 0.2s ease;
+}
+
+.mic-bars span.active {
   background: var(--primary);
-  transition: width 80ms linear;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -894,7 +899,7 @@ code.setting-value {
   .content::before,
   .entry,
   .entry-actions,
-  .mic-meter span {
+  .mic-bars span {
     transition: none;
   }
 

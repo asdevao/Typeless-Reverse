@@ -399,8 +399,8 @@
             <label class="setting-title" for="microphone-device" data-i18n="preferences.microphone">Microphone</label>
             <select class="select" id="microphone-device"></select>
           </div>
-          <!-- 对齐原版"选择麦克风"的调试：指示条实时测当前选中的那台 -->
-          <div class="mic-meter" aria-hidden="true"><span id="microphone-meter-bar"></span></div>
+          <!-- 对齐原版"选择麦克风"的调试：一排竖条实时测当前选中的那台（机制复刻自原版渲染层） -->
+          <div class="mic-bars" id="microphone-meter" aria-hidden="true"></div>
           <p class="setting-note" data-i18n="preferences.microphoneHint">Choose the microphone that captures your voice. If the indicator doesn't move, try another microphone.</p>
           <p class="setting-note" id="microphone-device-note" role="status" hidden></p>
           <!-- 从终端启动时登记不了开机启动，整行不显示 -->

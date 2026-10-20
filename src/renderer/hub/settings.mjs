@@ -1,6 +1,7 @@
 import { LOCALES, SYSTEM_LOCALE } from "../../i18n/index.mjs";
 import { t } from "../shared/i18n.mjs";
-import { meterLevels, openMicrophone } from "../shared/level-meter.mjs";
+import { openMicrophone } from "../shared/level-meter.mjs";
+import { createVocalMeter } from "../shared/vocal-meter.mjs";
 import { describeError, keyMissing, permissionDenied, permissionText } from "../shared/setup-text.mjs";
 
 // 设置对话框：原版的"设置中心"，左边一列菜单。我们的三页：通用（热键、主题、语言、本机模型的下载源、开机启动）、
@@ -218,12 +219,10 @@ export function createSettings({ refresh }) {
     micRun += 1;
     micMeter?.stop();
     micMeter = null;
-    for (const track of micStream?.getTracks() ?? []) track.stop();
-    micStream = null;
-    $("microphone-meter-bar").style.width = "0%";
+    micStream = null; // 麦克风轨道由 vocal-meter 的 stop 一并停掉
   }
 
-  /** 用当前选中的那台麦克风开一路只测音量：指示条动了就是它能收到声音 */
+  /** 用当前选中的那台麦克风开一路，画成竖条排：条动了就是它能收到声音（机制复刻自原版） */
   async function startMicMeter() {
     const run = ++micRun;
     const deviceId = $("microphone-device").value || null;
@@ -233,16 +232,13 @@ export function createSettings({ refresh }) {
     } catch {
       return; // 打不开（设备刚拔了）就让指示条静止：下面的提示文案已经教了换一台
     }
+    // 等麦克风的这一小会儿里人可能已经走开了：那一趟有自己的一路，这一路关掉
     if (run !== micRun) {
       for (const track of opened.getTracks()) track.stop();
       return;
     }
     micStream = opened;
-    const bar = $("microphone-meter-bar");
-    micMeter = meterLevels(opened, (level) => {
-      // 说话的音量一般只到满格的一两成，放大四倍才看得出在动（和引导页同一个倍数）
-      bar.style.width = `${Math.round(Math.min(1, level * 4) * 100)}%`;
-    });
+    micMeter = createVocalMeter({ stream: opened, container: $("microphone-meter") });
   }
 
   /** 设备清单（要开过一次麦克风才显示得出名字）+ 现在选的是哪台 */
