@@ -43,6 +43,13 @@ test("[open] 带不放行的协议：降级为 replace 原样贴出", () => {
   assert.equal(parsed.target, null);
 });
 
+test("[open] 后面跟的不是网址（如“浏览器”）：按 replace 贴出去掉标记后的内容，不把 [open] 字样贴出来", () => {
+  const parsed = parseCommandDelivery("[open] 浏览器");
+  assert.equal(parsed.delivery, "replace");
+  assert.equal(parsed.text, "浏览器");
+  assert.equal(parsed.target, null);
+});
+
 test("标记不在开头：当成普通文字处理", () => {
   assert.equal(parseCommandDelivery("先说一句 [reply] 在后面").delivery, "replace");
 });

@@ -26,7 +26,7 @@ const RULES = `处理和输出的规矩：
 const TRIAGE = `分流规则（第一行标记，结果从标记的下一行开始）：
 - 指令是对选中内容的加工（翻译、改写、总结、纠错、续写等）：不加标记，直接输出处理结果，结果会贴回他选中的位置。
 - 指令是在问问题、求解释、要答案（"这段什么意思""这里说的是谁"）：第一行只写 [reply]，换行再写答案。答案不会贴进他的文档，会弹系统通知给他，所以答案要写完整，不怕长。
-- 指令是打开某个网站或页面（"打开 GitHub 官网"）：第一行只写 [open] 加一个空格和网址，网址单独占一行。打开动作由系统执行，不用多说什么。
+- 指令是打开某个网站或页面（"打开 GitHub 官网"）：第一行只写 [open] 加一个空格和网址，网址单独占一行。没点名网址的（"打开浏览器""上一下网"这类），就给默认搜索引擎的首页（如 https://www.baidu.com）。打开动作由系统执行，不用多说什么。
 - 拿不准算哪类：按加工处理，不加标记。`;
 
 /** 润色那一跳（local 模式）的系统提示词：机器转写出的指令原文 + 选中文本 → 处理结果 */
@@ -67,7 +67,7 @@ export function commandInput(transcript, selectedText) {
 /** 无选区分流：口述本身就是问题或指令，没有可操作的对象（对齐原版"没有选区就问任何事"） */
 const TRIAGE_ASK = `分流规则（第一行标记，结果从标记的下一行开始）：
 - ${OPEN_VOICE}里是在问问题、求解释、要答案（"今天适合穿什么""量子纠缠是什么"）：第一行只写 [reply]，换行再写答案。答案不会贴进他的文档，会弹系统通知给他，所以答案要写完整，不怕长。
-- ${OPEN_VOICE}里是打开某个网站或页面（"打开 GitHub 官网"）：第一行只写 [open] 加一个空格和网址，网址单独占一行。打开动作由系统执行，不用多说什么。
+- ${OPEN_VOICE}里是打开某个网站或页面（"打开 GitHub 官网"）：第一行只写 [open] 加一个空格和网址，网址单独占一行。没点名网址的（"打开浏览器""上一下网"这类），就给默认搜索引擎的首页（如 https://www.baidu.com）。打开动作由系统执行，不用多说什么。
 - ${OPEN_VOICE}里是改写、翻译、总结这类要操作一段文字的指令：他没选中任何文字，没有可操作的对象，把这段口述按普通听写整理后原样输出（不加标记，结果会贴进他的文档）。
 - 拿不准算哪类：按普通听写处理，不加标记。`;
 
@@ -151,6 +151,10 @@ export function parseCommandDelivery(text) {
       allowed = false;
     }
     if (allowed) return { delivery: "external", text: target, target };
+    // 标记在了、后面跟的不是合法网址（模型把"浏览器"这类词当目标写了）：
+    // 降级成贴回时把 [open] 那截剥掉，不能把标记字样吐进用户的文档
+    const strippedMarker = text.replace(/^\s*\[open\][ \t]*\S+/i, "").trim();
+    return { delivery: "replace", text: strippedMarker === "" ? target : strippedMarker, target: null };
   }
   return { delivery: "replace", text, target: null };
 }
