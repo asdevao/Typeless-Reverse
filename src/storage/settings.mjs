@@ -120,6 +120,7 @@ export const SETTINGS = {
     choices: ["forever", "1", "7", "30", "90", "365"],
     parse(value) {
       const id = String(value);
+      const choices = ["forever", "1", "7", "30", "90", "365"];
       if (!choices.includes(id)) throw oneOf(choices);
       return id;
     },
