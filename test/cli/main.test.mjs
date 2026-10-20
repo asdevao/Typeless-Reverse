@@ -340,7 +340,7 @@ test("不带参数：没在运行就启动，然后给出状态面板", async ()
   assert.equal(await speakmore(), 0);
   assert.deepEqual(daemon.calls, ["start", "recheck"]);
   assert.match(output.out, /正在启动/);
-  assert.match(output.out, /SpeakMore 0\.1\.0 · 运行中/);
+  assert.match(output.out, /Utterly 0\.1\.0 · 运行中/);
   assert.match(output.out, new RegExp(`按一下${zhHotkey}开始说话`));
 });
 
@@ -591,7 +591,7 @@ test("用过的人缺了系统权限：只打开设置", async () => {
 });
 
 test("启动不起来时把原因说出来，以非零退出", async () => {
-  const daemon = fakeDaemon({ afterStart: new Error("SpeakMore 没能启动（退出码 2）") });
+  const daemon = fakeDaemon({ afterStart: new Error("Utterly 没能启动（退出码 2）") });
   const { speakmore, output } = harness({ daemon });
   assert.equal(await speakmore(), 1);
   assert.match(output.err, /没能启动（退出码 2）/);
@@ -631,14 +631,14 @@ test("正在运行的是装成应用的那一个：不代它重启（会被换�
   const restarting = harness({ daemon: fakeDaemon({ running: packaged }) });
   assert.equal(await restarting.speakmore("restart"), 1);
   assert.deepEqual(restarting.daemon.calls, []);
-  assert.match(restarting.output.err, /SpeakMore\.app/);
+  assert.match(restarting.output.err, /Utterly\.app/);
   assert.match(restarting.output.err, /退出/);
 
   const configuring = harness({ daemon: fakeDaemon({ running: packaged }) });
   assert.equal(await configuring.speakmore("config", "set", "hotkey", OTHER_HOTKEY), 0);
   assert.deepEqual(JSON.parse(readFileSync(paths.settingsFile, "utf8")), { hotkey: OTHER_HOTKEY });
   assert.deepEqual(configuring.daemon.calls, []);
-  assert.match(configuring.output.out, /SpeakMore\.app/);
+  assert.match(configuring.output.out, /Utterly\.app/);
   assert.doesNotMatch(configuring.output.out, /已经生效/);
 });
 
@@ -696,14 +696,14 @@ test("update：下载地址上有更新的版本，就让安装脚本装上它�
   const { speakmore, output, updates } = harness({ latest: "v0.2.0" });
   assert.equal(await speakmore("update"), 0);
   assert.deepEqual(updates.installs, ["v0.2.0"]);
-  assert.match(output.out, /更新 SpeakMore：0\.1\.0 → 0\.2\.0/);
+  assert.match(output.out, /更新 Utterly：0\.1\.0 → 0\.2\.0/);
 
   // 安装脚本没装成：它已经把原因说了，这边只把退出码交出去
   const failing = harness({ latest: "v0.2.0", installerExit: 1 });
   assert.equal(await failing.speakmore("update"), 1);
 });
 
-const APP = "/Applications/SpeakMore.app";
+const APP = "/Applications/Utterly.app";
 /** 正在运行的是装在"应用程序"里的那个 */
 const APP_RUNNING = { ...READY, packaged: true, pid: 4242 };
 
@@ -727,9 +727,9 @@ test("update：正在跑的是 App：先停掉它再换，命令行那一份只�
   assert.deepEqual(updates.installs, ["v0.2.0"]);
   assert.deepEqual(updates.starts, [false]);
   assert.deepEqual(updates.opened, [APP]);
-  assert.match(output.out, /更新 SpeakMore\.app：0\.1\.0 → 0\.2\.0/);
-  assert.match(output.out, /更新 SpeakMore：0\.1\.0 → 0\.2\.0/);
-  assert.match(output.out, /已经重新打开 SpeakMore\.app/);
+  assert.match(output.out, /更新 Utterly\.app：0\.1\.0 → 0\.2\.0/);
+  assert.match(output.out, /更新 Utterly：0\.1\.0 → 0\.2\.0/);
+  assert.match(output.out, /已经重新打开 Utterly\.app/);
 });
 
 test("update：只有 App 旧：只换 App；它没在跑就不打开", async () => {
@@ -739,7 +739,7 @@ test("update：只有 App 旧：只换 App；它没在跑就不打开", async ()
   assert.deepEqual(updates.apps, [{ version: "v0.1.0", path: APP, stillRunning: false }]);
   assert.deepEqual(updates.installs, []);
   assert.deepEqual(updates.opened, []);
-  assert.match(output.out, /更新 SpeakMore\.app：0\.0\.9 → 0\.1\.0/);
+  assert.match(output.out, /更新 Utterly\.app：0\.0\.9 → 0\.1\.0/);
   assert.doesNotMatch(output.out, /已经是最新的/);
 });
 
@@ -780,11 +780,11 @@ test("update：App 没换成：照实说，命令行那一份也不动，停掉�
     latest: "v0.2.0",
     app: { path: APP, version: "0.1.0" },
     appInstall: () => {
-      throw new LocalizedError(msg("cli.update.appChecksum", { file: "SpeakMore-arm64.dmg" }));
+      throw new LocalizedError(msg("cli.update.appChecksum", { file: "Utterly-arm64.dmg" }));
     },
   });
   assert.equal(await speakmore("update"), 1);
-  assert.match(output.err, /SpeakMore-arm64\.dmg/);
+  assert.match(output.err, /Utterly-arm64\.dmg/);
   assert.deepEqual(updates.installs, []);
   assert.deepEqual(updates.opened, [APP]);
 });
@@ -1166,12 +1166,12 @@ test("config set theme / config unset theme：和 theme 命令一样当场换，
 test("英文：帮助、面板、用错了时的说法都是英文的", async () => {
   const { speakmore, output } = harness({ daemon: fakeDaemon({ running: READY }), locale: "en" });
   assert.equal(await speakmore("help"), 0);
-  assert.match(output.out, /^SpeakMore: press a hotkey, speak/);
+  assert.match(output.out, /^Utterly: press a hotkey, speak/);
   assert.match(output.out, /speakmore theme <name> +Switch theme \(ink Ink \/ cinnabar Cinnabar \/ indigo Indigo\)/);
   assert.match(output.out, /latest 20 by default/);
 
   assert.equal(await speakmore("status"), 0);
-  assert.match(output.out, /SpeakMore 0\.1\.0 · running/);
+  assert.match(output.out, /Utterly 0\.1\.0 · running/);
   assert.match(output.out, new RegExp(`press ${enHotkey} to start talking`));
   assert.match(output.out, /Permissions +Microphone ✓ {3}Input Monitoring ✓ {3}Accessibility ✓/);
   assert.match(output.out, /Model +Gemini gemini-3\.6-flash \(MINIMAL\)/);
@@ -1185,9 +1185,9 @@ test("英文：有新版本的提醒、update 说的话", async () => {
   installed();
   const { speakmore, output } = harness({ daemon: fakeDaemon({ running: READY }), locale: "en", latest: "v0.2.0" });
   assert.equal(await speakmore("status"), 0);
-  assert.match(output.out, /SpeakMore 0\.2\.0 is out \(you have 0\.1\.0\): run speakmore update\./);
+  assert.match(output.out, /Utterly 0\.2\.0 is out \(you have 0\.1\.0\): run speakmore update\./);
   assert.equal(await speakmore("update"), 0);
-  assert.match(output.out, /Updating SpeakMore 0\.1\.0 → 0\.2\.0/);
+  assert.match(output.out, /Updating Utterly 0\.1\.0 → 0\.2\.0/);
 
   const withApp = harness({
     daemon: fakeDaemon({ running: APP_RUNNING }),
@@ -1196,8 +1196,8 @@ test("英文：有新版本的提醒、update 说的话", async () => {
     app: { path: APP, version: "0.1.0" },
   });
   assert.equal(await withApp.speakmore("update"), 0);
-  assert.match(withApp.output.out, /Updating SpeakMore\.app 0\.1\.0 → 0\.2\.0/);
-  assert.match(withApp.output.out, /Reopened SpeakMore\.app/);
+  assert.match(withApp.output.out, /Updating Utterly\.app 0\.1\.0 → 0\.2\.0/);
+  assert.match(withApp.output.out, /Reopened Utterly\.app/);
   output.out += withApp.output.out;
   output.err += withApp.output.err;
   assert.doesNotMatch(output.out + output.err, /[\u4e00-\u9fff]/);
@@ -1475,7 +1475,7 @@ test("uninstall（Windows）：用户 Path 里的那一项、开始菜单的快�
   mkdirSync(paths.binDir, { recursive: true });
   // 家目录以外的东西放在另一个临时目录（afterEach 会删）
   outside = mkdtempSync(join(tmpdir(), "sm-link-"));
-  const ours = join(outside, "SpeakMore.lnk");
+  const ours = join(outside, "Utterly.lnk");
   const theirs = join(outside, "Other.lnk");
   writeFileSync(ours, "快捷方式");
   writeFileSync(theirs, "别人的快捷方式");
@@ -1592,7 +1592,7 @@ test("uninstall：后台停不掉时不往下删（它还开着那些文件）",
   seedInstalled();
   const daemon = fakeDaemon({ running: READY });
   daemon.stop = async () => {
-    throw new Error("SpeakMore 停不掉（进程号 4321）");
+    throw new Error("Utterly 停不掉（进程号 4321）");
   };
   const { speakmore, output } = harness({ daemon });
   assert.equal(await speakmore("uninstall", "--yes"), 1);
@@ -2457,7 +2457,7 @@ test("transcriber <模型>：要换的还没下载时先问；答是就交给后
   assert.equal(await speakmore("transcriber", "sensevoice-small-q8"), 0);
   assert.match(
     confirmed[0],
-    /SenseVoice Small \(Q8_0\) 还没下载（253 MB，从国内源（SpeakMore 的 CDN）下）。现在下载吗/,
+    /SenseVoice Small \(Q8_0\) 还没下载（253 MB，从国内源（Utterly 的 CDN）下）。现在下载吗/,
   );
   assert.match(output.out, /交给后台下了：按 Ctrl-C 只是不看进度/);
   assert.match(output.out, /下载中 50%/);
@@ -2486,7 +2486,7 @@ test("transcriber download：用户自己点的，不再问；后台没在运行
   assert.equal(await idle.speakmore("transcriber", "download", "qwen3-asr-0.6b-q8"), 0);
   assert.deepEqual(idle.local.downloads, ["qwen3-asr-0.6b-q8"]);
   assert.deepEqual(idle.local.sources, ["cn"]);
-  assert.match(idle.output.out, /下载 Qwen3-ASR 0\.6B \(Q8_0\)（850 MB，从国内源（SpeakMore 的 CDN））/);
+  assert.match(idle.output.out, /下载 Qwen3-ASR 0\.6B \(Q8_0\)（850 MB，从国内源（Utterly 的 CDN））/);
   assert.match(idle.output.out, /下好了/);
   assert.equal(idle.confirmed.length, 0);
 

@@ -98,7 +98,7 @@ export default {
       customParams:
         '发给自定义服务的额外请求参数，一段 JSON 对象，比如 {"reasoning_effort": "minimal"}；验证和润色都带上，不能写 model、messages、stream',
       modelSource:
-        "本机模型从哪下载：cn 是 SpeakMore 的国内源，original 是 Hugging Face 原始地址。选的那个下不动会自动换另一个",
+        "本机模型从哪下载：cn 是 Utterly 的国内源，original 是 Hugging Face 原始地址。选的那个下不动会自动换另一个",
       acceleration:
         "本机模型用不用显卡：auto 有显卡就用，出问题自动退回 CPU；cpu 只用 CPU（显卡驱动有问题、或者想把显卡让给别的程序时）",
       barHint: "悬浮条上方那行操作提示（再按一下 … 完成 · esc 取消）显示不显示：on 显示，off 不显示",
@@ -159,7 +159,7 @@ export default {
   },
   command: {
     privateFallback: "数据隐私模式没有润色模型，执行不了指令：贴的是转写原文",
-    replyTitle: "SpeakMore 指令结果",
+    replyTitle: "Utterly 指令结果",
   },
   translate: {
     // 数据隐私模式没有润色的模型，翻不了：原文照贴，带这一句说清原因
@@ -179,7 +179,7 @@ export default {
     },
   },
   modelSources: {
-    cn: "国内源（SpeakMore 的 CDN）",
+    cn: "国内源（Utterly 的 CDN）",
     original: "原始地址（Hugging Face）",
   },
   accelerations: {
@@ -236,7 +236,7 @@ export default {
     endpointNotFound: "{provider} 的这个地址上没有对话接口（HTTP 404）：检查地址是否写全，多数以 /v1 结尾",
     paramsNotJson: '额外参数不是有效的 JSON：键名和字符串都要用英文双引号，比如 {"reasoning_effort": "minimal"}',
     paramsNotObject: '额外参数要是一个 JSON 对象，用大括号括起来，比如 {"reasoning_effort": "minimal"}',
-    paramsReserved: "额外参数里不能写 {name}：{names} 由 SpeakMore 发送",
+    paramsReserved: "额外参数里不能写 {name}：{names} 由 Utterly 发送",
   },
 
   setup: {
@@ -275,9 +275,9 @@ export default {
     noKeyFor: "{provider} 密钥未配置",
     noKeyForCli: "还没有 {provider} 的 key：运行 speakmore key {id}",
     unknownProvider: "不认识 {id} 这家模型厂商",
-    noKeyService: "还没有填 {provider} API key：在终端运行 speakmore key，或者点菜单栏上 SpeakMore 的图标打开设置",
+    noKeyService: "还没有填 {provider} API key：在终端运行 speakmore key，或者点菜单栏上 Utterly 的图标打开设置",
     noKeyServiceFor:
-      "还没有填 {provider} API key：在终端运行 speakmore key {id}，或者点菜单栏上 SpeakMore 的图标打开设置",
+      "还没有填 {provider} API key：在终端运行 speakmore key {id}，或者点菜单栏上 Utterly 的图标打开设置",
     failedFor: "{provider} 的 key 未通过：{reason}",
     whichVendor: "数据隐私模式不用 key；要给某一家存 key，写明是哪一家",
   },
@@ -340,8 +340,8 @@ export default {
     noMicrophone: "找不到麦克风",
     noSignal: "麦克风没信号：查输入设备、是否静音",
     recordError: "录音出错：{reason}",
-    helperStopped: "按键监听停了，{hotkey}失效：重启 SpeakMore 试试",
-    translateHelperStopped: "翻译按键监听停了，{hotkey}失效：重启 SpeakMore 试试",
+    helperStopped: "按键监听停了，{hotkey}失效：重启 Utterly 试试",
+    translateHelperStopped: "翻译按键监听停了，{hotkey}失效：重启 Utterly 试试",
     translateHotkeyConflicts: "翻译键和听写键都是{hotkey}，翻译键不生效：speakmore config set translateHotkey <键> 换一个",
   },
 
@@ -349,11 +349,11 @@ export default {
     ready: "就绪 · 按 {keycap} 说话",
     missing: "还差：{items}",
     preparing: "准备中…",
-    open: "打开 SpeakMore",
+    open: "打开 Utterly",
     history: "历史记录",
     settings: "设置…",
     version: "版本 {version}",
-    quit: "退出 SpeakMore",
+    quit: "退出 Utterly",
     fallbackTitle: "听写",
   },
 
@@ -568,7 +568,7 @@ export default {
       copy: "复制统计",
       copied: "已复制",
       copyFailed: "复制失败",
-      title: "我用 SpeakMore 语音输入：",
+      title: "我用 Utterly 语音输入：",
       words: "累计说了 {words} 个字",
       saved: "省下约 {time} 的打字时间",
       streak: "连续使用 {current} 天（累计 {active} 天）",
@@ -840,19 +840,19 @@ export default {
 
   paths: {
     homeNotAbsolute: "环境变量 SPEAKMORE_HOME 要写绝对路径，现在是 {home}",
-    homeTooLong: "SpeakMore 的目录路径太长，控制通道建不起来：{home}\n用环境变量 SPEAKMORE_HOME 换一个短一些的目录。",
+    homeTooLong: "Utterly 的目录路径太长，控制通道建不起来：{home}\n用环境变量 SPEAKMORE_HOME 换一个短一些的目录。",
   },
 
   control: {
-    notRunning: "SpeakMore 没有在运行",
-    timeout: "SpeakMore 没有在 {seconds} 秒内回话（命令 {command}）",
-    unreadable: "SpeakMore 的回答看不懂（命令 {command}）",
+    notRunning: "Utterly 没有在运行",
+    timeout: "Utterly 没有在 {seconds} 秒内回话（命令 {command}）",
+    unreadable: "Utterly 的回答看不懂（命令 {command}）",
   },
 
   storage: {
     historyTooNew: "历史库的版本是 {found}，比这个程序认识的 {known} 新，不敢动它",
-    historyTooOld: "历史库的版本是 {found}，这个程序认识的是 {known}：先把 SpeakMore 启动一次，或者更新到新版",
-    legacyRunning: "旧版本的 SpeakMore 还在运行，数据搬不过来。先把它退出（菜单栏“听写”→“退出”），再运行一次。",
+    historyTooOld: "历史库的版本是 {found}，这个程序认识的是 {known}：先把 Utterly 启动一次，或者更新到新版",
+    legacyRunning: "旧版本的 Utterly 还在运行，数据搬不过来。先把它退出（菜单栏“听写”→“退出”），再运行一次。",
   },
 
   cli: {
@@ -868,14 +868,14 @@ export default {
       usageImport: "用法：speakmore dict import-csv <csv 文件路径>",
       unknownAction: "不认识的词典操作：{action}（能用的：list / add / remove / import-csv）",
     },
-    help: `SpeakMore：按一下热键说话，整理好的文字贴进当前输入框。
+    help: `Utterly：按一下热键说话，整理好的文字贴进当前输入框。
 
   speakmore                     启动（已经在运行就只显示状态）。第一次会问你要一把 API key（默认用 Gemini）
   speakmore start               同上
   speakmore stop                停掉
   speakmore restart             重启
   speakmore status [--json]     看状态：在不在运行、key、系统权限、今天和累计说了多少
-  speakmore update              更新到最新版本（Mac 上装着 SpeakMore.app 的话连它一起）。设置、key、历史和录音不动
+  speakmore update              更新到最新版本（Mac 上装着 Utterly.app 的话连它一起）。设置、key、历史和录音不动
 
   speakmore history [-n 条数] [--json]
                                 看说过的话，按天分组，新的在前（默认最近 {limit} 条）
@@ -911,13 +911,13 @@ export default {
   speakmore settings            打开设置（去系统设置授权时用）
   speakmore logs [-n 行数] [-f]  看日志，-f 一直跟着
   speakmore uninstall [--keep-data] [--yes]
-                                卸载：停掉后台，把 SpeakMore 的目录整个删掉。--keep-data 留下设置、key、历史和录音
+                                卸载：停掉后台，把 Utterly 的目录整个删掉。--keep-data 留下设置、key、历史和录音
 
   speakmore help                这段说明
   speakmore --version           版本号
 `,
-    macOnly: "SpeakMore 目前只支持 macOS 和 Windows：听热键和贴字靠的是这两个系统各自的接口。",
-    nodeVersion: "SpeakMore 需要 Node 22.13 或更新的版本（23 系列要 23.4 以上），现在是 {version}。",
+    macOnly: "Utterly 目前只支持 macOS 和 Windows：听热键和贴字靠的是这两个系统各自的接口。",
+    nodeVersion: "Utterly 需要 Node 22.13 或更新的版本（23 系列要 23.4 以上），现在是 {version}。",
     unknownCommand: "没有 {name} 这个命令。",
     seeHelp: "运行 speakmore help 看全部命令。",
     stuck: "它可能卡住了。运行 speakmore stop 可以把它强行停掉，再运行 speakmore 重新启动。",
@@ -925,9 +925,9 @@ export default {
     badArgs: "参数不对：{reason}",
     extraArgs: "多了参数 {args}。用法：{usage}",
     positiveInteger: "{flag} 后面要跟一个正整数",
-    starting: "正在启动 SpeakMore…",
+    starting: "正在启动 Utterly…",
     runRestart: "运行 speakmore restart",
-    packagedRelaunch: "在菜单栏点“听写”→“退出”，再打开一次 SpeakMore.app",
+    packagedRelaunch: "在菜单栏点“听写”→“退出”，再打开一次 Utterly.app",
     syntax: {
       start: "speakmore start",
       stop: "speakmore stop",
@@ -952,15 +952,15 @@ export default {
       unreachable: "连不上 {url}：{reason}",
       badVersion: "下载地址给的版本号不对：{value}",
       upToDate: "已经是最新的（{version}）。",
-      updating: "更新 SpeakMore：{current} → {latest}",
-      updatingApp: "更新 SpeakMore.app：{current} → {latest}",
-      appDone: "SpeakMore.app 已经换成 {version}。",
-      reopened: "已经重新打开 SpeakMore.app。",
+      updating: "更新 Utterly：{current} → {latest}",
+      updatingApp: "更新 Utterly.app：{current} → {latest}",
+      appDone: "Utterly.app 已经换成 {version}。",
+      reopened: "已经重新打开 Utterly.app。",
       appChecksum: "下载的 {file} 和发布的对不上，可能是路上坏了：再运行一次 speakmore update。",
       appMount: "打不开下载的 {file}：{reason}",
-      appWrongPackage: "下载的 {file} 里不是 {version} 版的 SpeakMore.app，没有装。",
-      appUnsigned: "下载的 SpeakMore.app 签名不对，没有装：{reason}",
-      appOtherDeveloper: "下载的 SpeakMore.app 和装着的不是同一个开发者签的（{found}，装着的是 {installed}），没有装。",
+      appWrongPackage: "下载的 {file} 里不是 {version} 版的 Utterly.app，没有装。",
+      appUnsigned: "下载的 Utterly.app 签名不对，没有装：{reason}",
+      appOtherDeveloper: "下载的 Utterly.app 和装着的不是同一个开发者签的（{found}，装着的是 {installed}），没有装。",
       appReplace: "换不掉 {path}：{reason}。可以下载 {url}，自己拖进“应用程序”。",
       available: "有新版本 {latest}（现在是 {current}）：运行 speakmore update。",
     },
@@ -968,11 +968,11 @@ export default {
     lifecycle: {
       openedOnboarding: "已经打开首次引导，照着把缺的权限补上。补完运行 speakmore status 再看一眼。",
       openedSettings: "已经打开设置，照着把缺的权限补上。补完运行 speakmore status 再看一眼。",
-      notRunning: "SpeakMore 本来就没有在运行。",
-      stopped: "SpeakMore 已经停掉。",
-      killed: "SpeakMore 卡住了没有回应，已经强行结束。",
+      notRunning: "Utterly 本来就没有在运行。",
+      stopped: "Utterly 已经停掉。",
+      killed: "Utterly 卡住了没有回应，已经强行结束。",
       packagedRestart:
-        "现在运行的是装在“应用程序”里的 SpeakMore.app。从命令行重启会把它换成终端启动的那一个，权限和 key 都是另一套。",
+        "现在运行的是装在“应用程序”里的 Utterly.app。从命令行重启会把它换成终端启动的那一个，权限和 key 都是另一套。",
       howToRestart: "要重启它：{relaunch}。",
     },
     key: {
@@ -981,7 +981,7 @@ export default {
       getOne: "没有的话在这里申请一把：{url}",
       storage: "它会用系统钥匙串加密后存在这台电脑上，不会发到别处。",
       skip: "现在不想填就直接按回车。",
-      legacyDaemon: "正在运行的 SpeakMore 是旧版本，还不认得 {provider} 的 key：先{restart}，再来一次。",
+      legacyDaemon: "正在运行的 Utterly 是旧版本，还不认得 {provider} 的 key：先{restart}，再来一次。",
       verifying: "正在验证…",
       saved: "key 已保存，验证通过。",
       rejected: "这把 key 没有通过：{problem}",
@@ -999,8 +999,8 @@ export default {
     },
     config: {
       nextLaunch: "下次启动生效。",
-      packaged: "现在运行的是装在“应用程序”里的 SpeakMore.app。要让新设置生效：{relaunch}。",
-      restarting: "正在重启 SpeakMore 让它生效…",
+      packaged: "现在运行的是装在“应用程序”里的 Utterly.app。要让新设置生效：{relaunch}。",
+      restarting: "正在重启 Utterly 让它生效…",
       restartedBroken: "重启了，但现在不能用：{problem}",
       undo: "想撤回这次改动：{undo}",
       restartedKeyBad: "重启了，但 {provider} 的 key 不能用：{problem}。运行 speakmore key {id} 换一把",
@@ -1008,18 +1008,18 @@ export default {
       restartedStarting: "重启了，还没准备好：运行 speakmore status 看看。",
       restartedUnverified: "重启了，但没连上 {provider}，新设置对不对还没验证：过一会儿运行 speakmore status 看看。",
       applied: "已经生效。",
-      oldDaemonLive: "正在运行的 SpeakMore 是旧版本，不会当场换：运行 speakmore restart。",
+      oldDaemonLive: "正在运行的 Utterly 是旧版本，不会当场换：运行 speakmore restart。",
       appliedLive: "已经生效，不用重启。",
-      themeOverridden: "正在运行的 SpeakMore 用的还是{theme}：启动它的环境里设着 {variable}，它盖过设置文件。",
-      languageOverridden: "正在运行的 SpeakMore 用的还是{language}：启动它的环境里设着 {variable}，它盖过设置文件。",
-      modelSourceOverridden: "正在运行的 SpeakMore 用的还是{source}：启动它的环境里设着 {variable}，它盖过设置文件。",
+      themeOverridden: "正在运行的 Utterly 用的还是{theme}：启动它的环境里设着 {variable}，它盖过设置文件。",
+      languageOverridden: "正在运行的 Utterly 用的还是{language}：启动它的环境里设着 {variable}，它盖过设置文件。",
+      modelSourceOverridden: "正在运行的 Utterly 用的还是{source}：启动它的环境里设着 {variable}，它盖过设置文件。",
       envWarning: "注意：环境变量 {variable} 现在设着，它会盖过这个值。",
       changed: "{name} 改成了 {value}。",
       modeCommand: "这一项平时用 {command} 换：它先检查能不能用，不行就不换。config set 不检查，直接写进设置。",
       otherMode: "现在是 {current} 模式，这一项切到 {mode} 模式时才用上。",
       unset: "{name} 回到了默认值 {value}。",
       themeChanged: "主题换成了{theme}。",
-      notRunning: "SpeakMore 没有在运行。先运行 speakmore 启动。",
+      notRunning: "Utterly 没有在运行。先运行 speakmore 启动。",
       settingsOpened: "设置已经打开。",
       title: "设置",
       choices: "{describe}。能填：{choices}",
@@ -1086,7 +1086,7 @@ export default {
       downloadAlready: "{model} 已经下载好了。",
       downloadStopped: "{model} 的下载停下了（在别处取消了）。下完的文件留着，下到一半的那个下次从头来。",
       downloadInterrupted:
-        "SpeakMore 在下载途中退出了。下完的文件留着，再运行 speakmore transcriber download {id} 接着下。",
+        "Utterly 在下载途中退出了。下完的文件留着，再运行 speakmore transcriber download {id} 接着下。",
       nothingToCancel: "{model} 没有在下载。",
       cancelled: "停下了 {model} 的下载。下完的文件留着，下到一半的那个下次从头来。",
       notOnDisk: "{model} 本来就没下载，不用删。",
@@ -1094,11 +1094,11 @@ export default {
       deleteNeedsConfirm: "删除要确认：在终端里运行，或者加 --yes（speakmore transcriber delete {id} --yes）",
       deleteAborted: "没有删。",
       deleted: "删掉了 {model}，腾出 {size}。",
-      oldDaemonDelete: "正在运行的 SpeakMore 是旧版本，不知道哪个模型正在用，先不删：运行 speakmore restart 再删。",
+      oldDaemonDelete: "正在运行的 Utterly 是旧版本，不知道哪个模型正在用，先不删：运行 speakmore restart 再删。",
       checking: "正在检查 {model}：念一句话交给它转……",
       checkOk: "{model} 能用。念的是「{said}」，转出来「{text}」，转写用了 {seconds}。",
       checkLoaded: "它没在用，临时装上用了 {seconds}，查完已经卸掉。",
-      oldDaemonCheck: "正在运行的 SpeakMore 是旧版本，查不了本机模型：运行 speakmore restart 之后再查。",
+      oldDaemonCheck: "正在运行的 Utterly 是旧版本，查不了本机模型：运行 speakmore restart 之后再查。",
       notDownloadedAsk: "{model} 还没下载（{size}，从{source}下）。现在下载吗？输入 y 下载：",
       notDownloadedHint: "{model} 还没下载：先运行 speakmore transcriber download {id}",
       notDownloadedLater: "没有下载，也没有换。想下的时候运行 speakmore transcriber download {id}",
@@ -1145,7 +1145,7 @@ export default {
       notSwitched: "没有换：还没有 {provider} 的 key。",
       switched: "模型换成了 {model}。",
       checking: "正在检查 {model}…",
-      oldDaemonCheck: "正在运行的 SpeakMore 是旧版本，查不了：运行 speakmore restart 之后再查。",
+      oldDaemonCheck: "正在运行的 Utterly 是旧版本，查不了：运行 speakmore restart 之后再查。",
       unusable: "不能用：{problem}",
       usable: "能用：{model}，用的是{from}，来回 {seconds} 秒。",
       fromEnv: "环境变量 {variable} 里的 key",
@@ -1214,8 +1214,8 @@ export default {
       pending: "设置里的 {names} 和正在用的不一样，还没生效：{relaunch}。",
       helperStopped: "按键监听的小程序停了，热键不会生效：{relaunch}。还是这样的话看 speakmore logs。",
       openSettings: '运行 {command} 打开设置的权限页：每项权限旁边有去系统设置的按钮，开关打开后点"重新检查"。',
-      ownerApp: "权限记在应用自己名下，在系统设置的列表里找“SpeakMore”。",
-      ownerTerminal: "权限记在启动 SpeakMore 的那个终端程序名下（比如“终端”或 iTerm），在系统设置的列表里找它。",
+      ownerApp: "权限记在应用自己名下，在系统设置的列表里找“Utterly”。",
+      ownerTerminal: "权限记在启动 Utterly 的那个终端程序名下（比如“终端”或 iTerm），在系统设置的列表里找它。",
       footer: `speakmore history  看说过的话     speakmore config  看和改设置
 speakmore usage    看花了多少钱   speakmore stop    停掉
 speakmore help     全部命令`,
@@ -1251,24 +1251,24 @@ speakmore help     全部命令`,
       estimateNote: "钱是按各家官方标准价估算的美元；Gemini 在免费额度内用的其实不收钱。",
     },
     logs: {
-      none: "还没有日志：SpeakMore 启动过之后会写到 {file}",
+      none: "还没有日志：Utterly 启动过之后会写到 {file}",
     },
     uninstall: {
       yours: "设置、key、历史和录音",
       needsConfirm: "卸载要先确认。不在终端里运行时加上 --yes。",
-      planKeep: "要卸载 SpeakMore：删掉 {home} 里的程序和运行环境，{yours}留着。",
-      planAll: "要卸载 SpeakMore：把 {home} 整个删掉，包括程序、运行环境，以及你的{yours}。删了找不回来。",
+      planKeep: "要卸载 Utterly：删掉 {home} 里的程序和运行环境，{yours}留着。",
+      planAll: "要卸载 Utterly：把 {home} 整个删掉，包括程序、运行环境，以及你的{yours}。删了找不回来。",
       confirm: "确定吗？输入 y 再按回车：",
       aborted: "没有动。",
       removedKeep: "{home} 里的程序、运行环境、日志和缓存",
       keychainItem: "钥匙串里用来加密 key 的那一条",
-      keychainFailed: "钥匙串里用来加密 key 的那一条没删掉（{reason}）：可以在“钥匙串访问”里搜 SpeakMore 手动删",
+      keychainFailed: "钥匙串里用来加密 key 的那一条没删掉（{reason}）：可以在“钥匙串访问”里搜 Utterly 手动删",
       removedAll: "{home}（程序、运行环境，以及你的{yours}）",
       // Windows：install.ps1 在用户 Path 里加的那一项、App 设置里开过的开机启动
       pathEntry: "用户 Path 里的 {entry}",
       loginItem: "开机启动",
       afterExit: "程序文件正被这条命令用着，等它退出后几秒内删掉",
-      done: "SpeakMore 已经卸载。",
+      done: "Utterly 已经卸载。",
       removed: "删掉了：{item}",
       kept: "留着：{home} 里的{yours}。重新安装之后接着用；不要了就把这个目录删掉",
       leftovers: "还留在系统里的：",
@@ -1288,11 +1288,11 @@ speakmore help     全部命令`,
       signal: "被信号 {signal} 结束",
       exitCode: "退出码 {code}",
       exitedEarly: "中途退出",
-      failed: "SpeakMore 没能启动（{reason}）。日志 {file} 的最后几行：\n{tail}",
-      noAnswer: "SpeakMore 启动后 {seconds} 秒没有答话。看看日志：{file}",
+      failed: "Utterly 没能启动（{reason}）。日志 {file} 的最后几行：\n{tail}",
+      noAnswer: "Utterly 启动后 {seconds} 秒没有答话。看看日志：{file}",
       stuckNoPid:
-        "SpeakMore 卡住了不答话，也认不出它的进程号。在“活动监视器”里找到名叫 Electron 或 SpeakMore 的进程，结束它。",
-      cantStop: "SpeakMore 停不掉（进程号 {pid}）。在“活动监视器”里结束它。",
+        "Utterly 卡住了不答话，也认不出它的进程号。在“活动监视器”里找到名叫 Electron 或 Utterly 的进程，结束它。",
+      cantStop: "Utterly 停不掉（进程号 {pid}）。在“活动监视器”里结束它。",
       needXcode: "编译按键监听的小程序需要 Xcode 命令行工具。先运行：xcode-select --install",
       buildFailed: "按键监听的小程序没有编译成功（没装 Xcode 命令行工具的话先运行 xcode-select --install）：\n{detail}",
       needGo:
@@ -1306,8 +1306,8 @@ speakmore help     全部命令`,
   cli: {
       daemon: {
         stuckNoPid:
-          "SpeakMore 卡住了不答话，也认不出它的进程号。在“任务管理器”的“详细信息”里找到 electron.exe，结束它。",
-        cantStop: "SpeakMore 停不掉（进程号 {pid}）。在“任务管理器”里结束它。",
+          "Utterly 卡住了不答话，也认不出它的进程号。在“任务管理器”的“详细信息”里找到 electron.exe，结束它。",
+        cantStop: "Utterly 停不掉（进程号 {pid}）。在“任务管理器”里结束它。",
       },
       key: { storage: "它会用 Windows 的数据保护加密后存在这台电脑上，不会发到别处。" },
     },
@@ -1321,9 +1321,9 @@ speakmore help     全部命令`,
     key: {
       keychainUnavailable: "系统的加密存储不可用，没法安全地保存 key",
       noKeyService:
-        "还没有填 {provider} API key：在终端运行 speakmore key，或者点任务栏通知区域里 SpeakMore 的图标打开设置",
+        "还没有填 {provider} API key：在终端运行 speakmore key，或者点任务栏通知区域里 Utterly 的图标打开设置",
       noKeyServiceFor:
-        "还没有填 {provider} API key：在终端运行 speakmore key {id}，或者点任务栏通知区域里 SpeakMore 的图标打开设置",
+        "还没有填 {provider} API key：在终端运行 speakmore key {id}，或者点任务栏通知区域里 Utterly 的图标打开设置",
     },
     delivery: { pasteFailed: "没能自动粘贴：文字已复制，按 Ctrl+V 粘贴" },
     bar: { noMicPermission: "缺麦克风权限：设置 › 隐私和安全性 › 麦克风" },

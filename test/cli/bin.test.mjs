@@ -50,21 +50,21 @@ test("说什么语言：设置里写了就用它；跟随系统时看终端的 L
       env: { ...base, SPEAKMORE_HOME: dir, ...env },
     }).stdout.split("\n")[0];
 
-  assert.equal(helpIn({ LANG: "zh_CN.UTF-8" }), "SpeakMore：按一下热键说话，整理好的文字贴进当前输入框。");
-  assert.match(helpIn({ LANG: "en_US.UTF-8" }), /^SpeakMore: press a hotkey/);
-  assert.match(helpIn({ LANG: "zh_CN.UTF-8", LC_ALL: "en_GB.UTF-8" }), /^SpeakMore: press a hotkey/);
+  assert.equal(helpIn({ LANG: "zh_CN.UTF-8" }), "Utterly：按一下热键说话，整理好的文字贴进当前输入框。");
+  assert.match(helpIn({ LANG: "en_US.UTF-8" }), /^Utterly: press a hotkey/);
+  assert.match(helpIn({ LANG: "zh_CN.UTF-8", LC_ALL: "en_GB.UTF-8" }), /^Utterly: press a hotkey/);
   // 繁体、日文、C：我们没有，用英文
-  for (const LANG of ["zh_TW.UTF-8", "ja_JP.UTF-8", "C"]) assert.match(helpIn({ LANG }), /^SpeakMore: press/, LANG);
+  for (const LANG of ["zh_TW.UTF-8", "ja_JP.UTF-8", "C"]) assert.match(helpIn({ LANG }), /^Utterly: press/, LANG);
   // 什么都没设：macOS 上按英文；Windows 的终端一般不设这几个，按系统的显示语言（i18n 的测试查）
-  if (process.platform !== "win32") assert.match(helpIn({}), /^SpeakMore: press/);
+  if (process.platform !== "win32") assert.match(helpIn({}), /^Utterly: press/);
 
   // 设置里定了的话盖过终端的语言；环境变量 SPEAKMORE_LANGUAGE 又盖过设置
   writeFileSync(resolvePaths({ SPEAKMORE_HOME: dir }).settingsFile, JSON.stringify({ language: "zh-CN" }));
-  assert.match(helpIn({ LANG: "en_US.UTF-8" }), /^SpeakMore：/);
-  assert.match(helpIn({ LANG: "zh_CN.UTF-8", SPEAKMORE_LANGUAGE: "en" }), /^SpeakMore: press/);
+  assert.match(helpIn({ LANG: "en_US.UTF-8" }), /^Utterly：/);
+  assert.match(helpIn({ LANG: "zh_CN.UTF-8", SPEAKMORE_LANGUAGE: "en" }), /^Utterly: press/);
   // 设置文件坏了：先按终端的语言说，坏在哪由读设置的命令报
   writeFileSync(resolvePaths({ SPEAKMORE_HOME: dir }).settingsFile, "{ 坏了");
-  assert.match(helpIn({ LANG: "zh_CN.UTF-8" }), /^SpeakMore：/);
+  assert.match(helpIn({ LANG: "zh_CN.UTF-8" }), /^Utterly：/);
 });
 
 test("Node 太旧：按终端的语言说要哪个版本；旧到连文案那一层都加载不了时用英文说，不甩调用栈", (t) => {
@@ -88,12 +88,12 @@ test("Node 太旧：按终端的语言说要哪个版本；旧到连文案那一
 
   const zhTerminal = runAs("20.18.1");
   assert.equal(zhTerminal.status, 1);
-  assert.equal(zhTerminal.stderr, "SpeakMore 需要 Node 22.13 或更新的版本（23 系列要 23.4 以上），现在是 20.18.1。\n");
+  assert.equal(zhTerminal.stderr, "Utterly 需要 Node 22.13 或更新的版本（23 系列要 23.4 以上），现在是 20.18.1。\n");
 
   const ancient = runAs("14.21.3", { ancient: true });
   assert.equal(ancient.status, 1);
   assert.equal(
     ancient.stderr,
-    "SpeakMore needs Node 22.13 or newer (23.4 or newer on the 23 line); this is 14.21.3.\n",
+    "Utterly needs Node 22.13 or newer (23.4 or newer on the 23 line); this is 14.21.3.\n",
   );
 });

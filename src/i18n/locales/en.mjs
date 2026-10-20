@@ -103,7 +103,7 @@ export default {
       customParams:
         'Extra request parameters for the custom service, as one JSON object, e.g. {"reasoning_effort": "minimal"}; sent with checks and polishing alike. model, messages, and stream can\'t be set',
       modelSource:
-        "Where on-device models download from: cn is SpeakMore's mirror in China, original is Hugging Face. If the chosen one stalls, the other is tried",
+        "Where on-device models download from: cn is Utterly's mirror in China, original is Hugging Face. If the chosen one stalls, the other is tried",
       acceleration:
         "Whether on-device models use the GPU: auto uses it when there is one and falls back to the CPU if it fails; cpu uses only the CPU (for GPU driver trouble, or to leave the GPU to other programs)",
       barHint: "Whether the hint line above the voice bar (press … to finish · esc to cancel) shows: on or off",
@@ -165,7 +165,7 @@ export default {
   },
   command: {
     privateFallback: "Private mode has no polish model, so the instruction can't run: pasting the transcript",
-    replyTitle: "SpeakMore command result",
+    replyTitle: "Utterly command result",
   },
   translate: {
     // Private mode has no polishing model to translate with: the raw transcript is pasted, with this note
@@ -185,7 +185,7 @@ export default {
     },
   },
   modelSources: {
-    cn: "China mirror (SpeakMore CDN)",
+    cn: "China mirror (Utterly CDN)",
     original: "Original (Hugging Face)",
   },
   accelerations: {
@@ -244,7 +244,7 @@ export default {
     paramsNotJson:
       'the extra parameters aren\'t valid JSON: keys and strings need straight double quotes, e.g. {"reasoning_effort": "minimal"}',
     paramsNotObject: 'the extra parameters must be one JSON object in braces, e.g. {"reasoning_effort": "minimal"}',
-    paramsReserved: "the extra parameters can't set {name}: SpeakMore sends {names} itself",
+    paramsReserved: "the extra parameters can't set {name}: Utterly sends {names} itself",
   },
 
   setup: {
@@ -284,9 +284,9 @@ export default {
     noKeyForCli: "No {provider} key yet: run speakmore key {id}",
     unknownProvider: "Unknown model provider: {id}",
     noKeyService:
-      "No {provider} API key yet: run speakmore key in a terminal, or open Settings from the SpeakMore menu bar icon",
+      "No {provider} API key yet: run speakmore key in a terminal, or open Settings from the Utterly menu bar icon",
     noKeyServiceFor:
-      "No {provider} API key yet: run speakmore key {id} in a terminal, or open Settings from the SpeakMore menu bar icon",
+      "No {provider} API key yet: run speakmore key {id} in a terminal, or open Settings from the Utterly menu bar icon",
     failedFor: "{provider} key failed: {reason}",
     whichVendor: "Private mode doesn't use a key; to save one, say which provider it's for",
   },
@@ -350,8 +350,8 @@ export default {
     noMicrophone: "No microphone found",
     noSignal: "The microphone isn't picking anything up: check the input device and mute",
     recordError: "Recording error: {reason}",
-    helperStopped: "Key listener stopped; {hotkey} won't work. Try restarting SpeakMore",
-    translateHelperStopped: "Translation key listener stopped; {hotkey} won't work. Try restarting SpeakMore",
+    helperStopped: "Key listener stopped; {hotkey} won't work. Try restarting Utterly",
+    translateHelperStopped: "Translation key listener stopped; {hotkey} won't work. Try restarting Utterly",
     translateHotkeyConflicts:
       "The translate key and the dictation key are both {hotkey}, so translating is off. Change one: speakmore config set translateHotkey <key>",
   },
@@ -360,11 +360,11 @@ export default {
     ready: "Ready · press {keycap} to talk",
     missing: "Missing: {items}",
     preparing: "Getting ready…",
-    open: "Open SpeakMore",
+    open: "Open Utterly",
     history: "History",
     settings: "Settings…",
     version: "Version {version}",
-    quit: "Quit SpeakMore",
+    quit: "Quit Utterly",
     fallbackTitle: "Dictate",
   },
 
@@ -578,7 +578,7 @@ export default {
       copy: "Copy stats",
       copied: "Copied",
       copyFailed: "Copy failed",
-      title: "My SpeakMore voice dictation:",
+      title: "My Utterly voice dictation:",
       words: "{words} words dictated",
       saved: "About {time} of typing saved",
       streak: "{current}-day streak ({active} days total)",
@@ -851,22 +851,22 @@ export default {
   paths: {
     homeNotAbsolute: "The SPEAKMORE_HOME env var must be an absolute path; it's {home}",
     homeTooLong:
-      "The SpeakMore folder path is too long for the control socket: {home}\nUse the SPEAKMORE_HOME env var to pick a shorter one.",
+      "The Utterly folder path is too long for the control socket: {home}\nUse the SPEAKMORE_HOME env var to pick a shorter one.",
   },
 
   control: {
-    notRunning: "SpeakMore isn't running",
-    timeout: "SpeakMore didn't reply within {seconds} seconds (command {command})",
-    unreadable: "Couldn't understand SpeakMore's reply (command {command})",
+    notRunning: "Utterly isn't running",
+    timeout: "Utterly didn't reply within {seconds} seconds (command {command})",
+    unreadable: "Couldn't understand Utterly's reply (command {command})",
   },
 
   storage: {
     historyTooNew:
       "The history database is version {found}, newer than this program knows ({known}), so it won't touch it",
     historyTooOld:
-      "The history database is version {found}, but this program expects {known}: start SpeakMore once, or update to the latest version",
+      "The history database is version {found}, but this program expects {known}: start Utterly once, or update to the latest version",
     legacyRunning:
-      "An old version of SpeakMore is still running, so its data can't be moved. Quit it first (menu bar → Quit), then run this again.",
+      "An old version of Utterly is still running, so its data can't be moved. Quit it first (menu bar → Quit), then run this again.",
   },
 
   cli: {
@@ -882,14 +882,14 @@ export default {
       usageImport: "Usage: speakmore dict import-csv <csv file>",
       unknownAction: "Unknown dictionary action: {action} (available: list / add / remove / import-csv)",
     },
-    help: `SpeakMore: press a hotkey, speak, and polished text is pasted into the current text box.
+    help: `Utterly: press a hotkey, speak, and polished text is pasted into the current text box.
 
   speakmore                     Start (just shows status if already running). First run asks for an API key (Gemini by default)
   speakmore start               Same as above
   speakmore stop                Stop
   speakmore restart             Restart
   speakmore status [--json]     Status: running or not, key, system permissions, how much you said today and in total
-  speakmore update              Update to the latest version (on a Mac, SpeakMore.app too if you have it). Settings, keys, history, and recordings are kept
+  speakmore update              Update to the latest version (on a Mac, Utterly.app too if you have it). Settings, keys, history, and recordings are kept
 
   speakmore history [-n count] [--json]
                                 What you said, grouped by day, newest first (latest {limit} by default)
@@ -926,14 +926,14 @@ export default {
   speakmore logs [-n lines] [-f]
                                 Show logs; -f keeps following
   speakmore uninstall [--keep-data] [--yes]
-                                Uninstall: stop it and delete the whole SpeakMore folder. --keep-data keeps settings, keys, history, and recordings
+                                Uninstall: stop it and delete the whole Utterly folder. --keep-data keeps settings, keys, history, and recordings
 
   speakmore help                This help
   speakmore --version           Version
 `,
     macOnly:
-      "SpeakMore only supports macOS and Windows for now: listening for the hotkey and pasting rely on each system's own APIs.",
-    nodeVersion: "SpeakMore needs Node 22.13 or newer (23.4 or newer on the 23 line); this is {version}.",
+      "Utterly only supports macOS and Windows for now: listening for the hotkey and pasting rely on each system's own APIs.",
+    nodeVersion: "Utterly needs Node 22.13 or newer (23.4 or newer on the 23 line); this is {version}.",
     unknownCommand: "There's no command called {name}.",
     seeHelp: "Run speakmore help to see all commands.",
     stuck: "It may be stuck. Run speakmore stop to force it to stop, then run speakmore to start it again.",
@@ -941,9 +941,9 @@ export default {
     badArgs: "Invalid arguments: {reason}",
     extraArgs: "Unexpected argument {args}. Usage: {usage}",
     positiveInteger: "{flag} needs a positive integer",
-    starting: "Starting SpeakMore…",
+    starting: "Starting Utterly…",
     runRestart: "run speakmore restart",
-    packagedRelaunch: "click the SpeakMore menu bar icon → Quit SpeakMore, then open SpeakMore.app again",
+    packagedRelaunch: "click the Utterly menu bar icon → Quit Utterly, then open Utterly.app again",
     syntax: {
       start: "speakmore start",
       stop: "speakmore stop",
@@ -969,40 +969,40 @@ export default {
       unreachable: "Couldn't reach {url}: {reason}",
       badVersion: "The download server returned a bad version number: {value}",
       upToDate: "Already up to date ({version}).",
-      updating: "Updating SpeakMore {current} → {latest}",
-      updatingApp: "Updating SpeakMore.app {current} → {latest}",
-      appDone: "SpeakMore.app is now {version}.",
-      reopened: "Reopened SpeakMore.app.",
+      updating: "Updating Utterly {current} → {latest}",
+      updatingApp: "Updating Utterly.app {current} → {latest}",
+      appDone: "Utterly.app is now {version}.",
+      reopened: "Reopened Utterly.app.",
       appChecksum:
         "The downloaded {file} doesn't match the release; it was probably damaged on the way. Run speakmore update again.",
       appMount: "Couldn't open the downloaded {file}: {reason}",
-      appWrongPackage: "The downloaded {file} doesn't contain SpeakMore.app {version}, so nothing was installed.",
-      appUnsigned: "The downloaded SpeakMore.app isn't properly signed, so it wasn't installed: {reason}",
+      appWrongPackage: "The downloaded {file} doesn't contain Utterly.app {version}, so nothing was installed.",
+      appUnsigned: "The downloaded Utterly.app isn't properly signed, so it wasn't installed: {reason}",
       appOtherDeveloper:
-        "The downloaded SpeakMore.app is signed by a different developer ({found}; the installed one is {installed}), so it wasn't installed.",
+        "The downloaded Utterly.app is signed by a different developer ({found}; the installed one is {installed}), so it wasn't installed.",
       appReplace: "Couldn't replace {path}: {reason}. You can download {url} and drag it into Applications yourself.",
-      available: "SpeakMore {latest} is out (you have {current}): run speakmore update.",
+      available: "Utterly {latest} is out (you have {current}): run speakmore update.",
     },
 
     lifecycle: {
       openedOnboarding:
         "Opened the setup guide. Grant the missing permissions there, then run speakmore status to check.",
       openedSettings: "Opened Settings. Grant the missing permissions there, then run speakmore status to check.",
-      notRunning: "SpeakMore wasn't running.",
-      stopped: "SpeakMore stopped.",
-      killed: "SpeakMore was stuck and has been force-quit.",
+      notRunning: "Utterly wasn't running.",
+      stopped: "Utterly stopped.",
+      killed: "Utterly was stuck and has been force-quit.",
       packagedRestart:
-        "The running SpeakMore is SpeakMore.app in Applications. Restarting it from the command line would swap in a terminal-launched copy with separate permissions and keys.",
+        "The running Utterly is Utterly.app in Applications. Restarting it from the command line would swap in a terminal-launched copy with separate permissions and keys.",
       howToRestart: "To restart it: {relaunch}.",
     },
     key: {
       prompt: "Paste the key and press Enter (input is hidden): ",
-      need: "SpeakMore needs a {provider} API key: recordings are sent to {provider} to become text.",
+      need: "Utterly needs a {provider} API key: recordings are sent to {provider} to become text.",
       getOne: "Don't have one? Get one here: {url}",
       storage: "It's encrypted with the system keychain and stays on this Mac.",
       skip: "Press Enter to skip for now.",
       legacyDaemon:
-        "The running SpeakMore is an old version that doesn't know {provider} keys yet: {restart} first, then try again.",
+        "The running Utterly is an old version that doesn't know {provider} keys yet: {restart} first, then try again.",
       verifying: "Verifying…",
       saved: "Key saved and verified.",
       rejected: "This key didn't pass: {problem}",
@@ -1021,8 +1021,8 @@ export default {
     },
     config: {
       nextLaunch: "Takes effect next launch.",
-      packaged: "The running SpeakMore is SpeakMore.app in Applications. To apply the new settings: {relaunch}.",
-      restarting: "Restarting SpeakMore to apply…",
+      packaged: "The running Utterly is Utterly.app in Applications. To apply the new settings: {relaunch}.",
+      restarting: "Restarting Utterly to apply…",
       restartedBroken: "Restarted, but it can't be used now: {problem}",
       undo: "To undo this change: {undo}",
       restartedKeyBad:
@@ -1032,14 +1032,14 @@ export default {
       restartedUnverified:
         "Restarted, but couldn't reach {provider}, so the new settings aren't verified yet: run speakmore status in a bit.",
       applied: "Applied.",
-      oldDaemonLive: "The running SpeakMore is an old version and won't switch on the fly: run speakmore restart.",
+      oldDaemonLive: "The running Utterly is an old version and won't switch on the fly: run speakmore restart.",
       appliedLive: "Applied, no restart needed.",
       themeOverridden:
-        "The running SpeakMore still uses {theme}: {variable} is set where it was started, and it overrides the settings file.",
+        "The running Utterly still uses {theme}: {variable} is set where it was started, and it overrides the settings file.",
       languageOverridden:
-        "The running SpeakMore still uses {language}: {variable} is set where it was started, and it overrides the settings file.",
+        "The running Utterly still uses {language}: {variable} is set where it was started, and it overrides the settings file.",
       modelSourceOverridden:
-        "The running SpeakMore still uses {source}: {variable} is set where it was started, and it overrides the settings file.",
+        "The running Utterly still uses {source}: {variable} is set where it was started, and it overrides the settings file.",
       envWarning: "Note: the {variable} env var is set and overrides this value.",
       changed: "{name} set to {value}.",
       modeCommand:
@@ -1047,7 +1047,7 @@ export default {
       otherMode: "You're in {current} mode now; this takes effect when you switch to {mode} mode.",
       unset: "{name} reset to the default, {value}.",
       themeChanged: "Theme set to {theme}.",
-      notRunning: "SpeakMore isn't running. Run speakmore to start it first.",
+      notRunning: "Utterly isn't running. Run speakmore to start it first.",
       settingsOpened: "Settings opened.",
       title: "Settings",
       choices: "{describe}. Options: {choices}",
@@ -1111,14 +1111,14 @@ export default {
       transcriberManage: "Download: speakmore transcriber download {id} · stop: cancel · remove: delete · check: check",
       downloadStart: "Downloading {model} ({size}, from {source})…",
       downloadBackground:
-        "SpeakMore is downloading it in the background: Ctrl-C only stops watching; to stop the download, run speakmore transcriber cancel {id}",
+        "Utterly is downloading it in the background: Ctrl-C only stops watching; to stop the download, run speakmore transcriber cancel {id}",
       downloadProgress: "Downloading {percent}% ({received} / {total})",
       downloadDone: "{model} is downloaded.",
       downloadAlready: "{model} is already downloaded.",
       downloadStopped:
         "The {model} download stopped (cancelled elsewhere). Finished files are kept; a half-done file starts over next time.",
       downloadInterrupted:
-        "SpeakMore quit during the download. Finished files are kept; run speakmore transcriber download {id} to continue.",
+        "Utterly quit during the download. Finished files are kept; run speakmore transcriber download {id} to continue.",
       nothingToCancel: "{model} isn't downloading.",
       cancelled: "Stopped downloading {model}. Finished files are kept; a half-done file starts over next time.",
       notOnDisk: "{model} isn't downloaded, so there's nothing to delete.",
@@ -1128,12 +1128,12 @@ export default {
       deleteAborted: "Nothing deleted.",
       deleted: "Deleted {model}, freeing {size}.",
       oldDaemonDelete:
-        "The running SpeakMore is an old version that can't tell which model is in use, so nothing was deleted: run speakmore restart, then try again.",
+        "The running Utterly is an old version that can't tell which model is in use, so nothing was deleted: run speakmore restart, then try again.",
       checking: "Checking {model}: reading it a sentence…",
       checkOk: "{model} works. Read “{said}”, got “{text}”, transcribed in {seconds}.",
       checkLoaded: "It wasn't in use: loading it took {seconds}, and it's unloaded again.",
       oldDaemonCheck:
-        "The running SpeakMore is an old version that can't check on-device models: run speakmore restart, then check again.",
+        "The running Utterly is an old version that can't check on-device models: run speakmore restart, then check again.",
       notDownloadedAsk: "{model} isn't downloaded yet ({size}, from {source}). Download it now? Type y to download: ",
       notDownloadedHint: "{model} isn't downloaded yet: run speakmore transcriber download {id} first",
       notDownloadedLater:
@@ -1185,7 +1185,7 @@ export default {
       switched: "Model switched to {model}.",
       checking: "Checking {model}…",
       oldDaemonCheck:
-        "The running SpeakMore is an old version and can't check: run speakmore restart, then check again.",
+        "The running Utterly is an old version and can't check: run speakmore restart, then check again.",
       unusable: "Not usable: {problem}",
       usable: "Works: {model}, using {from}, round trip {seconds}s.",
       fromEnv: "the key in the {variable} env var",
@@ -1258,9 +1258,9 @@ export default {
         "The key-listening helper stopped, so the hotkey won't work: {relaunch}. If it keeps happening, see speakmore logs.",
       openSettings:
         "Run {command} to open the permissions page in Settings: each permission has a button to System Settings; after turning it on, click “Check again”.",
-      ownerApp: "Permissions belong to the app itself; look for “SpeakMore” in the System Settings lists.",
+      ownerApp: "Permissions belong to the app itself; look for “Utterly” in the System Settings lists.",
       ownerTerminal:
-        "Permissions belong to the terminal app that started SpeakMore (e.g. Terminal or iTerm); look for it in the System Settings lists.",
+        "Permissions belong to the terminal app that started Utterly (e.g. Terminal or iTerm); look for it in the System Settings lists.",
       footer: `speakmore history  what you said     speakmore config  view and change settings
 speakmore usage    what it cost      speakmore stop    stop it
 speakmore help     all commands`,
@@ -1297,25 +1297,25 @@ speakmore help     all commands`,
         "Costs are USD estimates at each provider's standard price; Gemini use within the free tier is actually free.",
     },
     logs: {
-      none: "No logs yet: SpeakMore writes them to {file} once it has started",
+      none: "No logs yet: Utterly writes them to {file} once it has started",
     },
     uninstall: {
       yours: "settings, keys, history, and recordings",
       needsConfirm: "Uninstalling needs confirmation. Add --yes when not running in a terminal.",
-      planKeep: "About to uninstall SpeakMore: delete the program and runtime in {home}, keeping your {yours}.",
+      planKeep: "About to uninstall Utterly: delete the program and runtime in {home}, keeping your {yours}.",
       planAll:
-        "About to uninstall SpeakMore: delete all of {home}, including the program, runtime, and your {yours}. This can't be undone.",
+        "About to uninstall Utterly: delete all of {home}, including the program, runtime, and your {yours}. This can't be undone.",
       confirm: "Are you sure? Type y and press Enter: ",
       aborted: "Nothing changed.",
       removedKeep: "the program, runtime, logs, and cache in {home}",
       keychainItem: "the keychain item used to encrypt keys",
       keychainFailed:
-        "The keychain item used to encrypt keys wasn't deleted ({reason}): search for SpeakMore in Keychain Access and delete it by hand",
+        "The keychain item used to encrypt keys wasn't deleted ({reason}): search for Utterly in Keychain Access and delete it by hand",
       pathEntry: "{entry} in your user Path",
       loginItem: "Open at login",
       afterExit: "The program files are in use by this command; they're removed a few seconds after it exits",
       removedAll: "{home} (the program, runtime, and your {yours})",
-      done: "SpeakMore uninstalled.",
+      done: "Utterly uninstalled.",
       removed: "Deleted: {item}",
       kept: "Kept: your {yours} in {home}. Reinstall to pick up where you left off; delete the folder if you don't need them",
       leftovers: "Still on your system:",
@@ -1336,11 +1336,11 @@ speakmore help     all commands`,
       signal: "ended by signal {signal}",
       exitCode: "exit code {code}",
       exitedEarly: "exited midway",
-      failed: "SpeakMore failed to start ({reason}). Last lines of the log {file}:\n{tail}",
-      noAnswer: "SpeakMore didn't respond within {seconds} seconds of starting. Check the log: {file}",
+      failed: "Utterly failed to start ({reason}). Last lines of the log {file}:\n{tail}",
+      noAnswer: "Utterly didn't respond within {seconds} seconds of starting. Check the log: {file}",
       stuckNoPid:
-        "SpeakMore is stuck and not answering, and its process can't be identified. Find the process named Electron or SpeakMore in Activity Monitor and quit it.",
-      cantStop: "Can't stop SpeakMore (PID {pid}). Quit it in Activity Monitor.",
+        "Utterly is stuck and not answering, and its process can't be identified. Find the process named Electron or Utterly in Activity Monitor and quit it.",
+      cantStop: "Can't stop Utterly (PID {pid}). Quit it in Activity Monitor.",
       needXcode:
         "Building the key-listening helper needs the Xcode Command Line Tools. Run this first: xcode-select --install",
       buildFailed:
@@ -1356,8 +1356,8 @@ speakmore help     all commands`,
   cli: {
       daemon: {
         stuckNoPid:
-          "SpeakMore is stuck and not answering, and its process can't be identified. In Task Manager's Details tab, find electron.exe and end it.",
-        cantStop: "Can't stop SpeakMore (PID {pid}). End it in Task Manager.",
+          "Utterly is stuck and not answering, and its process can't be identified. In Task Manager's Details tab, find electron.exe and end it.",
+        cantStop: "Can't stop Utterly (PID {pid}). End it in Task Manager.",
       },
       key: { storage: "It's encrypted with Windows data protection and stays on this PC." },
     },
@@ -1381,9 +1381,9 @@ speakmore help     all commands`,
     key: {
       keychainUnavailable: "Windows' encrypted storage isn't available, so the key can't be stored safely",
       noKeyService:
-        "No {provider} API key yet: run speakmore key in a terminal, or open Settings from the SpeakMore icon in the taskbar tray",
+        "No {provider} API key yet: run speakmore key in a terminal, or open Settings from the Utterly icon in the taskbar tray",
       noKeyServiceFor:
-        "No {provider} API key yet: run speakmore key {id} in a terminal, or open Settings from the SpeakMore icon in the taskbar tray",
+        "No {provider} API key yet: run speakmore key {id} in a terminal, or open Settings from the Utterly icon in the taskbar tray",
     },
     delivery: { pasteFailed: "Couldn't paste: text copied, press Ctrl+V to paste" },
     bar: { noMicPermission: "No microphone access: Settings › Privacy & security › Microphone" },

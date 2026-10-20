@@ -186,7 +186,7 @@ export function renderStatus({ status, version, settings, stats }, { color, t, p
   const c = paint(color);
   if (status === null) {
     return [
-      `${c.bold(`SpeakMore ${version}`)} · ${t("cli.status.notRunning")}`,
+      `${c.bold(`Utterly ${version}`)} · ${t("cli.status.notRunning")}`,
       "",
       `${INDENT}${t("cli.status.runToStart", { command: c.bold("speakmore") })}`,
       "",
@@ -201,7 +201,7 @@ export function renderStatus({ status, version, settings, stats }, { color, t, p
       : summary.missing.length > 0
         ? c.yellow(t("cli.status.missingCount", { count: summary.missing.length }))
         : t("cli.status.preparing");
-  const lines = [`${c.bold(`SpeakMore ${status.version}`)} · ${state}`, ""];
+  const lines = [`${c.bold(`Utterly ${status.version}`)} · ${state}`, ""];
 
   if (summary.ready) {
     lines.push(`${INDENT}${t("cli.status.ready", { hotkey: hotkeyTitle(status, t) })}`, "");

@@ -1466,7 +1466,7 @@ async function main() {
   function createHub(target) {
     const window = new BrowserWindow({
       ...HUB_SIZE,
-      title: "SpeakMore",
+      title: "Utterly",
       backgroundColor: windowBackground(),
       // 和原版一样把标题栏藏起来，红绿灯放进侧栏的左上角
       ...frame({ x: 26, y: 24 }),
@@ -1495,7 +1495,7 @@ async function main() {
     if (onboardingWindow === null) {
       onboardingWindow = new BrowserWindow({
         ...HUB_SIZE,
-        title: "SpeakMore",
+        title: "Utterly",
         backgroundColor: windowBackground(),
         ...frame({ x: 20, y: 16 }),
         webPreferences,
@@ -1536,7 +1536,7 @@ async function main() {
 
   const trayIcon = nativeImage.createFromPath(TRAY_ICON);
   const tray = new Tray(trayIcon);
-  tray.setToolTip("SpeakMore");
+  tray.setToolTip("Utterly");
   // 图标读不出来时菜单栏上会是空的一格，找不到入口。退回写两个字，并记下来
   if (trayIcon.isEmpty()) {
     log.error("tray_icon_missing", { path: TRAY_ICON });

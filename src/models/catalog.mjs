@@ -14,7 +14,7 @@
 
 // ---------- 下载源 ----------
 
-/** 国内源：SpeakMore 自己的 COS 桶，前面是 CDN（全球加速，在国外也能用）。scripts/release/sync-models.mjs 往上传 */
+/** 国内源：Utterly 自己的 COS 桶，前面是 CDN（全球加速，在国外也能用）。scripts/release/sync-models.mjs 往上传 */
 export const CN_BASE = "https://models.speakmore.zephyrxiang.com";
 
 /** 国内源上的对象名：<模型 id>/<原始地址钉住的提交>/<文件路径>。换了提交就是新地址，CDN 可以一直缓存 */

@@ -186,7 +186,7 @@ export function requestFor(vendor, model, { customParams = null } = {}) {
 }
 
 /**
- * 额外参数里不许写的几项：模型名、提示词由 SpeakMore 发，回话按整段 JSON 读（openai-chat.mjs），
+ * 额外参数里不许写的几项：模型名、提示词由 Utterly 发，回话按整段 JSON 读（openai-chat.mjs），
  * 改了它们成品就乱了，不如当场说清
  */
 const RESERVED_PARAMS = Object.freeze(["model", "messages", "stream"]);

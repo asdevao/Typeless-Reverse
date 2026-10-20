@@ -5,14 +5,14 @@ import { hotkeyZh, noStats, plain, ready, settings } from "./fixtures.mjs";
 
 test("没有在运行时只说一句怎么启动", () => {
   const text = renderStatus({ status: null, version: "0.1.0", settings, stats: noStats }, plain);
-  assert.match(text, /SpeakMore 0\.1\.0 · 没有运行/);
+  assert.match(text, /Utterly 0\.1\.0 · 没有运行/);
   assert.match(text, /speakmore/);
   assert.doesNotMatch(text, /权限/);
 });
 
 test("一切就绪时说怎么用，并列出 key、权限、热键、模型", () => {
   const text = renderStatus({ status: ready, version: "0.1.0", settings, stats: noStats }, plain);
-  assert.match(text, /SpeakMore 0\.1\.0 · 运行中/);
+  assert.match(text, /Utterly 0\.1\.0 · 运行中/);
   assert.match(text, new RegExp(`按一下${hotkeyZh}开始说话`));
   assert.match(text, /key\s+已保存，验证通过/);
   assert.match(text, /麦克风 ✓\s+输入监控 ✓\s+辅助功能 ✓/);
@@ -128,7 +128,7 @@ test("按键监听的小程序停了：明说热键不会生效，以及怎么�
   assert.match(text, /speakmore restart/);
 });
 
-test("装成应用运行时，权限记在 SpeakMore 自己名下，不说成终端", () => {
+test("装成应用运行时，权限记在 Utterly 自己名下，不说成终端", () => {
   const status = {
     ...ready,
     packaged: true,
@@ -136,7 +136,7 @@ test("装成应用运行时，权限记在 SpeakMore 自己名下，不说成终
     summary: { ready: false, missing: ["输入监控权限"], blocker: null, degraded: null },
   };
   const text = renderStatus({ status, version: "0.1.0", settings, stats: noStats }, plain);
-  assert.match(text, /在系统设置的列表里找“SpeakMore”/);
+  assert.match(text, /在系统设置的列表里找“Utterly”/);
   assert.doesNotMatch(text, /终端/);
 });
 
