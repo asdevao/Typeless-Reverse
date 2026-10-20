@@ -180,14 +180,37 @@ export function createHistory() {
     });
   }
 
-  /** 删除全部：确认一次再执行（对齐原版的确认弹窗文案） */
-  $("history-delete-all").addEventListener("click", async () => {
-    if (!window.confirm(t("history.deleteAllConfirm"))) return;
+  /** 删除全部：对齐原版的自定义确认弹窗（不是 window.confirm） */
+  const deleteDialog = $("history-delete-dialog");
+  let deleting = false;
+
+  $("history-delete-all").addEventListener("click", () => {
+    if (!deleteDialog.open) deleteDialog.showModal();
+  });
+  $("history-delete-cancel").addEventListener("click", () => deleteDialog.close());
+  deleteDialog.addEventListener("click", (event) => {
+    // 点弹窗外面的暗底也关掉（和设置对话框同一个规矩）
+    if (event.target !== deleteDialog) return;
+    const box = deleteDialog.getBoundingClientRect();
+    const inside =
+      event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
+    if (!inside) deleteDialog.close();
+  });
+
+  $("history-delete-confirm").addEventListener("click", async () => {
+    if (deleting) return;
+    deleting = true;
+    $("history-delete-confirm").disabled = true;
     try {
       await window.speakmore.historyDeleteAll();
+      deleteDialog.close();
     } catch (error) {
+      deleteDialog.close();
       $("history-error").textContent = t("history.deleteAllError", { reason: String(error?.message ?? error) });
       $("history-error").hidden = false;
+    } finally {
+      deleting = false;
+      $("history-delete-confirm").disabled = false;
     }
   });
 

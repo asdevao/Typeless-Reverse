@@ -283,12 +283,13 @@
         <section class="page" data-route="history" aria-labelledby="history-title" hidden>
           <div class="history-header">
             <h1 class="page-title" id="history-title" data-i18n="history.title">History</h1>
-            <div class="history-actions">
-              <select class="select history-retention" id="history-retention"></select>
-              <button type="button" class="icon-button history-delete-all" id="history-delete-all" data-i18n-aria-label="history.deleteAll">
-                <svg class="icon" aria-hidden="true"><use href="#i-close" /></svg>
-              </button>
-            </div>
+          <div class="history-actions">
+            <select class="select history-retention" id="history-retention"></select>
+            <button type="button" class="history-delete-all" id="history-delete-all">
+              <svg class="icon" aria-hidden="true" viewBox="0 0 14 14" fill="none"><path d="M4.10449 4.20312H9.89453C9.8962 4.20715 9.89941 4.21252 9.89941 4.2207V11.0146C9.89941 11.3981 9.61412 11.6504 9.33301 11.6504H4.66602C4.38501 11.6502 4.09961 11.3981 4.09961 11.0146V4.2207C4.09961 4.21252 4.10284 4.20715 4.10449 4.20312ZM5.2334 9.7793V6.07324C5.23355 5.742 5.50173 5.47363 5.83301 5.47363C6.16428 5.47363 6.43246 5.742 6.43262 6.07324V9.7793C6.43262 10.1107 6.16438 10.3799 5.83301 10.3799C5.50164 10.3799 5.2334 10.1107 5.2334 9.7793ZM7.56641 9.7793V6.07324C7.56656 5.74211 7.83489 5.47381 8.16602 5.47363C8.49729 5.47363 8.76645 5.742 8.7666 6.07324V9.7793C8.7666 10.1107 8.49739 10.3799 8.16602 10.3799C7.83479 10.3797 7.56641 10.1106 7.56641 9.7793ZM8.14453 2.34961H5.85449C5.85279 2.35357 5.84967 2.35889 5.84961 2.36719V2.98535C5.84962 2.99361 5.85282 2.99891 5.85449 3.00293H8.14453C8.14622 2.99891 8.14941 2.99361 8.14941 2.98535V2.36719C8.14936 2.3588 8.14625 2.35357 8.14453 2.34961ZM9.34961 2.98535C9.34961 2.99122 9.34872 2.99707 9.34863 3.00293H11.666C11.9973 3.00293 12.2664 3.27135 12.2666 3.60254C12.2666 3.93391 11.9974 4.20312 11.666 4.20312H11.0986C11.0987 4.20895 11.0996 4.21487 11.0996 4.2207V11.0146C11.0996 11.9955 10.3406 12.8496 9.33301 12.8496H4.66602C3.65862 12.8494 2.89941 11.9954 2.89941 11.0146V4.2207C2.89941 4.21487 2.90031 4.20894 2.90039 4.20312H2.33301C2.00164 4.20312 1.7334 3.93391 1.7334 3.60254C1.73362 3.27135 2.00177 3.00293 2.33301 3.00293H4.65039C4.65031 2.99707 4.64941 2.99122 4.64941 2.98535V2.36719C4.64965 1.72766 5.14778 1.15039 5.83301 1.15039H8.16602C8.85124 1.15039 9.34937 1.72766 9.34961 2.36719V2.98535Z" fill="currentColor" /></svg>
+              <span data-i18n="history.deleteAll">Delete all</span>
+            </button>
+          </div>
           </div>
           <div class="history-tabs" role="tablist">
             <button type="button" class="history-tab active" data-tab="all" data-i18n="history.tabAll">All</button>
@@ -480,6 +481,18 @@
     </dialog>
 
     <!-- 选择麦克风：对齐原版的调试弹窗（设备行 + 选中行实时音量竖条，尺寸同原版：448px、行高 58、竖条 6×22） -->
+    <!-- 删除所有历史的确认弹窗（对齐原版的 R9 确认对话框） -->
+    <dialog id="history-delete-dialog" class="history-delete-dialog" aria-labelledby="history-delete-title">
+      <header class="history-delete-header">
+        <h3 id="history-delete-title" data-i18n="history.deleteAllTitle">Delete all history?</h3>
+      </header>
+      <p class="history-delete-description" data-i18n="history.deleteAllDescription">All your local history will be permanently deleted and cannot be recovered.</p>
+      <footer class="history-delete-footer">
+        <button type="button" class="button history-delete-cancel" id="history-delete-cancel" data-i18n="history.deleteAllCancel">Cancel</button>
+        <button type="button" class="button history-delete-confirm" id="history-delete-confirm" data-i18n="history.deleteAll">Delete all</button>
+      </footer>
+    </dialog>
+
     <dialog id="microphone-dialog" class="mic-dialog" aria-labelledby="microphone-title">
       <header class="mic-header">
         <div>

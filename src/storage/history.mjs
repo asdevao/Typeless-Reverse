@@ -219,11 +219,10 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
      * 返回被删条目的录音路径列表（调用方负责删文件）
      */
     purgeOlderThan(cutoffIso) {
-      const removed = db.transaction(() => {
-        purgeCalls.run({ cutoff: cutoffIso });
-        return purgeOldHistory.all({ cutoff: cutoffIso });
-      })();
-      return removed.map((row) => row.audioLocalPath).filter((path) => path !== null);
+      // node:sqlite 没有 transaction()（那是 better-sqlite3 的 API）——两条语句直接跑。
+      // 真中断了也只是记账多留几条孤儿（条目已删），下次清理会收走
+      purgeCalls.run({ cutoff: cutoffIso });
+      return purgeOldHistory.all({ cutoff: cutoffIso }).map((row) => row.audioLocalPath).filter((path) => path !== null);
     },
     /** 删除全部（历史页的"删除所有"）：所有条目和记账全清，返回录音路径列表（调用方删文件） */
     deleteAll() {
