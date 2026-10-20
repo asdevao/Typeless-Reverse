@@ -53,6 +53,8 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   let hintShown = true;
   /** 现在这一次是不是翻译的（提示换翻译的那几句） */
   let translate = false;
+  /** 现在这一次是不是指令的（提示换"询问任何问题"那几句，对齐原版 askAnything 的条） */
+  let command = false;
   /** 翻译键的短名字（结束翻译那次用它） */
   let translateKeycap = null;
   /** 目标语言的名字，按界面语言翻好的一段字 */
@@ -96,7 +98,7 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   }
 
   function drawHint() {
-    const parts = hintFor(view, { keycap, cancellable: controls, shown: hintShown, translate, translateKeycap, target }, t);
+    const parts = hintFor(view, { keycap, cancellable: controls, shown: hintShown, translate, translateKeycap, target, command }, t);
     hint.replaceChildren(
       ...parts.map((part) =>
         typeof part === "string" ? part : Object.assign(document.createElement("kbd"), { textContent: part.key }),
@@ -195,6 +197,13 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
     /** 现在这一次是不是翻译的：提示换翻译的那几句（bar.mjs 在状态机换了状态后调） */
     setTranslate(on) {
       translate = on === true;
+      if (view !== View.HIDDEN) drawHint();
+    },
+
+    /** 现在这一次是不是指令的：提示换"询问任何问题"那几句（body 上带 data-command，样式可据此区分） */
+    setCommand(on) {
+      command = on === true;
+      body.dataset.command = String(command);
       if (view !== View.HIDDEN) drawHint();
     },
 

@@ -82,6 +82,7 @@ function dispatch(event) {
   // 状态没动（比如空闲时松开热键）就不重画
   if (state !== previous) {
     ui.setTranslate(state.translate);
+    ui.setCommand(state.command === true);
     ui.show(viewOf(state, previous.phase), t.text(state.message));
   }
   for (const action of result.actions) ACTIONS[action]();

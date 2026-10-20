@@ -81,3 +81,14 @@ test("哪个样子下哪个按钮点得动：打开麦克风时只能取消，�
     assert.deepEqual(controlsIn(view), [], view);
   }
 });
+
+test("指令的那次：提示换“询问任何问题”那几句，收尾是“正在思考”", () => {
+  const text = (view, options, t) => hintFor(view, options, t).filter((part) => typeof part === "string").join("");
+  const command = { keycap: "右 Alt", cancellable: true, command: true };
+  assert.ok(text(View.RECORDING, command, zh).includes("询问任何问题"));
+  assert.ok(text(View.STARTING, command, zh).includes("询问任何问题"));
+  assert.ok(text(View.FINISHING, command, zh).includes("思考"));
+  assert.ok(text(View.RECORDING, { ...command, keycap: "Right Alt" }, en).includes("Ask anything"));
+  // 普通听写不带这个前缀，翻译的那次也不带
+  assert.ok(!text(View.RECORDING, { keycap: "右 Alt", cancellable: true }, zh).includes("询问任何问题"));
+});
