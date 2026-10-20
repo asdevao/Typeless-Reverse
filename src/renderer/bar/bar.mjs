@@ -191,7 +191,12 @@ async function stop() {
     const timeoutMs = isCommand ? 30_000 : undefined;
     const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, command: isCommand, timeoutMs });
     // 指令的那次按服务端定的交付方式分流（对齐原版：怎么投递服务端说了算）；听写和翻译照旧贴字
-    if (outcome.delivery === "reply") {
+    // 无选区的指令：所有回答都进结果卡片（不再往文档里贴——往文档里贴必须是自己选了文字要改写）。
+    // 有选区的照旧按模型的分流：reply 卡片、replace 贴回选区、external 打开
+    const toCard =
+      outcome.delivery === "reply" ||
+      (isCommand && commandSelectedText === null && outcome.text.trim() !== "" && outcome.delivery !== "external");
+    if (toCard) {
       // 答案进结果卡片（载荷带上问的问题和当时的选区，原版卡片同款）
       await window.speakmore.commandReply({
         answer: outcome.text,
