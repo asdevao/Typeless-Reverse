@@ -44,6 +44,9 @@ const MIGRATIONS = [
    );
    CREATE INDEX model_calls_created_at ON model_calls (created_at);
    CREATE INDEX model_calls_audio_id ON model_calls (audio_id);`,
+  // v1→v2：历史表加 command 列（指令会话标记，历史页的"问任何问题"标签用它筛选）
+  `ALTER TABLE history ADD COLUMN command INTEGER NOT NULL DEFAULT 0;
+   CREATE INDEX history_command ON history (command);`,
 ];
 
 function migrate(db) {
@@ -100,8 +103,8 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
   db.exec("PRAGMA busy_timeout = 2000");
 
   const insert = db.prepare(
-    `INSERT INTO history (id, status, refined_text, error, duration, audio_local_path, created_at)
-     VALUES (:id, :status, :refinedText, :error, :duration, :audioLocalPath, :createdAt)`,
+    `INSERT INTO history (id, status, refined_text, error, duration, audio_local_path, created_at, command)
+     VALUES (:id, :status, :refinedText, :error, :duration, :audioLocalPath, :createdAt, :command)`,
   );
   const insertCall = db.prepare(
     `INSERT INTO model_calls (audio_id, purpose, provider, model, input_tokens, audio_tokens, cached_tokens,
@@ -186,15 +189,16 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
   return {
     /** @param {{ id: string, status: "completed" | "failed", refinedText: string, error: string | null, duration: number, audioLocalPath: string | null, createdAt: string }} entry */
     add(entry) {
-      insert.run(entry);
+      insert.run({ command: 0, ...entry });
     },
     /**
      * 最近的记录，新的在前。每一条带上它的用量 usage：{ calls, inputTokens, outputTokens, costUsd, latencyMs }，
      * 夹着时间戳重来过的几次加在一起；没记过账的（没调到模型就失败了，或者记账之前的版本存的）是 null
      */
     list({ limit = 200 } = {}) {
-      return select.all({ limit }).map(({ calls, inputTokens, outputTokens, costUsd, latencyMs, ...row }) => ({
+      return select.all({ limit }).map(({ calls, inputTokens, outputTokens, costUsd, latencyMs, command, ...row }) => ({
         ...row,
+        command: command === 1,
         usage: calls === 0 ? null : { calls, inputTokens, outputTokens, costUsd, latencyMs },
       }));
     },

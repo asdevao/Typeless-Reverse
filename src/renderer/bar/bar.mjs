@@ -212,17 +212,33 @@ async function stop() {
       outcome.delivery === "reply" ||
       (isCommand && commandSelectedText === null && outcome.text.trim() !== "" && outcome.delivery !== "external");
     if (toCard) {
-      // 答案进结果卡片（载荷带上问的问题和当时的选区，原版卡片同款）
+      // 答案进结果卡片（载荷带上问的问题和当时的选区，原版卡片同款）。
+      // 同时把录音和结果记入历史（deliver 只记录不贴字——传空 text 让它跳过粘贴）
       await window.speakmore.commandReply({
         answer: outcome.text,
         userPrompt: outcome.userPrompt ?? null,
         selectedText: commandSelectedText,
       });
+      await window.speakmore.deliver({
+        audioId: current.audioId,
+        text: outcome.text,
+        durationSeconds: recorded.durationSeconds,
+        command: true,
+        audio: await recorded.blob.arrayBuffer(),
+      }).catch(() => {});
       dispatch({ type: "RESULT", message: msg("bar.commandReplied") });
       return;
     }
     if (outcome.delivery === "external") {
       await window.speakmore.openExternalTarget(outcome.externalTarget);
+      // 打开类的也记入历史
+      await window.speakmore.deliver({
+        audioId: current.audioId,
+        text: outcome.text,
+        durationSeconds: recorded.durationSeconds,
+        command: true,
+        audio: await recorded.blob.arrayBuffer(),
+      }).catch(() => {});
       dispatch({ type: "RESULT", message: msg("bar.commandOpened") });
       return;
     }

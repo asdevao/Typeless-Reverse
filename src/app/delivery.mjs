@@ -40,6 +40,7 @@ export function createDelivery({ recordingsDir, history, paste, pasteRich, write
       duration: payload.durationSeconds,
       audioLocalPath,
       createdAt: now().toISOString(),
+      command: payload.command === true ? 1 : 0,
       ...fields,
     });
   };
