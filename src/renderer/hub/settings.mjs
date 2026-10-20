@@ -222,6 +222,8 @@ export function createSettings({ refresh }) {
 
   /** 用生效的那台开一路只测音量，点亮选中行上的竖条（原版调试流是带降噪的） */
   async function startMicMeter(deviceId) {
+    // 先停上一路：弹窗里换设备、设置变更刷新都会重开，不停旧的会漏一路一直开着的麦克风
+    stopMicMeter();
     const run = ++micRun;
     let opened;
     try {
