@@ -41,6 +41,7 @@ test("没有文件也没有环境变量时全用默认值", () => {
     translateTarget: { value: "en", source: "default" },
     historyRetentionDays: { value: "forever", source: "default" },
     microphoneDeviceId: { value: "", source: "default" },
+    interactionSounds: { value: "on", source: "default" },
     mode: { value: "native", source: "default" },
     model: { value: "gemini/gemini-3.6-flash", source: "default" },
     thinking: { value: "MINIMAL", source: "default" },

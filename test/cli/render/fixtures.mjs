@@ -49,6 +49,7 @@ export const settings = {
   barHint: { value: "on", source: "default" },
   historyRetentionDays: { value: "forever", source: "default" },
   microphoneDeviceId: { value: "", source: "default" },
+  interactionSounds: { value: "on", source: "default" },
   theme: { value: "ink", source: "default" },
   language: { value: "system", source: "default" },
 };

@@ -112,6 +112,7 @@ export default {
       historyRetentionDays:
         "How long to keep dictation history: forever keeps everything, a number is days. Expired entries are deleted along with their recordings (on startup and every 6 hours)",
       microphoneDeviceId: "Which microphone to record with: empty means the system default, otherwise the deviceId from enumerateDevices (picked in Settings)",
+      interactionSounds: "Play short sounds on key moments (recording starts, result ready, failure): on or off",
     },
     unknown: "There's no setting called {name}. You can change: {names}",
     notText: "must be text",
@@ -194,6 +195,10 @@ export default {
   barHints: {
     on: "Shown",
     off: "Hidden",
+  },
+  interactionSounds: {
+    on: "On",
+    off: "Off",
   },
   localModels: {
     tags: {
@@ -686,6 +691,9 @@ export default {
     microphoneExternal: "External microphone",
     microphoneEmptyTitle: "No microphone detected",
     microphoneEmptyDescription: "Check your device settings or connect a microphone.",
+    interactionSounds: "Interaction sounds",
+    interactionSoundsHint: "Play short sounds on key moments: recording starts, result ready, failure.",
+    interactionSoundsFailed: "Not changed: {reason}",
     retention: {
       forever: "Keep forever",
       "1": "Keep for 1 day",

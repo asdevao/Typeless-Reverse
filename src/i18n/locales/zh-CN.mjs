@@ -107,6 +107,7 @@ export default {
       historyRetentionDays:
         "听写历史保留多久：forever 永久，数字是天数。到期的条目连录音一起删（启动时和每 6 小时清一遍）",
       microphoneDeviceId: "录音用哪台麦克风：不填是系统默认，填 enumerateDevices 给的 deviceId（设置页里选）",
+      interactionSounds: "关键操作（开始录音、拿到成品、失败）播放短提示音：on 开、off 关",
     },
     unknown: "没有 {name} 这项设置。能改的有：{names}",
     notText: "要是一段文字",
@@ -188,6 +189,10 @@ export default {
   barHints: {
     on: "显示",
     off: "不显示",
+  },
+  interactionSounds: {
+    on: "开",
+    off: "关",
   },
   localModels: {
     tags: {
@@ -676,6 +681,9 @@ export default {
       microphoneExternal: "外部麦克风",
       microphoneEmptyTitle: "未检测到麦克风",
       microphoneEmptyDescription: "检查您的设备设置或连接麦克风。",
+      interactionSounds: "交互声音",
+      interactionSoundsHint: "为开始录音、拿到成品、失败这些关键操作播放短提示音。",
+      interactionSoundsFailed: "没改成：{reason}",
       retention: {
         forever: "永久保留",
         "1": "保留 1 天",

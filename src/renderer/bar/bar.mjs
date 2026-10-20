@@ -7,6 +7,7 @@ import { createBarUi } from "./bar-ui.mjs";
 import { viewOf, View } from "./bar-view.mjs";
 import { Action, initialState, LONG_PRESS_MS, Phase, transition } from "./machine.mjs";
 import { startRecording } from "./recorder.mjs";
+import { createSounds } from "./sounds.mjs";
 import { VoiceSocket } from "./voice-socket.mjs";
 
 /** 原版的单次录音上限：9 分钟 */
@@ -22,6 +23,7 @@ const {
   microphoneDeviceId: initialMicrophoneDeviceId,
   barControls,
   barHint,
+  interactionSounds,
 } = await window.speakmore.config();
 /** 现在的热键（id）。提示里写它的短名字，按界面语言写 */
 let hotkey = initialHotkey;
@@ -43,6 +45,9 @@ ui.setTarget(t(`translate.targets.${translateTarget}`));
 ui.setControls(barControls);
 ui.setHintShown(barHint === "on");
 window.speakmore.onBarHint((value) => ui.setHintShown(value === "on"));
+// 交互声音：设置里换开关节点，悬浮条当场跟着变
+const sounds = createSounds({ enabled: interactionSounds === "on" });
+window.speakmore.onInteractionSoundsChanged((value) => sounds.setEnabled(value === "on"));
 window.speakmore.onHotkeyChanged((next) => {
   hotkey = next;
   ui.setKeycap(keycapOf(hotkey));
@@ -84,6 +89,10 @@ function dispatch(event) {
     ui.setTranslate(state.translate);
     ui.setCommand(state.command === true);
     ui.show(viewOf(state, previous.phase), t.text(state.message));
+    // 交互声音（设置可关）：开始录音一声、拿到成品一声、失败一声
+    if (state.phase === Phase.STARTING) sounds.start();
+    else if (event.type === "RESULT") sounds.done();
+    else if (event.type === "FAILED") sounds.failed();
   }
   for (const action of result.actions) ACTIONS[action]();
 }

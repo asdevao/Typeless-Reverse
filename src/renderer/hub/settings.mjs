@@ -94,7 +94,8 @@ export function createSettings({ refresh }) {
         setup.historyRetentionDays?.value,
       ),
     );
-    $("bar-hint").checked = setup.barHint === "on";
+      $("bar-hint").checked = setup.barHint === "on";
+      $("interaction-sounds").checked = setup.interactionSounds === "on";
     $("open-at-login").checked = setup.openAtLogin?.enabled === true;
     $("open-at-login-row").hidden = setup.openAtLogin?.supported !== true;
   }
@@ -385,6 +386,18 @@ export function createSettings({ refresh }) {
       showNote("bar-hint-note", result.note ?? null);
     } catch (error) {
       showNote("general-problem", t("preferences.barHintFailed", { reason: describeError(error) }), "problem");
+    }
+    await refresh();
+  });
+
+  $("interaction-sounds").addEventListener("change", async (event) => {
+    showNote("general-problem", null);
+    showNote("interaction-sounds-note", null);
+    try {
+      const result = await window.speakmore.setInteractionSounds(event.target.checked ? "on" : "off");
+      showNote("interaction-sounds-note", result.note ?? null);
+    } catch (error) {
+      showNote("general-problem", t("preferences.interactionSoundsFailed", { reason: describeError(error) }), "problem");
     }
     await refresh();
   });

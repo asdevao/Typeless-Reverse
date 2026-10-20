@@ -255,6 +255,18 @@ export const SETTINGS = {
     },
     label: (value) => msg(`accelerations.${value}`),
   },
+  interactionSounds: {
+    // 交互声音：关键操作（开始录音、拿到成品、失败）播放短提示音（对齐原版的 interaction sounds）
+    env: "SPEAKMORE_INTERACTION_SOUNDS",
+    default: "on",
+    choices: ["on", "off"],
+    parse(value) {
+      const id = String(value).trim().toLowerCase();
+      if (!["on", "off"].includes(id)) throw oneOf(["on", "off"]);
+      return id;
+    },
+    label: (value) => msg(`interactionSounds.${value}`),
+  },
   barHint: {
     env: "SPEAKMORE_BAR_HINT",
     default: "on",

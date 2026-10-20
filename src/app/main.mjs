@@ -917,6 +917,8 @@ async function main() {
     microphoneDeviceId: resolveSettings({ file: PATHS.settingsFile, env: process.env }).microphoneDeviceId.value,
     barControls,
     barHint: currentBarHint(),
+    // 交互声音：关键操作的短提示音，悬浮条在开始/成品/失败时放
+    interactionSounds: resolveSettings({ file: PATHS.settingsFile, env: process.env }).interactionSounds.value,
   }));
   handle("dictation:capture-selection", async () => {
     // 模拟 Ctrl+C 抓当前选区：按键由原生小帮手注入（Electron 里 koffi 会炸），
@@ -1048,6 +1050,8 @@ async function main() {
       },
       // 设置页的麦克风调试：选定的是哪台（null = 系统默认），设备清单由页面自己枚举
       microphoneDeviceId: resolveSettings({ file: PATHS.settingsFile, env: process.env }).microphoneDeviceId.value,
+      // 设置页的交互声音开关
+      interactionSounds: resolveSettings({ file: PATHS.settingsFile, env: process.env }).interactionSounds.value,
       translateTarget: { value: translateTarget, choices: TRANSLATE_TARGETS },
       theme: { value: theme.id, choices: THEMES.map(({ id }) => id) },
       barHint: currentBarHint(),
@@ -1287,6 +1291,17 @@ async function main() {
     tellBar("bar:hint", barHint);
     setupChanged();
     const variable = overridingEnv("barHint", process.env);
+    return variable === null ? {} : { note: msg("notes.envRemove", { variable }) };
+  });
+
+  // 交互声音开不开：存下来，悬浮条当场跟着变
+  handle("setup:set-interaction-sounds", (_event, wanted) => {
+    saveSetting(PATHS.settingsFile, "interactionSounds", wanted);
+    const interactionSounds = resolveSettings({ file: PATHS.settingsFile, env: process.env }).interactionSounds.value;
+    log.info("interaction_sounds_changed", { interactionSounds });
+    tellBar("bar:interaction-sounds", interactionSounds);
+    setupChanged();
+    const variable = overridingEnv("interactionSounds", process.env);
     return variable === null ? {} : { note: msg("notes.envRemove", { variable }) };
   });
   handle("setup:set-language", (_event, wanted) => {
