@@ -24,6 +24,8 @@ let payload = null;
 let generation = 0;
 /** 上次上报过的高度 */
 let reportedHeight = 0;
+/** 内容高度的观察器：重画时断开上一个，不泄漏 */
+let resizeObserver = null;
 
 // ---------- 复制按钮（3 秒"已复制"，原版同款） ----------
 
@@ -232,8 +234,9 @@ function render(next) {
       }, REVEAL_DELAY_MS);
     });
   };
-  const observer = new ResizeObserver(report);
-  observer.observe(content);
+  if (resizeObserver) resizeObserver.disconnect();
+  resizeObserver = new ResizeObserver(report);
+  resizeObserver.observe(content);
   report();
 }
 

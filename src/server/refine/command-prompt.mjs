@@ -163,8 +163,9 @@ export function parseCommandJson(text) {
         // url 不合法：贴 content（没有 content 就贴 url 原文），别把坏网址打开
         return { delivery: "replace", text: content !== null && content !== "" ? content : parsed.url.trim(), target: null };
       }
-      if (content !== null && parsed?.delivery !== "open") {
-        return { delivery: "replace", text: content, target: null };
+      // delivery 是三个已知值之一：content 缺失/为空也不许把原始 JSON 文字贴进用户的文档（改成静默）
+      if (["reply", "replace", "open"].includes(parsed?.delivery)) {
+        return { delivery: "replace", text: content ?? "", target: null };
       }
     } catch {
       // JSON 坏了：走标记解析

@@ -116,3 +116,13 @@ test("parseCommandJson：坏 url 贴 content；坏 JSON 退回首行标记解析
   const wrapped = parseCommandJson('说明文字 {"delivery":"reply","content":"包着的","url":""} 尾巴');
   assert.equal(wrapped.text, "包着的");
 });
+
+test("parseCommandJson：delivery 已知但 content 缺失——绝不把原始 JSON 贴进文档（改静默）", () => {
+  const noContent = parseCommandJson('{"delivery":"reply"}');
+  assert.deepEqual(noContent, { delivery: "replace", text: "", target: null });
+  const noContentReplace = parseCommandJson('{"delivery":"replace"}');
+  assert.deepEqual(noContentReplace, { delivery: "replace", text: "", target: null });
+  const blank = parseCommandJson('{"delivery":"reply","content":"   "}');
+  assert.equal(blank.delivery, "replace");
+  assert.equal(blank.text, "");
+});

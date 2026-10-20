@@ -186,9 +186,9 @@ async function stop() {
       voice.abandon();
       throw new LocalizedError(msg("bar.noSignal"));
     }
-    // 指令的答案生成更慢（问答可能要长答案）：超时单独放宽到 30 秒，对齐原版的指令专用超时；
-    // 没选区的指令问答也一样要等长答案
-    const timeoutMs = isCommand ? 30_000 : undefined;
+    // 指令的答案生成更慢（Agnes 带推理实测 29 秒，差点撞线）：超时放宽到 60 秒，
+    // 否则稍长的答案客户端先超时报错，卡片永远弹不出来
+    const timeoutMs = isCommand ? 60_000 : undefined;
     const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, command: isCommand, timeoutMs });
     // 指令的那次按服务端定的交付方式分流（对齐原版：怎么投递服务端说了算）；听写和翻译照旧贴字
     // 无选区的指令：所有回答都进结果卡片（不再往文档里贴——往文档里贴必须是自己选了文字要改写）。
