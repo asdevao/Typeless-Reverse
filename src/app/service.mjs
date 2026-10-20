@@ -150,10 +150,14 @@ export async function startService({
       refiner: {
         async refine(audio, options) {
           if (!refiner) throw noKey();
-          // 词典热词替换：native 链路的成品出来后过一遍（local 链路在转写后已做过，这里是幂等的第二遍）
-          const text = await refiner.refine(audio, options);
+          // 词典热词替换：native 链路的成品出来后过一遍（local 链路在转写后已做过，这里是幂等的第二遍）。
+          // 结果有两种形状：普通听写是字符串；private 模式的指令/翻译回退是 { text, notice }——
+          // 热词只替换文字，notice 原样带回（applyHotwords 只认字符串，整个对象喂进去会炸）
+          const outcome = await refiner.refine(audio, options);
           const hotwords = dictionary();
-          return hotwords.length > 0 ? applyHotwords(text, hotwords) : text;
+          if (hotwords.length === 0) return outcome;
+          if (typeof outcome === "string") return applyHotwords(outcome, hotwords);
+          return { ...outcome, text: applyHotwords(outcome.text, hotwords) };
         },
         /** 开口时先做的准备（Gemini 建提示词缓存）。还没有 key 时没什么可准备的 */
         async prepare(intent) {
