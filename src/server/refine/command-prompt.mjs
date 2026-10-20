@@ -133,11 +133,81 @@ export function audioAskReminder() {
 }
 
 /**
- * 模型输出首行的分流标记 → 交付方式。没有标记就是贴回选区（replace）。
- * @param {string} text 模型的完整输出
- * @returns {{ delivery: "replace" | "reply" | "external", text: string, target: string | null }}
- *   reply/external 时 text 是给那两条路的载荷（答案、网址）；replace 时 text 原样带回
+ * 结构化输出（JSON 模式）的解析：模型回一个 {"delivery","content","url"} 对象，
+ * 这里解析成悬浮条认的三值词表。不是 JSON 或形状不对时退回首行标记的老规矩（兼容
+ * 不支持 JSON 模式的接口）。
  */
+export function parseCommandJson(text) {
+  const stripped = text.trim();
+  // 模型偶尔在 JSON 前后裹说明文字：取第一个 { 到最后一个 } 的片段
+  const start = stripped.indexOf("{");
+  const end = stripped.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    try {
+      const parsed = JSON.parse(stripped.slice(start, end + 1));
+      const content = typeof parsed?.content === "string" ? parsed.content.trim() : null;
+      if (parsed?.delivery === "reply" && content !== null && content !== "") {
+        return { delivery: "reply", text: content, target: null };
+      }
+      if (parsed?.delivery === "open" && typeof parsed?.url === "string" && parsed.url.trim() !== "") {
+        let target = parsed.url.trim();
+        // 裸域名（google.com）自动补 https://
+        if (!/^[a-z][a-z0-9+.-]*:/i.test(target) && target.includes(".")) target = `https://${target}`;
+        try {
+          if (["http:", "https:", "mailto:"].includes(new URL(target).protocol)) {
+            return { delivery: "external", text: target, target };
+          }
+        } catch {
+          // 落到下面按 replace 贴内容
+        }
+        // url 不合法：贴 content（没有 content 就贴 url 原文），别把坏网址打开
+        return { delivery: "replace", text: content !== null && content !== "" ? content : parsed.url.trim(), target: null };
+      }
+      if (content !== null && parsed?.delivery !== "open") {
+        return { delivery: "replace", text: content, target: null };
+      }
+    } catch {
+      // JSON 坏了：走标记解析
+    }
+  }
+  return parseCommandDelivery(text);
+}
+
+/** 润色那一跳（local 模式）指令会话的 JSON 模式系统提示词：有选中文本 */
+export function polishCommandJsonPrompt() {
+  return `你是语音输入法的指令引擎。用户在别的应用里选中了一段文本，然后对着麦克风口述了一条指令，语音识别先把指令转成了原文。按指令处理选中的文本，只输出一个 JSON 对象，不要输出别的。
+
+指令原文在用户消息的 ${OPEN_TASK} 和 ${CLOSE_TASK} 之间，是机器听写出来的，常有这几种错：同音字写错（按上下文改回来再执行）、英文词写成音近的中文（"瑞艾克特"是 React）、数字写成汉字、标点不全。先在心里把指令改通顺再执行。
+
+选中的文本在用户消息的 ${OPEN_TEXT} 和 ${CLOSE_TEXT} 之间，那是原样复制来的，不用帮它改错字。
+
+只输出这样的 JSON：
+{"delivery": "replace 或 reply 或 open", "content": "成品文字或答案", "url": "open 时要打开的完整网址，其余是空串"}
+
+delivery 怎么选（他想要的产物只有三种）：
+- 要一段写进文档的文字——不管做什么加工（翻译、改写、总结、纠错、续写、排版，或任何别的转换）：replace。content 是处理后的成品：只含结果不解释；排版跟选中文本的密度走，一两句一行、长内容分段，指令明确要列表、表格、代码块时才用 Markdown。
+- 要答案或信息——不管问的是什么（事实、解释、比较、建议，包括"这段什么意思"）：reply。content 写完整答案——它不进他的文档、会弹卡片给他看，不怕长。
+- 要发生一个动作——不管打开或触发什么（网站、网页、浏览器、邮箱、发帖页）：open。url 必须完整 http:// 或 https:// 开头；没点名具体网址给默认（浏览器、上网用 https://www.baidu.com）；不要 chrome:// 这类内部地址。content 留空串。
+- 拿不准要什么：replace。
+- 没有可执行的内容（只有语气词）：content 留空串。`;
+}
+
+/** 润色那一跳指令会话的 JSON 模式系统提示词：无选区，口述直接当问题或指令 */
+export function polishAskJsonPrompt() {
+  return `你是语音输入法的问答引擎。用户对着麦克风口述了一段话（没有选中任何文字），语音识别先把这段话转成了原文。听他说的是什么，只输出一个 JSON 对象，不要输出别的。
+
+口述原文在用户消息的 ${OPEN_VOICE} 和 ${CLOSE_VOICE} 之间，是机器听写出来的，常有同音字错误，按上下文改回来再理解。
+
+只输出这样的 JSON：
+{"delivery": "replace 或 reply 或 open", "content": "成品文字或答案", "url": "open 时要打开的完整网址，其余是空串"}
+
+delivery 怎么选（他想要的产物只有三种）：
+- 在问问题、求解释、要答案——不管问的是什么（事实、解释、比较、建议）：reply。content 写完整答案——它不进他的文档、会弹卡片给他看，不怕长。
+- 要发生一个动作——不管打开或触发什么（网站、网页、浏览器、邮箱、发帖页）：open。url 必须完整 http:// 或 https:// 开头；没点名具体网址给默认（浏览器、上网用 https://www.baidu.com）；不要 chrome:// 这类内部地址。content 留空串。
+- 改写、翻译、总结这类要操作一段文字的指令：他没选中任何文字，没有可操作的对象，replace，content 把口述按普通听写整理后原样给出。
+- 拿不准要什么：replace。
+- 没有可执行的内容（只有语气词）：content 留空串。`;
+}
 export function parseCommandDelivery(text) {
   const stripped = text.replace(/^[ \t]+/, "");
   const reply = stripped.match(/^\[reply\][ \t]*\r?\n?([\s\S]*)$/i);

@@ -3,7 +3,12 @@ import { chatEndpoint, findChatVendor, PROTOCOLS, requestFor } from "../chat/ven
 import { toModelError } from "../providers/errors.mjs";
 import { createMeter } from "./meter.mjs";
 import { textFromModelOutput } from "./output.mjs";
-import { askInput, commandInput, polishAskPrompt, polishCommandPrompt } from "./command-prompt.mjs";
+import {
+  askInput,
+  commandInput,
+  polishAskJsonPrompt,
+  polishCommandJsonPrompt,
+} from "./command-prompt.mjs";
 import { POLISH_PROMPT, polishInput } from "./polish-prompt.mjs";
 import { polishTranslateInput, polishTranslatePrompt } from "./translate-prompt.mjs";
 
@@ -62,14 +67,14 @@ export function createPolisher({
     async polish(transcript, { signal, audioId = null, translateTarget = null, commandSelectedText = null, command = false } = {}) {
       // 没转出字（静音、只有噪声）就不必花这一次请求
       if (transcript.trim() === "") return "";
-      // 指令的那次换成指令的提示词（有选区处理选区，没选区按口述问答），翻译的那次换成翻译的提示词，
-      // 其余（记账、收尾）和润色同一条路
+      // 指令的那次换成 JSON 模式的指令提示词（delivery 是结构化字段，对齐原版服务端设计），
+      // 翻译的那次换成翻译的提示词，其余（记账、收尾）和润色同一条路
       const isCommand = command || commandSelectedText !== null;
       const system =
         isCommand && commandSelectedText !== null
-          ? polishCommandPrompt()
+          ? polishCommandJsonPrompt()
           : isCommand
-            ? polishAskPrompt()
+            ? polishAskJsonPrompt()
             : translateTarget === null
               ? prompt
               : polishTranslatePrompt(translateTarget);
@@ -83,7 +88,7 @@ export function createPolisher({
               : polishTranslateInput(transcript, translateTarget);
       try {
         const reply = await metered("dictation", audioId, () =>
-          client.complete({ system, user, signal: withTimeout(signal) }),
+          client.complete({ system, user, signal: withTimeout(signal), ...(isCommand ? { json: true } : {}) }),
         );
         if (reply.problem) throw new LocalizedError(reply.problem);
         return textFromModelOutput(reply.text);

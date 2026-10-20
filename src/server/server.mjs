@@ -8,7 +8,7 @@ import {
   parseClientMessage,
   ServerType,
 } from "./protocol/protocol.mjs";
-import { parseCommandDelivery } from "./refine/command-prompt.mjs";
+import { parseCommandJson } from "./refine/command-prompt.mjs";
 import { RecordingSession } from "./protocol/session.mjs";
 
 export const WS_PATH = "/ws/rt_voice_flow";
@@ -163,7 +163,7 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
       );
       // 指令的那次（有选区的处理、没选区的问答都算）：模型首行的标记决定交付方式
       // （对齐原版"怎么投递由服务端决定"的设计）。普通听写和翻译没有标记，照旧走贴字
-      const verdict = finished.command ? parseCommandDelivery(outcome.text) : null;
+      const verdict = finished.command ? parseCommandJson(outcome.text) : null;
       const text = verdict === null ? outcome.text : verdict.text;
       // 日志只记长度：成品是用户说的话，不该留在日志里
       log.info("refined", {

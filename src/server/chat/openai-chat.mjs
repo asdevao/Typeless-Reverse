@@ -110,13 +110,16 @@ export function createClient({
      * @returns {Promise<{ text: string | null, problem: object | null, usage: object }>} 模型的原文（收尾交给调用方）、
      *   用不了的原因、这一次的用量。用不了的回话（被截断、被拦下）也收了钱，所以不在这里抛错，由调用方记完账再报错
      */
-    async complete({ system, user, signal }) {
+    async complete({ system, user, signal, json = false }) {
       const payload = await complete(
         {
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
           ],
+          // 指令会话用结构化输出（对齐原版 delivery 是服务端结构化字段的设计）：标记约定靠模型自觉，
+          // JSON 模式是接口强制的。不支持这家的接口会当场报错，比静默贴错强
+          ...(json ? { response_format: { type: "json_object" } } : {}),
         },
         signal,
       );

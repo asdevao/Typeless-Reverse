@@ -5,6 +5,7 @@ import {
   audioAskReminder,
   audioCommandPrompt,
   parseCommandDelivery,
+  parseCommandJson,
   polishAskPrompt,
 } from "../../../src/server/refine/command-prompt.mjs";
 
@@ -95,4 +96,23 @@ test("[open] 下一行跟的是词（浏览器）不是网址：剥标记贴回�
   const parsed = parseCommandDelivery("[open]\n浏览器");
   assert.equal(parsed.delivery, "replace");
   assert.ok(!parsed.text.includes("[open]"));
+});
+
+test("parseCommandJson：reply/open/replace 三值各走各的，url 修裸域名", () => {
+  const reply = parseCommandJson('{"delivery":"reply","content":"今天晴。","url":""}');
+  assert.deepEqual(reply, { delivery: "reply", text: "今天晴。", target: null });
+  const open = parseCommandJson('{"delivery":"open","content":"","url":"www.google.com"}');
+  assert.equal(open.delivery, "external");
+  assert.equal(open.target, "https://www.google.com");
+  const replace = parseCommandJson('{"delivery":"replace","content":"改写结果","url":""}');
+  assert.deepEqual(replace, { delivery: "replace", text: "改写结果", target: null });
+});
+
+test("parseCommandJson：坏 url 贴 content；坏 JSON 退回首行标记解析", () => {
+  const badUrl = parseCommandJson('{"delivery":"open","content":"备用文字","url":"chrome://history"}');
+  assert.deepEqual(badUrl, { delivery: "replace", text: "备用文字", target: null });
+  const marker = parseCommandJson('[reply]\n标记答案');
+  assert.deepEqual(marker, { delivery: "reply", text: "标记答案", target: null });
+  const wrapped = parseCommandJson('说明文字 {"delivery":"reply","content":"包着的","url":""} 尾巴');
+  assert.equal(wrapped.text, "包着的");
 });
