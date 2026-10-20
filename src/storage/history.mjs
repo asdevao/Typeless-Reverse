@@ -120,6 +120,7 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
      )
      SELECT recent.id, recent.status, recent.refined_text AS refinedText, recent.error, recent.duration,
             recent.audio_local_path AS audioLocalPath, recent.created_at AS createdAt,
+            recent.command,
             count(call.id) AS calls,
             sum(call.input_tokens) AS inputTokens,
             sum(call.output_tokens) AS outputTokens,

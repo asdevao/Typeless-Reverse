@@ -149,6 +149,14 @@ export function createHistory() {
 
   /** 画当前标签页下的条目（按天分组） */
   function renderList() {
+    // 临时诊断：看前端收到的 command 字段和标签筛选结果
+    console.warn("renderList:", JSON.stringify({
+      total: allRows.length,
+      tab: activeTab,
+      commands: allRows.filter((r) => r.command === true).length,
+      dictations: allRows.filter((r) => r.command !== true).length,
+      sample: allRows.slice(0, 2).map((r) => ({ command: r.command, text: (r.refinedText ?? "").slice(0, 15) })),
+    }));
     const rows = allRows.filter((row) => matchesTab(row, activeTab));
     $("history-error").hidden = true;
     $("history-empty").hidden = rows.length > 0;
