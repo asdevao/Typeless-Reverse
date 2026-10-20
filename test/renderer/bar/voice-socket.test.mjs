@@ -43,6 +43,7 @@ test("开始、按序发块、结束，拿到成品；服务端收到的是各�
     notice: null,
     delivery: null,
     externalTarget: null,
+    userPrompt: null,
   });
   assert.equal(received.mimeType, "audio/webm");
   assert.ok(received.text.endsWith(`${"A".repeat(10)}BBB`));
@@ -58,6 +59,7 @@ test("同一条连接上连着做两次", async () => {
       notice: null,
       delivery: null,
       externalTarget: null,
+      userPrompt: null,
     });
   }
 });
@@ -76,6 +78,7 @@ test("翻译的那次：start_audio 里说清是 voice_translation、翻成哪�
     notice: { key: "translate.privateFallback" },
     delivery: null,
     externalTarget: null,
+    userPrompt: null,
   });
   assert.equal(seen.translateTarget, "ja");
 });
@@ -93,6 +96,7 @@ test("无选区的指令问答：start/end 都是 voice_command，服务端 refi
     notice: null,
     delivery: "reply",
     externalTarget: null,
+    userPrompt: null,
   });
   assert.equal(seen.command, true);
   assert.equal(seen.commandSelectedText, null);
@@ -187,5 +191,6 @@ test("放弃一次录音后，它迟到的成品不会算到下一次头上", as
     notice: null,
     delivery: null,
     externalTarget: null,
+    userPrompt: null,
   });
 });

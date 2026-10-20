@@ -193,12 +193,14 @@ export class VoiceSocket {
     if (!current || (value.audio_id && value.audio_id !== current.audioId)) return;
     switch (kind) {
       case "audio_processing_completed":
-        // delivery / external_action：指令会话的交付方式（reply 弹通知、external 打开链接），普通听写是 null
+        // delivery / external_action：指令会话的交付方式（reply 弹卡片、external 打开链接），普通听写是 null。
+        // user_prompt 是口述原文（local 链路带得出来），结果卡片拿它当"问的问题"展示
         current.settle?.resolve({
           text: value.refined_text,
           notice: value.notice ?? null,
           delivery: value.delivery ?? null,
           externalTarget: value.external_action?.target ?? null,
+          userPrompt: value.user_prompt ?? null,
         });
         break;
       case "audio_processing_error":

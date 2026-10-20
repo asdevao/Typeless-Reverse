@@ -72,7 +72,10 @@ test("本地转写链路：拿交进来的转写器和按路线装的润色器�
     decode: async () => new Float32Array(16_000),
     fetch,
   });
-  assert.equal(await refiner.refine(Buffer.from("x"), { mimeType: "audio/webm" }), "好的");
+  assert.deepEqual(await refiner.refine(Buffer.from("x"), { mimeType: "audio/webm" }), {
+    text: "好的",
+    userPrompt: "好的",
+  });
   assert.equal(requests[0].url, "https://api.deepseek.com/chat/completions");
 });
 
@@ -154,7 +157,10 @@ test("第一跳交给云端：不用交转写器，按路线装；两家各用�
     decode: async () => new Float32Array(16_000).fill(0.1),
     fetch,
   });
-  assert.equal(await refiner.refine(Buffer.from("x"), { mimeType: "audio/webm" }), "好的");
+  assert.deepEqual(await refiner.refine(Buffer.from("x"), { mimeType: "audio/webm" }), {
+    text: "好的",
+    userPrompt: "好的",
+  });
   assert.deepEqual(
     requests.map(({ url, auth }) => [new URL(url).host, auth]),
     [

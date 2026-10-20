@@ -148,6 +148,14 @@ export default {
     undecodable: "录音解不开：{reason}",
     transcribeFailed: "本地转写失败：{reason}",
   },
+  card: {
+    answerTitle: "回答",
+    close: "关闭",
+    copy: "复制",
+    copied: "已复制",
+    more: "...更多",
+    less: "显示更少",
+  },
   command: {
     privateFallback: "数据隐私模式没有润色模型，执行不了指令：贴的是转写原文",
     replyTitle: "SpeakMore 指令结果",

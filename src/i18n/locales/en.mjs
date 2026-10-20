@@ -154,6 +154,14 @@ export default {
     undecodable: "Couldn't read the recording: {reason}",
     transcribeFailed: "Local transcription failed: {reason}",
   },
+  card: {
+    answerTitle: "Answer",
+    close: "Close",
+    copy: "Copy",
+    copied: "Copied",
+    more: "...more",
+    less: "Show less",
+  },
   command: {
     privateFallback: "Private mode has no polish model, so the instruction can't run: pasting the transcript",
     replyTitle: "SpeakMore command result",

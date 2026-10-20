@@ -192,7 +192,12 @@ async function stop() {
     const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, command: isCommand, timeoutMs });
     // 指令的那次按服务端定的交付方式分流（对齐原版：怎么投递服务端说了算）；听写和翻译照旧贴字
     if (outcome.delivery === "reply") {
-      await window.speakmore.commandReply(outcome.text);
+      // 答案进结果卡片（载荷带上问的问题和当时的选区，原版卡片同款）
+      await window.speakmore.commandReply({
+        answer: outcome.text,
+        userPrompt: outcome.userPrompt ?? null,
+        selectedText: commandSelectedText,
+      });
       dispatch({ type: "RESULT", message: msg("bar.commandReplied") });
       return;
     }

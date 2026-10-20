@@ -184,9 +184,9 @@ test("local 模式把目标语言交给润色那一跳", async () => {
     },
   };
   const refiner = createLocalRefiner({ transcriber, polisher, log: quiet, decode });
-  assert.equal(
+  assert.deepEqual(
     await refiner.refine(Buffer.from("x"), { mimeType: "audio/webm", audioId: "a9", translateTarget: "en" }),
-    "We'll meet tomorrow.",
+    { text: "We'll meet tomorrow.", userPrompt: "明天开会" },
   );
   assert.deepEqual(seen, [{ text: "明天开会", options: { signal: undefined, audioId: "a9", translateTarget: "en" } }]);
 });

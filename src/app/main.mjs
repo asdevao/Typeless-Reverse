@@ -503,6 +503,147 @@ async function main() {
   const tellBar = (channel, payload) => {
     if (!bar.isDestroyed()) bar.webContents.send(channel, payload);
   };
+
+  // ---------- 结果卡片窗（1:1 复刻原版 interactive-card）----------
+  // 宽 800、贴着工作区底边上方 20px（悬浮条正上方）、随内容向上长高（最高 800，初始 500）、
+  // panel 型无边框透明置顶；光标挪到哪块屏卡片跟到哪块屏；渲染层量好内容高度报上来调窗口。
+
+  const CARD_WIDTH = 800;
+  const CARD_MAX_HEIGHT = 800;
+  const CARD_INITIAL_HEIGHT = 500;
+  const CARD_BOTTOM_MARGIN = 20;
+  const CARD_BOUNDS_DEBOUNCE_MS = 80;
+  const CARD_BOUNDS_EPSILON = 2;
+  let cardWindow = null;
+  let cardPending = null;
+  let cardBoundsTimer = null;
+  let cardPendingHeight = null;
+  let cardMouseTimer = null;
+  let cardDisplayId = null;
+
+  function cardTargetDisplay() {
+    try {
+      return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+    } catch {
+      return screen.getPrimaryDisplay();
+    }
+  }
+
+  function cardBoundsFor(display, height) {
+    const work = display.workArea;
+    const max = Math.max(1, work.height - CARD_BOTTOM_MARGIN);
+    const h = Math.min(Math.max(Math.round(height), 1), max);
+    const x = Math.max(
+      work.x,
+      Math.min(work.x + Math.floor(work.width / 2) - Math.floor(CARD_WIDTH / 2), work.x + work.width - CARD_WIDTH),
+    );
+    let y = work.y + work.height - CARD_BOTTOM_MARGIN - h;
+    if (y < work.y) y = work.y;
+    return { x, y, width: CARD_WIDTH, height: h };
+  }
+
+  function stopCardMouseTracking() {
+    if (cardMouseTimer !== null) {
+      clearInterval(cardMouseTimer);
+      cardMouseTimer = null;
+    }
+    cardDisplayId = null;
+  }
+
+  function createCardWindow() {
+    const display = cardTargetDisplay();
+    const max = Math.max(1, display.workArea.height - CARD_BOTTOM_MARGIN);
+    const initial = max >= CARD_MAX_HEIGHT ? CARD_MAX_HEIGHT : Math.min(CARD_INITIAL_HEIGHT, max);
+    cardDisplayId = display.id;
+    cardWindow = new BrowserWindow({
+      ...cardBoundsFor(display, initial),
+      type: "panel",
+      title: "AI result",
+      frame: false,
+      transparent: true,
+      backgroundColor: "#00000000",
+      hasShadow: false,
+      maximizable: false,
+      minimizable: false,
+      resizable: false,
+      fullscreenable: false,
+      focusable: true,
+      show: false,
+      alwaysOnTop: true,
+      webPreferences,
+    });
+    cardWindow.setAlwaysOnTop(true, "screen-saver", 1);
+    cardWindow.setFullScreenable(false);
+    cardWindow.loadFile(join(sourceDir, "renderer", "card", "card.html"));
+    // 光标挪到哪块屏，卡片跟到哪块屏（原版同款 100ms 轮询）
+    cardMouseTimer = setInterval(() => {
+      if (!cardWindow || cardWindow.isDestroyed()) return;
+      const next = cardTargetDisplay();
+      if (next.id !== cardDisplayId) {
+        cardDisplayId = next.id;
+        cardWindow.setBounds(cardBoundsFor(next, cardWindow.getBounds().height));
+      }
+    }, 100);
+    cardWindow.on("closed", () => {
+      cardWindow = null;
+      stopCardMouseTracking();
+    });
+  }
+
+  /** 打开（或更新）结果卡片。answer 是必须的；没有就不开 */
+  function openCard(payload) {
+    if (typeof payload?.answer !== "string" || payload.answer.trim() === "") return false;
+    cardPending = payload;
+    if (cardWindow && !cardWindow.isDestroyed()) {
+      cardWindow.webContents.send("card:update", payload);
+      cardWindow.show();
+    } else {
+      createCardWindow();
+    }
+    return true;
+  }
+
+  function closeCard() {
+    if (cardBoundsTimer !== null) {
+      clearTimeout(cardBoundsTimer);
+      cardBoundsTimer = null;
+    }
+    cardPendingHeight = null;
+    cardPending = null;
+    stopCardMouseTracking();
+    if (cardWindow && !cardWindow.isDestroyed()) cardWindow.close();
+    cardWindow = null;
+  }
+
+  handle("card:get-payload", () => cardPending);
+  handle("card:close", () => {
+    closeCard();
+    return true;
+  });
+  handle("card:update-bounds", (_event, height) => {
+    if (!Number.isFinite(height)) return false;
+    cardPendingHeight = Math.min(Math.max(Math.round(height), 1), CARD_MAX_HEIGHT);
+    if (cardBoundsTimer !== null) clearTimeout(cardBoundsTimer);
+    cardBoundsTimer = setTimeout(() => {
+      cardBoundsTimer = null;
+      const next = cardPendingHeight;
+      cardPendingHeight = null;
+      if (!cardWindow || cardWindow.isDestroyed() || !Number.isFinite(next)) return;
+      const bounds = cardBoundsFor(cardTargetDisplay(), next);
+      const current = cardWindow.getBounds();
+      if (
+        Math.abs(current.height - bounds.height) > CARD_BOUNDS_EPSILON ||
+        Math.abs(current.x - bounds.x) > CARD_BOUNDS_EPSILON ||
+        Math.abs(current.y - bounds.y) > CARD_BOUNDS_EPSILON
+      ) {
+        cardWindow.setBounds(bounds);
+      }
+    }, CARD_BOUNDS_DEBOUNCE_MS);
+    return true;
+  });
+
+  // ---------- 结果卡片窗结束 ----------
+
   const notify = (message) => tellBar("notice", message);
   /** 悬浮条上方的操作提示开不开（设置里的 barHint，on / off）。每次现读：被环境变量盖着时是环境变量里的 */
   const currentBarHint = () => resolveSettings({ file: PATHS.settingsFile, env: process.env }).barHint.value;
@@ -772,11 +913,17 @@ async function main() {
     saveDictionary(PATHS.dictionaryFile, merged);
     return { imported: imported.length, total: merged.length };
   });
-  // 指令的 reply 交付：答案弹系统通知 + 复制到剪贴板（通知看完就没了，剪贴板保证答案不丢）
-  handle("command:reply", (_event, answer) => {
+  // 指令的 reply 交付：答案进结果卡片（1:1 复刻原版 interactive-card），同时复制到剪贴板（卡片关了答案也不丢）
+  handle("command:reply", (_event, payload) => {
+    const answer = typeof payload === "string" ? payload : payload?.answer;
     if (typeof answer !== "string" || answer.trim() === "") throw new TypeError("要展示的答案是一段非空文字");
     clipboard.writeText(answer);
-    new Notification({ title: msg("command.replyTitle"), body: answer.slice(0, 400) }).show();
+    openCard({
+      answer,
+      userPrompt: (payload && typeof payload === "object" && payload.userPrompt) || null,
+      selectedText: (payload && typeof payload === "object" && payload.selectedText) || null,
+      webMetadata: null,
+    });
     return { copied: true };
   });
   // 指令的 external 交付：只放行网页和邮件链接，其余协议一律不开

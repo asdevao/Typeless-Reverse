@@ -71,6 +71,12 @@ const RADIUS_EXCEPTIONS = [
   ["hub/hub.css:.mic-device", "麦克风设备行的 10px 圆角，对齐原版"],
   ["hub/hub.css:.mic-volume span", "音量竖条的胶囊头（999px），对齐原版"],
   ["hub/hub.css:.mic-save", "保存按钮的胶囊头（999px），对齐原版"],
+  ["card/card.css:.card", "结果卡片的 12px 圆角，尺寸对齐原版"],
+  ["card/card.css:.prompt-copy", "问题行复制按钮的 4px，对齐原版"],
+  ["card/card.css:.header-button", "卡片头部按钮的 4px，对齐原版"],
+  ["card/card.css:.prompt-spine::before", "折叠指示器 1px 竖线的胶囊头（999px），对齐原版"],
+  ["card/card.css:.answer code", "行内代码的 4px，对齐原版"],
+  ["card/card.css:.answer pre", "代码块的 8px，对齐原版"],
 ];
 
 test("圆角只用 --radius-*（或者全圆的 50%），例外都写明了缘由", () => {

@@ -185,7 +185,7 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
         web_metadata: null,
         delivery: verdict === null ? null : verdict.delivery,
         action: null,
-        user_prompt: null,
+        user_prompt: outcome.userPrompt ?? null,
         external_action: verdict?.delivery === "external" ? { target: verdict.target } : null,
         notice: outcome.notice,
       });

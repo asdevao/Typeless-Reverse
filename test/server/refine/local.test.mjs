@@ -50,7 +50,10 @@ test("录音 → 统一格式 → 本地转写 → 润色；和原生链路一�
   const refiner = createLocalRefiner({ transcriber, polisher, log, decode });
   const audio = Buffer.from("webm");
   const signal = new AbortController().signal;
-  assert.equal(await refiner.refine(audio, { mimeType: "audio/webm", signal, audioId: "a1" }), "成品：原文");
+  assert.deepEqual(await refiner.refine(audio, { mimeType: "audio/webm", signal, audioId: "a1" }), {
+    text: "成品：原文",
+    userPrompt: "原文",
+  });
   assert.deepEqual(seen.decoded, [{ audio, mimeType: "audio/webm" }]);
   assert.equal(seen.transcribed[0], SAMPLES);
   assert.deepEqual(seen.polished, [{ text: "原文", options: { signal, audioId: "a1" } }]);
@@ -198,6 +201,9 @@ test("本机转写那一跳也记一笔账：是哪个模型、转了多久，�
       throw new Error("库锁住了");
     },
   });
-  assert.equal(await broken.refine(Buffer.from("webm"), { mimeType: "audio/webm", audioId: "a2" }), "成品：原文");
+  assert.deepEqual(await broken.refine(Buffer.from("webm"), { mimeType: "audio/webm", audioId: "a2" }), {
+    text: "成品：原文",
+    userPrompt: "原文",
+  });
   assert.ok(log.events.some(({ event }) => event === "model_call_not_recorded"));
 });

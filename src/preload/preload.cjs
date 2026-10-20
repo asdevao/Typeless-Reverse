@@ -43,6 +43,12 @@ contextBridge.exposeInMainWorld("speakmore", {
     ipcRenderer.on("bar:microphone-device", (_event, deviceId) => callback(deviceId)),
   onBarHint: (callback) => ipcRenderer.on("bar:hint", (_event, value) => callback(value)),
 
+  // 结果卡片（语音指令 reply 交付的独立窗口）
+  cardPayload: () => ipcRenderer.invoke("card:get-payload"),
+  onCardUpdate: (callback) => ipcRenderer.on("card:update", (_event, payload) => callback(payload)),
+  cardClose: () => ipcRenderer.invoke("card:close"),
+  cardBounds: (height) => ipcRenderer.invoke("card:update-bounds", height),
+
   // 主窗口：首页、历史记录
   appInfo: () => ipcRenderer.invoke("app:info"),
   listHistory: () => ipcRenderer.invoke("history:list"),

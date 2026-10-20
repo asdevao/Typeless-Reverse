@@ -128,7 +128,8 @@ export function createLocalRefiner({ transcriber, polisher, log, model, onCall =
         polish_ms: Math.round(performance.now() - transcribedAt),
         transcript_length: transcript.length,
       });
-      return refined;
+      // userPrompt 是转写原文：结果卡片拿它当"问的问题"展示（原版卡片同款字段）
+      return { text: refined, userPrompt: transcript.trim() };
     },
   };
 }
