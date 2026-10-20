@@ -1,7 +1,6 @@
 import { LOCALES, SYSTEM_LOCALE } from "../../i18n/index.mjs";
 import { t } from "../shared/i18n.mjs";
-import { openMicrophone } from "../shared/level-meter.mjs";
-import { createVocalMeter } from "../shared/vocal-meter.mjs";
+import { createVolumeBars, createVolumeMeter } from "../shared/volume-bars.mjs";
 import { describeError, keyMissing, permissionDenied, permissionText } from "../shared/setup-text.mjs";
 
 // 设置对话框：原版的"设置中心"，左边一列菜单。我们的三页：通用（热键、主题、语言、本机模型的下载源、开机启动）、
@@ -208,77 +207,167 @@ export function createSettings({ refresh }) {
     await refresh();
   });
 
-  // ---------- 通用·麦克风：设备选择 + 实时指示条（对齐原版"选择麦克风"的调试体验） ----------
+  // ---------- 通用·麦克风：选择麦克风弹窗（对齐原版的调试体验，尺寸同原版） ----------
 
+  const micDialog = $("microphone-dialog");
   let micMeter = null;
-  let micStream = null;
-  /** 第几次开麦：换设备、关对话框都加一，等麦克风回来时对不上号的就是过时了的 */
+  /** 第几次开麦：换设备、关弹窗都加一，等麦克风回来时对不上号的就是过时了的 */
   let micRun = 0;
 
   function stopMicMeter() {
     micRun += 1;
     micMeter?.stop();
     micMeter = null;
-    micStream = null; // 麦克风轨道由 vocal-meter 的 stop 一并停掉
   }
 
-  /** 用当前选中的那台麦克风开一路，画成竖条排：条动了就是它能收到声音（机制复刻自原版） */
-  async function startMicMeter() {
+  /** 用生效的那台开一路只测音量，点亮选中行上的竖条（原版调试流是带降噪的） */
+  async function startMicMeter(deviceId) {
     const run = ++micRun;
-    const deviceId = $("microphone-device").value || null;
     let opened;
     try {
-      opened = await openMicrophone(deviceId);
+      // 原版调试这一路开了降噪（和听写不同：听写要把未加工的声音交给模型）
+      opened = await navigator.mediaDevices.getUserMedia({
+        audio: { ...(deviceId ? { deviceId: { exact: deviceId } } : {}), noiseSuppression: true },
+      });
     } catch {
-      return; // 打不开（设备刚拔了）就让指示条静止：下面的提示文案已经教了换一台
+      return; // 打不开（设备刚拔了）就熄着竖条：弹窗文案已经教了换一台
     }
     // 等麦克风的这一小会儿里人可能已经走开了：那一趟有自己的一路，这一路关掉
     if (run !== micRun) {
       for (const track of opened.getTracks()) track.stop();
       return;
     }
-    micStream = opened;
-    micMeter = createVocalMeter({ stream: opened, container: $("microphone-meter") });
+    const bars = createVolumeBars({ container: $("microphone-volume") });
+    micMeter = createVolumeMeter({ stream: opened, onVolume: (volume) => bars.setVolume(volume) });
   }
 
-  /** 设备清单（要开过一次麦克风才显示得出名字）+ 现在选的是哪台 */
-  async function renderMicrophone(setup) {
-    let devices = [];
+  /** 设备的徽标（对齐原版分类）：蓝牙 → 蓝牙麦克风；括号里带冒号 → 外部；内置 → 推荐；其余不标 */
+  function micBadgeOf(label) {
+    const detail = label.match(/\(([^)]+)\)$/)?.[1] ?? "";
+    if (/bluetooth|蓝牙|无线/i.test(`${label} ${detail}`)) return "bluetooth";
+    if (detail.includes(":")) return "external";
+    if (/built[- ]?in|内置/i.test(detail)) return "recommended";
+    return null;
+  }
+
+  /** 弹窗里的设备清单：自动检测排最前（原版第一项），推荐其次，其余跟系统顺序 */
+  async function micDevicesOf() {
+    let inputs = [];
     try {
-      devices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === "audioinput");
+      inputs = (await navigator.mediaDevices.enumerateDevices()).filter(
+        (device) =>
+          device.kind === "audioinput" && device.deviceId !== "default" && device.deviceId !== "communications",
+      );
     } catch {
-      // 枚举不出就只剩系统默认一项
+      // 枚举不出就只剩自动检测一项
+    }
+    const order = { recommended: 0, bluetooth: 1, external: 2 };
+    const devices = inputs
+      .map((device) => ({
+        deviceId: device.deviceId,
+        label: device.label || t("preferences.microphoneUnknown"),
+        badge: micBadgeOf(device.label),
+      }))
+      .sort((a, b) => (order[a.badge] ?? 3) - (order[b.badge] ?? 3));
+    devices.unshift({ deviceId: "", label: t("preferences.microphoneAutoDetect"), badge: "usesSystemDefault" });
+    return { devices, hasInputs: inputs.length > 0 };
+  }
+
+  /** 弹窗内容：设备行一列，选中行的右侧是实时音量竖条（对齐原版布局） */
+  async function renderMicrophoneDialog(setup) {
+    const list = $("microphone-list");
+    const { devices, hasInputs } = await micDevicesOf();
+    if (!hasInputs) {
+      const title = document.createElement("p");
+      title.className = "mic-empty-title";
+      title.textContent = t("preferences.microphoneEmptyTitle");
+      const description = document.createElement("p");
+      description.className = "mic-empty-description";
+      description.textContent = t("preferences.microphoneEmptyDescription");
+      const empty = document.createElement("div");
+      empty.className = "mic-empty";
+      empty.replaceChildren(title, description);
+      list.replaceChildren(empty);
+      stopMicMeter();
+      return;
     }
     const saved = setup.microphoneDeviceId ?? "";
-    // 存过的设备已经不在了（拔了）：显示回系统默认，但不改存档——插回来还认它
-    const stillThere = saved === "" || devices.some((device) => device.deviceId === saved);
-    $("microphone-device").replaceChildren(
-      ...options(
-        [
-          ["", t("preferences.microphoneDefault")],
-          ...devices.map((device) => [device.deviceId, device.label || t("preferences.microphoneUnknown")]),
-        ],
-        stillThere ? saved : "",
-      ),
+    const badgeText = {
+      usesSystemDefault: t("preferences.microphoneUsesSystemDefault"),
+      recommended: t("preferences.microphoneRecommended"),
+      bluetooth: t("preferences.microphoneBluetooth"),
+      external: t("preferences.microphoneExternal"),
+    };
+    list.replaceChildren(
+      ...devices.map((device) => {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "mic-device";
+        const selected = (device.deviceId || "") === saved;
+        row.setAttribute("aria-current", selected ? "true" : "false");
+        const text = document.createElement("span");
+        text.className = "mic-device-text";
+        const name = document.createElement("span");
+        name.className = "mic-device-name";
+        name.textContent = device.label;
+        text.append(name);
+        if (device.badge) {
+          const badge = document.createElement("span");
+          badge.className = `mic-device-badge${device.badge === "recommended" ? " recommended" : ""}`;
+          badge.textContent = badgeText[device.badge];
+          text.append(badge);
+        }
+        row.append(text);
+        if (selected) {
+          const volume = document.createElement("span");
+          volume.className = "mic-volume";
+          volume.id = "microphone-volume";
+          row.append(volume);
+        }
+        row.addEventListener("click", () => chooseMicrophone(device.deviceId));
+        return row;
+      }),
     );
-    // 对话框开着就（重）开一路测音量：换设备、换设置后来刷新都会走到这里
-    if (dialog.open) startMicMeter();
+    if (micDialog.open) startMicMeter(saved);
   }
 
-  $("microphone-device").addEventListener("change", async (event) => {
+  /** 点一个设备：存下来并立即按它测（原版点选即保存），刷新会重排行和触发行上的名字 */
+  async function chooseMicrophone(deviceId) {
     showNote("general-problem", null);
-    showNote("microphone-device-note", null);
+    stopMicMeter();
     try {
-      const result = await window.speakmore.setMicrophoneDevice(event.target.value);
-      showNote("microphone-device-note", result.note ?? null);
-      // 保存成功后 refresh 会重渲染并重启指示条，这里不用自己再开一路
+      await window.speakmore.setMicrophoneDevice(deviceId);
+      await refresh();
     } catch (error) {
       showNote("general-problem", t("preferences.microphoneFailed", { reason: describeError(error) }), "problem");
     }
-    await refresh();
-  });
+  }
 
-  dialog.addEventListener("close", stopMicMeter);
+  /** 设置页那一行上的名字：系统默认，或选定设备的名字 */
+  async function renderMicrophone(setup) {
+    const saved = setup.microphoneDeviceId ?? "";
+    let name = t("preferences.microphoneDefault");
+    if (saved !== "") {
+      try {
+        const found = (await navigator.mediaDevices.enumerateDevices()).find(
+          (device) => device.kind === "audioinput" && device.deviceId === saved,
+        );
+        if (found?.label) name = found.label;
+      } catch {
+        // 枚举不到名字就先叫"系统默认"，不影响使用
+      }
+    }
+    $("microphone-current").textContent = name;
+    if (micDialog.open) await renderMicrophoneDialog(setup);
+  }
+
+  $("microphone-open").addEventListener("click", () => {
+    micDialog.showModal();
+    refresh();
+  });
+  $("microphone-close").addEventListener("click", () => micDialog.close());
+  $("microphone-save").addEventListener("click", () => micDialog.close());
+  micDialog.addEventListener("close", stopMicMeter);
 
   $("bar-hint").addEventListener("change", async (event) => {
     showNote("general-problem", null);

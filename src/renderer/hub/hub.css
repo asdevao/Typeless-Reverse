@@ -868,27 +868,198 @@ code.setting-value {
   color: var(--problem);
 }
 
-/* 麦克风调试的竖条排（对齐原版"选择麦克风"的指示条）：高度跟实时音量、说话时从中心向两侧起波 */
-.mic-bars {
+/* 选择麦克风弹窗（尺寸对齐原版：448px 宽、圆角 16、设备行高 58、选中行右侧 6 根 6×22 音量竖条） */
+.mic-dialog {
+  width: 448px;
+  max-width: calc(100vw - 32px);
+  border: none;
+  border-radius: 16px;
+  background: var(--surface-solid);
+  box-shadow: var(--lift);
+  padding: 0;
+  color: var(--ink);
+}
+
+.mic-dialog::backdrop {
+  background: color-mix(in oklab, var(--ink) 32%, transparent);
+}
+
+.mic-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 24px 24px 16px;
+}
+
+.mic-title {
+  margin: 0;
+  font-size: var(--text-heading);
+  font-weight: var(--weight-bold);
+  line-height: 22px;
+  color: var(--ink);
+}
+
+.mic-description {
+  margin: 8px 0 0;
+  font-size: var(--text-body);
+  line-height: 22px;
+  color: var(--ink-2);
+}
+
+.mic-close {
+  flex-shrink: 0;
+}
+
+.mic-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 24px 24px;
+  max-height: 368px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.mic-list::-webkit-scrollbar {
+  display: none;
+}
+
+.mic-empty {
+  padding: 24px 12px 16px;
+  text-align: center;
+}
+
+.mic-empty-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.mic-empty-description {
+  margin: 4px 0 0;
+  font-size: var(--text-body);
+  line-height: 22px;
+  color: var(--ink-2);
+}
+
+.mic-device {
   display: flex;
   align-items: center;
-  gap: var(--gap, 2px);
-  height: 1.5rem;
-  margin-top: 0.5rem;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 58px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.mic-device:hover {
+  background: var(--fill-hover);
+}
+
+.mic-device[aria-current="true"] {
+  border-color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 10%, var(--surface));
+}
+
+.mic-device-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mic-device-name {
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: 16px;
+  width: 100%;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.mic-bars span {
-  width: 2px;
-  height: 2px;
-  border-radius: 50%;
-  background: color-mix(in oklab, var(--primary) 45%, transparent);
+.mic-device-badge {
+  font-size: var(--text-small);
+  line-height: 14px;
+  color: var(--ink-2);
+}
+
+.mic-device-badge.recommended {
+  color: var(--primary);
+}
+
+.mic-volume {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
-  transition: background-color 0.2s ease;
 }
 
-.mic-bars span.active {
+.mic-volume span {
+  width: 6px;
+  height: 22px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 22%, transparent);
+  transition: background-color 0.15s ease-in-out;
+}
+
+.mic-volume span.lit {
   background: var(--primary);
+}
+
+.mic-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 24px 24px;
+}
+
+.mic-save {
+  min-height: 36px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--gradient);
+  color: var(--on-primary);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.mic-save:hover {
+  box-shadow: 0 2px 6px -2px var(--primary);
+}
+
+/* 设置页通用页那一行：显示当前用的是哪台，点开选择麦克风弹窗 */
+.mic-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: var(--text-small);
+  padding: 0;
+}
+
+.mic-trigger:hover {
+  color: var(--ink);
+}
+
+.mic-chevron {
+  font-size: var(--text-body);
+  line-height: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -899,7 +1070,7 @@ code.setting-value {
   .content::before,
   .entry,
   .entry-actions,
-  .mic-bars span {
+  .mic-volume span {
     transition: none;
   }
 

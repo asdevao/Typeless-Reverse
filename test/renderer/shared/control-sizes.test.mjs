@@ -67,6 +67,10 @@ const RADIUS_EXCEPTIONS = [
   ["shared/window.css:.tabs > .indicator", "分类标签下面那条 2px 的下划线"],
   ["hub/hub.css:.cell", "首页活跃度热力图的小格子"],
   ["hub/hub.css:.page-arrow", "热力图翻页的小箭头"],
+  ["hub/hub.css:.mic-dialog", "选择麦克风弹窗的 16px 圆角，尺寸对齐原版"],
+  ["hub/hub.css:.mic-device", "麦克风设备行的 10px 圆角，对齐原版"],
+  ["hub/hub.css:.mic-volume span", "音量竖条的胶囊头（999px），对齐原版"],
+  ["hub/hub.css:.mic-save", "保存按钮的胶囊头（999px），对齐原版"],
 ];
 
 test("圆角只用 --radius-*（或者全圆的 50%），例外都写明了缘由", () => {

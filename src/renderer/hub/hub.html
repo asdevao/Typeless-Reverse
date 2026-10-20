@@ -396,13 +396,12 @@
           </div>
           <p class="setting-note" id="history-retention-note" role="status" hidden></p>
           <div class="setting">
-            <label class="setting-title" for="microphone-device" data-i18n="preferences.microphone">Microphone</label>
-            <select class="select" id="microphone-device"></select>
+            <label class="setting-title" data-i18n="preferences.microphone">Microphone</label>
+            <button type="button" class="mic-trigger" id="microphone-open">
+              <span id="microphone-current"></span>
+              <span class="mic-chevron" aria-hidden="true">›</span>
+            </button>
           </div>
-          <!-- 对齐原版"选择麦克风"的调试：一排竖条实时测当前选中的那台（机制复刻自原版渲染层） -->
-          <div class="mic-bars" id="microphone-meter" aria-hidden="true"></div>
-          <p class="setting-note" data-i18n="preferences.microphoneHint">Choose the microphone that captures your voice. If the indicator doesn't move, try another microphone.</p>
-          <p class="setting-note" id="microphone-device-note" role="status" hidden></p>
           <!-- 从终端启动时登记不了开机启动，整行不显示 -->
           <div class="setting" id="open-at-login-row">
             <label class="setting-title" for="open-at-login" data-i18n="preferences.openAtLogin">Launch at login</label>
@@ -449,6 +448,23 @@
           </div>
         </section>
       </div>
+    </dialog>
+
+    <!-- 选择麦克风：对齐原版的调试弹窗（设备行 + 选中行实时音量竖条，尺寸同原版：448px、行高 58、竖条 6×22） -->
+    <dialog id="microphone-dialog" class="mic-dialog" aria-labelledby="microphone-title">
+      <header class="mic-header">
+        <div>
+          <h3 id="microphone-title" class="mic-title" data-i18n="preferences.microphoneTitle">Microphone</h3>
+          <p class="mic-description" data-i18n="preferences.microphoneHint">Choose the microphone that captures your voice. If the indicator doesn't move, try another microphone.</p>
+        </div>
+        <button type="button" class="icon-button mic-close" id="microphone-close" data-i18n-aria-label="common.close">
+          <svg class="icon" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </header>
+      <div class="mic-list" id="microphone-list"></div>
+      <footer class="mic-footer">
+        <button type="button" class="mic-save" id="microphone-save" data-i18n="preferences.microphoneSave">Save</button>
+      </footer>
     </dialog>
 
     <p class="toast" id="toast" role="status" data-hidden></p>
