@@ -838,7 +838,14 @@ async function main() {
     pasteRich: async (text, html) => {
       // 还原只管文字段（和选区抓取同一个 v1 边界）：这个 Electron 的主进程剪贴板没有 readHTML
       const previous = clipboard.readText();
-      clipboard.write({ text, html });
+      // 这个 Electron 的 clipboard.write 装双格式对象会因参数转换失败炸（和 readHTML 缺失同源的
+      // 版本差异）：炸了就退纯文本，粘贴绝不能因为富格式失败
+      try {
+        clipboard.write({ text, html });
+      } catch (error) {
+        log.warn("rich_clipboard_failed", { error: String(error?.message ?? error).slice(0, 200) });
+        clipboard.writeText(text);
+      }
       // Ctrl+V 由原生小帮手注入：Electron 的主进程里用 koffi 模拟按键会因参数转换失败必炸
       const result = await helper.pasteClipboard();
       // 贴成了才还原；没贴成把成品留在剪贴板里，让用户自己按 Ctrl+V

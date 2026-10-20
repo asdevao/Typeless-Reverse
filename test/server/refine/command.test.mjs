@@ -81,3 +81,18 @@ test("原生链路的指令提示词：有选区嵌选中文本，没选区换�
   assert.ok(bare.includes("没有选中任何文字"));
   assert.ok(audioAskReminder().includes("口述"));
 });
+
+test("[open] 的目标在下一行也认（模型常把网址换行写）；裸域名自动补 https://", () => {
+  const nextLine = parseCommandDelivery("[open]\nhttps://www.google.com");
+  assert.equal(nextLine.delivery, "external");
+  assert.equal(nextLine.target, "https://www.google.com");
+  const bare = parseCommandDelivery("[open] www.google.com");
+  assert.equal(bare.delivery, "external");
+  assert.equal(bare.target, "https://www.google.com");
+});
+
+test("[open] 下一行跟的是词（浏览器）不是网址：剥标记贴回，不吐 [open] 字样", () => {
+  const parsed = parseCommandDelivery("[open]\n浏览器");
+  assert.equal(parsed.delivery, "replace");
+  assert.ok(!parsed.text.includes("[open]"));
+});
