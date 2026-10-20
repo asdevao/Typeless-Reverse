@@ -605,6 +605,7 @@ export default {
     unpriced: "{models} unpriced; {count} not counted",
     dictate: "Press to talk",
     translate: "Press to translate",
+    command: "Hold + Space to ask anything",
     // The recognition mode menu next to the title (renderer/hub/mode-picker.mjs); mode names live in plaza.modes
     mode: {
       label: "Recognition",

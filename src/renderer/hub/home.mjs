@@ -258,7 +258,7 @@ export function createHome() {
 
   return {
     /**
-     * @param {{ insights: object, usage: object, app: { version: string, hotkey: string } }} data
+     * @param {{ insights: object, usage: object, app: { version: string, hotkey: string, translateHotkey: string, translateTarget: string } }} data
      */
     render({ insights, usage: report, app }) {
       latest = insights;
@@ -270,6 +270,8 @@ export function createHome() {
       // 翻译卡：键帽 + 标题（目标语言跟设置走，名字按界面语言写）
       $("home-translate-keycap").textContent = keycapOf(app.translateHotkey);
       $("home-translate-title").textContent = `${t("home.translate")} → ${t(`translate.targets.${app.translateTarget}`)}`;
+      // 指令卡：组合键 = 听写键按住 + 按一下 Space（跟着听写热键走，换键后这里同步换）
+      $("home-command-keycap").textContent = `${keycapOf(app.hotkey)} + Space`;
       $("home-version").textContent = `v${app.version}`;
     },
 

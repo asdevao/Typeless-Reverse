@@ -595,6 +595,7 @@ export default {
     unpriced: "{models} 无标价，{count} 次未计入",
     dictate: "按一下说话",
     translate: "按一下翻译",
+    command: "按住＋空格 问任何事",
     // 标题右边的识别方式选单（renderer/hub/mode-picker.mjs）；三种方式的名字在 plaza.modes
     mode: {
       label: "识别方式",
