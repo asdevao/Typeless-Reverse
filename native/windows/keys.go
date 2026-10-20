@@ -11,6 +11,7 @@ package main
 // 虚拟键码（WinUser.h）
 const (
 	vkEscape   = 0x1B
+	vkSpace    = 0x20
 	vkLControl = 0xA2
 	vkRControl = 0xA3
 	vkRShift   = 0xA1
@@ -51,6 +52,9 @@ type keyState struct {
 	hotkey        uint32
 	hotkeyDown    bool
 	reportedOther bool
+	// 现在按着 Space 吗（组合键的另一半）。原版报的是"当前按住的全部键"，
+	// 两键谁先落地都算组合；我们靠这个标志把"先按 Space 再按热键"也认成组合
+	spaceDown bool
 
 	capturing bool
 	regions   []region
@@ -97,7 +101,17 @@ func (s *keyState) onKey(in keyInput) outcome {
 		}
 		s.hotkeyDown = in.down
 		s.reportedOther = false
-		return outcome{events: []event{{"event": "hotkey", "down": in.down}}, mask: in.down && s.hotkey == vkRMenu}
+		out := outcome{events: []event{{"event": "hotkey", "down": in.down}}, mask: in.down && s.hotkey == vkRMenu}
+		// 组合键的另一半先落地了（两键同按，谁先谁后都算）：热键按下这一下就把组合报上去，
+		// 状态机先收热键再收组合，正好走"开始录音 → 升级成指令"
+		if in.down && s.spaceDown && s.hotkey != vkSpace {
+			s.reportedOther = true
+			out.events = append(out.events, event{"event": "other_key", "key": vkSpace})
+		}
+		return out
+	}
+	if in.vk == vkSpace && s.hotkey != vkSpace {
+		s.spaceDown = in.down
 	}
 	if in.vk == vkLControl && in.scan == altGrFakeCtrlScan {
 		return outcome{}

@@ -234,7 +234,8 @@ const INPUT_EVENTS = {
   hotkey: (event) => (event.down ? "KEY_DOWN" : "KEY_UP"),
   translate_hotkey: (event) => (event.down ? "TRANSLATE_KEY_DOWN" : "KEY_UP"),
   command_hotkey: (event) => (event.down ? "COMMAND_KEY_DOWN" : "KEY_UP"),
-  other_key: () => "OTHER_KEY",
+  // 带上键码（小帮手报的字段叫 key）：状态机靠它认"热键按住时按了 Space"的指令组合
+  other_key: (event) => ({ type: "OTHER_KEY", vk: event.key }),
   escape: () => "USER_CANCEL",
   click: (event) => ({ cancel: "USER_CANCEL", confirm: "USER_CONFIRM", command: "USER_COMMAND" })[event.id],
 };
@@ -246,7 +247,7 @@ window.speakmore.onInput((event) => {
   // 趁焦点还在目标窗口，异步抓选中文本补挂给服务端。抓不到（没有选区）就当无选区的指令问答
   if (
     event.event === "other_key" &&
-    event.vk === 0x20 &&
+    event.key === 0x20 &&
     state.held &&
     !state.translate &&
     (state.phase === Phase.STARTING || state.phase === Phase.RECORDING)
@@ -258,7 +259,7 @@ window.speakmore.onInput((event) => {
     console.warn("不认识的输入事件", event);
     return;
   }
-  dispatch({ type });
+  dispatch(typeof type === "string" ? { type } : type);
 });
 
 /** 组合键转指令时的选中文本抓取：fire-and-forget，抓到就补挂，抓不到拉倒（当无选区问答） */
