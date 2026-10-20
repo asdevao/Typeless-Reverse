@@ -574,6 +574,11 @@ async function main() {
     cardWindow.setAlwaysOnTop(true, "screen-saver", 1);
     cardWindow.setFullScreenable(false);
     cardWindow.loadFile(join(sourceDir, "renderer", "card", "card.html"));
+    // 页面就绪再亮窗：建窗时 show:false 防闪白（原版同款），基类会在就绪后补 show——
+    // 漏了这步窗口就永远藏着，卡片"开了却看不见"
+    cardWindow.once("ready-to-show", () => {
+      if (cardWindow && !cardWindow.isDestroyed()) cardWindow.show();
+    });
     // 临时诊断：把卡片渲染层的话转进主日志（排查透明度用，查完撤）
     cardWindow.webContents.on("console-message", (_event, level, message, line, sourceId) => {
       log.warn("card_console", { level, message: String(message).slice(0, 300), line, source: String(sourceId).slice(-80) });
@@ -836,8 +841,13 @@ async function main() {
     paste: (text) => helper.paste(text),
     // 富文本贴：剪贴板写 text + html 双格式（目标应用粘贴时自动挑支持的），再模拟 Ctrl+V；完事把剪贴板还原成贴之前的文字
     pasteRich: async (text, html) => {
-      // 还原只管文字段（和选区抓取同一个 v1 边界）：这个 Electron 的主进程剪贴板没有 readHTML
-      const previous = clipboard.readText();
+      // 存剪贴板用安全的读：这个 Electron 的 readText 偶发参数转换错，读不了就跳过还原
+      let previous = null;
+      try {
+        previous = clipboard.readText();
+      } catch {
+        // 读不了就不还原了，贴完让成品留在剪贴板里
+      }
       // 这个 Electron 的 clipboard.write 装双格式对象会因参数转换失败炸（和 readHTML 缺失同源的
       // 版本差异）：炸了就退纯文本，粘贴绝不能因为富格式失败
       try {
@@ -849,7 +859,7 @@ async function main() {
       // Ctrl+V 由原生小帮手注入：Electron 的主进程里用 koffi 模拟按键会因参数转换失败必炸
       const result = await helper.pasteClipboard();
       // 贴成了才还原；没贴成把成品留在剪贴板里，让用户自己按 Ctrl+V
-      if (result.ok) clipboard.writeText(previous);
+      if (result.ok && previous !== null) clipboard.writeText(previous);
       return result;
     },
     writeClipboard: (text) => clipboard.writeText(text),
@@ -887,15 +897,23 @@ async function main() {
   }));
   handle("dictation:capture-selection", async () => {
     // 模拟 Ctrl+C 抓当前选区：按键由原生小帮手注入（Electron 里 koffi 会炸），
-    // 等目标应用复制、读完还原，语义和原 selection.mjs 的 captureSelectedText 一致
-    const before = clipboard.readText();
+    // 等目标应用复制、读完还原。这个 Electron 的 clipboard.readText 偶发参数转换错：
+    // 读不了就当没有选区（无选区指令本来就走问答卡片），不让它炸整个抓取
+    const readClipboard = () => {
+      try {
+        return clipboard.readText();
+      } catch {
+        return null;
+      }
+    };
+    const before = readClipboard();
     const sent = await helper.sendCopy();
     if (!sent.ok) return null;
     await new Promise((resolve) => setTimeout(resolve, 200));
-    const captured = clipboard.readText();
-    clipboard.writeText(before);
-    // 前后一样：多半是没选中（也可能选中的恰好和剪贴板里的一字不差，按没选中处理）
-    return captured === before ? null : captured;
+    const captured = readClipboard();
+    if (before !== null && captured !== null) clipboard.writeText(before);
+    // 前后一样（或读不了剪贴板）：按没选中处理
+    return captured === null || captured === before ? null : captured;
   });
   // 失败条目的重试：把存下来的录音按当前链路再跑一遍，成品更新进这条历史并贴出
   handle("history:retry", async (_event, audioId) => {
