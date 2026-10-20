@@ -26,11 +26,12 @@ func TestHotkeyDownUpReportedOnceEachDespiteAutoRepeat(t *testing.T) {
 	}
 }
 
-func TestOtherKeyWhileHeldReportedOnceWithoutNamingTheKey(t *testing.T) {
+func TestOtherKeyWhileHeldReportedOnceWithKeyCode(t *testing.T) {
 	s := newState("right_ctrl")
 	s.onKey(key(vkRControl, true))
+	// 事件带上键码：悬浮条靠它识别"热键按住时按了 Space"的指令组合（对齐原版 askAnything）
 	got := eventsOf(s.onKey(key('A', true)), s.onKey(key('A', false)), s.onKey(key('B', true)))
-	if want := []event{{"event": "other_key"}}; !reflect.DeepEqual(got, want) {
+	if want := []event{{"event": "other_key", "key": uint32('A')}}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %v, want %v", got, want)
 	}
 	// 下一次按住重新算

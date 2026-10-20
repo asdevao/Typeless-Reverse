@@ -65,6 +65,7 @@ const (
 
 	vkControl = 0x11
 	vkV       = 0x56
+	vkC       = 0x43
 
 	cfUnicodeText = 13
 	gmemMoveable  = 0x0002

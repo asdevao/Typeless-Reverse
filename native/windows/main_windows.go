@@ -177,6 +177,36 @@ func paste(id int, text string) {
 	})
 }
 
+// 只按 Ctrl+V、不碰剪贴板：富文本贴用。主进程先把 text+html 双格式写进剪贴板再叫这一声，
+// 剪贴板的存还原都归主进程管（它要保住 html 那一份）。Electron 里用 koffi 模拟按键会因
+// 参数转换失败而必炸，所以这一条也得走小帮手
+func pasteClipboard(id int) {
+	if foregroundBlocksInput() {
+		emit(event{"event": "pasted", "id": id, "ok": false, "reason": "elevated"})
+		return
+	}
+	if !sendKeys([]uint16{vkControl, vkV, vkV, vkControl}, []bool{true, true, false, false}) {
+		emit(event{"event": "pasted", "id": id, "ok": false, "reason": "send_input"})
+		return
+	}
+	time.AfterFunc(restoreDelay, func() {
+		onUIThread(func() { emit(event{"event": "pasted", "id": id, "ok": true}) })
+	})
+}
+
+// 只按 Ctrl+C：抓选区用。主进程等一小会儿再读剪贴板、读完还原（语义同 src/app/selection.mjs）
+func sendCopy(id int) {
+	if foregroundBlocksInput() {
+		emit(event{"event": "copied", "id": id, "ok": false, "reason": "elevated"})
+		return
+	}
+	if !sendKeys([]uint16{vkControl, vkC, vkC, vkControl}, []bool{true, true, false, false}) {
+		emit(event{"event": "copied", "id": id, "ok": false, "reason": "send_input"})
+		return
+	}
+	emit(event{"event": "copied", "id": id, "ok": true})
+}
+
 func handle(line []byte) {
 	cmd, err := parseCommand(line)
 	if err != nil {
@@ -191,6 +221,18 @@ func handle(line []byte) {
 		}
 		id, text := *cmd.ID, *cmd.Text
 		onUIThread(func() { paste(id, text) })
+	case "paste_clipboard":
+		if cmd.ID == nil {
+			emit(event{"event": "error", "message": "paste_clipboard 需要 id"})
+			return
+		}
+		onUIThread(func() { pasteClipboard(*cmd.ID) })
+	case "send_copy":
+		if cmd.ID == nil {
+			emit(event{"event": "error", "message": "send_copy 需要 id"})
+			return
+		}
+		onUIThread(func() { sendCopy(*cmd.ID) })
 	case "capture":
 		regions, err := parseRegions(cmd.Regions)
 		if err != nil {

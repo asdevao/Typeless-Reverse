@@ -55,7 +55,7 @@ export function startHelper(command, { args = [], onEvent, log }) {
       log.warn("helper_bad_line", { line: line.slice(0, 200) });
       return;
     }
-    if (event.event === "pasted") {
+    if (event.event === "pasted" || event.event === "copied") {
       const request = pending.get(event.id);
       if (!request) return;
       pending.delete(event.id);
@@ -99,6 +99,39 @@ export function startHelper(command, { args = [], onEvent, log }) {
         }, PASTE_TIMEOUT_MS);
         pending.set(id, { resolve, reject, timer });
         child.stdin.write(`${JSON.stringify({ cmd: "paste", id, text })}\n`);
+      });
+    },
+    /**
+     * 只按 Ctrl+V、不动剪贴板：富文本贴用（主进程先写好 text+html 双格式再叫这一声）。
+     * Electron 的主进程里用 koffi 模拟按键会因参数转换失败必炸，所以这条也得走小帮手
+     * @returns {Promise<{ ok: boolean, reason: string | null }>}
+     */
+    pasteClipboard() {
+      if (exited) return Promise.reject(new Error("原生小帮手没有在运行"));
+      const id = nextId++;
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          pending.delete(id);
+          reject(new Error("粘贴没有在限时内完成"));
+        }, PASTE_TIMEOUT_MS);
+        pending.set(id, { resolve, reject, timer });
+        child.stdin.write(`${JSON.stringify({ cmd: "paste_clipboard", id })}\n`);
+      });
+    },
+    /**
+     * 只按 Ctrl+C：抓选区用（主进程等一会儿读剪贴板、读完还原）。
+     * @returns {Promise<{ ok: boolean, reason: string | null }>}
+     */
+    sendCopy() {
+      if (exited) return Promise.reject(new Error("原生小帮手没有在运行"));
+      const id = nextId++;
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          pending.delete(id);
+          reject(new Error("复制没有在限时内完成"));
+        }, PASTE_TIMEOUT_MS);
+        pending.set(id, { resolve, reject, timer });
+        child.stdin.write(`${JSON.stringify({ cmd: "send_copy", id })}\n`);
       });
     },
     /**

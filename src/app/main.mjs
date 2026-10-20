@@ -31,7 +31,6 @@ import { describeRoute, keyVendorOf, MODES } from "../server/modes.mjs";
 import { TRANSLATE_TARGETS } from "../server/refine/translate-prompt.mjs";
 import { formatModelChoice, PROVIDERS } from "../server/providers/index.mjs";
 import { findVendor, VENDORS } from "../server/vendors.mjs";
-import { captureSelectedText, pressCtrlV } from "./selection.mjs";
 import { mdLikeToHtml } from "./rich-text.mjs";
 import {
   addEntry,
@@ -840,10 +839,11 @@ async function main() {
       // 还原只管文字段（和选区抓取同一个 v1 边界）：这个 Electron 的主进程剪贴板没有 readHTML
       const previous = clipboard.readText();
       clipboard.write({ text, html });
-      pressCtrlV();
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      clipboard.writeText(previous);
-      return { ok: true };
+      // Ctrl+V 由原生小帮手注入：Electron 的主进程里用 koffi 模拟按键会因参数转换失败必炸
+      const result = await helper.pasteClipboard();
+      // 贴成了才还原；没贴成把成品留在剪贴板里，让用户自己按 Ctrl+V
+      if (result.ok) clipboard.writeText(previous);
+      return result;
     },
     writeClipboard: (text) => clipboard.writeText(text),
     log,
@@ -878,7 +878,18 @@ async function main() {
     barControls,
     barHint: currentBarHint(),
   }));
-  handle("dictation:capture-selection", () => captureSelectedText());
+  handle("dictation:capture-selection", async () => {
+    // 模拟 Ctrl+C 抓当前选区：按键由原生小帮手注入（Electron 里 koffi 会炸），
+    // 等目标应用复制、读完还原，语义和原 selection.mjs 的 captureSelectedText 一致
+    const before = clipboard.readText();
+    const sent = await helper.sendCopy();
+    if (!sent.ok) return null;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const captured = clipboard.readText();
+    clipboard.writeText(before);
+    // 前后一样：多半是没选中（也可能选中的恰好和剪贴板里的一字不差，按没选中处理）
+    return captured === before ? null : captured;
+  });
   // 失败条目的重试：把存下来的录音按当前链路再跑一遍，成品更新进这条历史并贴出
   handle("history:retry", async (_event, audioId) => {
     if (typeof audioId !== "string" || !/^[0-9a-f-]{36}$/.test(audioId)) throw new TypeError("audioId 不是 UUID");
