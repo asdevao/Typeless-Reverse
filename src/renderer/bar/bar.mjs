@@ -4,7 +4,7 @@
 import { LocalizedError, msg, problemOf } from "../../i18n/index.mjs";
 import { keycapOf, localize, setLocale, t } from "../shared/i18n.mjs";
 import { createBarUi } from "./bar-ui.mjs";
-import { viewOf } from "./bar-view.mjs";
+import { viewOf, View } from "./bar-view.mjs";
 import { Action, initialState, LONG_PRESS_MS, Phase, transition } from "./machine.mjs";
 import { startRecording } from "./recorder.mjs";
 import { VoiceSocket } from "./voice-socket.mjs";
@@ -180,6 +180,7 @@ async function stop() {
   const commandSelectedText = isCommand ? (pendingCommandSelection ?? null) : null;
   pendingCommandSelection = null;
   let recorded = null;
+  let stillThinking = null; // 整理慢时的"还在想"提示定时器
   try {
     recorded = await current.recording.stop();
     if (!recorded.hadSignal) {
@@ -189,7 +190,12 @@ async function stop() {
     // 指令的答案生成更慢（Agnes 带推理实测 29 秒，差点撞线）：超时放宽到 60 秒，
     // 否则稍长的答案客户端先超时报错，卡片永远弹不出来
     const timeoutMs = isCommand ? 60_000 : undefined;
+    // 整理慢时说一声"还在想"（对齐原版按时长算的 taking longer 提示）：10 秒还在等就换提示
+    stillThinking = setTimeout(() => {
+      if (state.phase === Phase.FINISHING) ui.show(View.FINISHING, t.text(msg("bar.stillThinking")));
+    }, 10_000);
     const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, command: isCommand, timeoutMs });
+    clearTimeout(stillThinking);
     // 指令的那次按服务端定的交付方式分流（对齐原版：怎么投递服务端说了算）；听写和翻译照旧贴字
     // 无选区的指令：所有回答都进结果卡片（不再往文档里贴——往文档里贴必须是自己选了文字要改写）。
     // 有选区的照旧按模型的分流：reply 卡片、replace 贴回选区、external 打开
@@ -221,6 +227,7 @@ async function stop() {
     // 服务端带话时（比如 private 模式翻不了、贴的是原文）它比"贴好了"那句更要紧
     dispatch({ type: "RESULT", message: outcome.notice ?? notice });
   } catch (error) {
+    if (stillThinking !== null) clearTimeout(stillThinking);
     console.error("这次听写失败", error);
     const message = describe(error);
     // 录音还在的话交给主进程存下来，失败了话也不会白说。历史里记的是这一刻界面上的那句话

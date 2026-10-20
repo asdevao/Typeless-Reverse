@@ -149,6 +149,12 @@ export function parseCommandJson(text) {
       if (parsed?.delivery === "reply" && content !== null && content !== "") {
         return { delivery: "reply", text: content, target: null };
       }
+      // 启动应用（对齐原版 launchApplicationByName）："打开浏览器/记事本"启动应用本身而不是开网页。
+      // target 用 app: 前缀编码，主进程按白名单启动
+      if (parsed?.delivery === "open" && typeof parsed?.launch === "string" && parsed.launch.trim() !== "") {
+        const app = parsed.launch.trim();
+        return { delivery: "external", text: app, target: `app:${app}` };
+      }
       if (parsed?.delivery === "open" && typeof parsed?.url === "string" && parsed.url.trim() !== "") {
         let target = parsed.url.trim();
         // 裸域名（google.com）自动补 https://
@@ -183,12 +189,13 @@ export function polishCommandJsonPrompt() {
 选中的文本在用户消息的 ${OPEN_TEXT} 和 ${CLOSE_TEXT} 之间，那是原样复制来的，不用帮它改错字。
 
 只输出这样的 JSON：
-{"delivery": "replace 或 reply 或 open", "content": "成品文字或答案", "url": "open 时要打开的完整网址，其余是空串"}
+{"delivery": "replace 或 reply 或 open", "content": "成品文字或答案", "url": "open 打开网站时的完整网址，其余是空串", "launch": "open 启动应用时的应用名，其余是空串"}
 
 delivery 怎么选（他想要的产物只有三种）：
 - 要一段写进文档的文字——不管做什么加工（翻译、改写、总结、纠错、续写、排版，或任何别的转换）：replace。content 是处理后的成品：只含结果不解释；排版跟选中文本的密度走，一两句一行、长内容分段，指令明确要列表、表格、代码块时才用 Markdown。
 - 要答案或信息——不管问的是什么（事实、解释、比较、建议，包括"这段什么意思"）：reply。content 写完整答案——它不进他的文档、会弹卡片给他看，不怕长。
-- 要发生一个动作——不管打开或触发什么（网站、网页、浏览器、邮箱、发帖页）：open。url 必须完整 http:// 或 https:// 开头；没点名具体网址给默认（浏览器、上网用 https://www.baidu.com）；不要 chrome:// 这类内部地址。content 留空串。
+- 要打开网站或网页：open。url 必须完整 http:// 或 https:// 开头；不要 chrome:// 这类内部地址。content 留空串。
+- 要启动应用（浏览器、记事本、计算器、文件管理器、VS Code、Word、Excel、终端、系统设置）：open。launch 填应用名（chrome、edge、notepad、calc、explorer、code、word、excel、terminal、settings）。url 和 content 留空串。
 - 拿不准要什么：replace。
 - 没有可执行的内容（只有语气词）：content 留空串。`;
 }
@@ -200,11 +207,12 @@ export function polishAskJsonPrompt() {
 口述原文在用户消息的 ${OPEN_VOICE} 和 ${CLOSE_VOICE} 之间，是机器听写出来的，常有同音字错误，按上下文改回来再理解。
 
 只输出这样的 JSON：
-{"delivery": "replace 或 reply 或 open", "content": "成品文字或答案", "url": "open 时要打开的完整网址，其余是空串"}
+{"delivery": "replace 或 reply 或 open", "content": "成品文字或答案", "url": "open 打开网站时的完整网址，其余是空串", "launch": "open 启动应用时的应用名，其余是空串"}
 
 delivery 怎么选（他想要的产物只有三种）：
 - 在问问题、求解释、要答案——不管问的是什么（事实、解释、比较、建议）：reply。content 写完整答案——它不进他的文档、会弹卡片给他看，不怕长。
-- 要发生一个动作——不管打开或触发什么（网站、网页、浏览器、邮箱、发帖页）：open。url 必须完整 http:// 或 https:// 开头；没点名具体网址给默认（浏览器、上网用 https://www.baidu.com）；不要 chrome:// 这类内部地址。content 留空串。
+- 要打开网站或网页：open。url 必须完整 http:// 或 https:// 开头；不要 chrome:// 这类内部地址。content 留空串。
+- 要启动应用（浏览器、记事本、计算器、文件管理器、VS Code、Word、Excel、终端、系统设置）：open。launch 填应用名（chrome、edge、notepad、calc、explorer、code、word、excel、terminal、settings）。url 和 content 留空串。
 - 改写、翻译、总结这类要操作一段文字的指令：他没选中任何文字，没有可操作的对象，replace，content 把口述按普通听写整理后原样给出。
 - 拿不准要什么：replace。
 - 没有可执行的内容（只有语气词）：content 留空串。`;

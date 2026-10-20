@@ -336,6 +336,7 @@ export default {
     commandRecording: "Ask anything · press {key} when done · {esc} to cancel",
     commandRecordingNoEsc: "Ask anything · press {key} when done",
     commandFinishing: "Thinking…",
+    stillThinking: "Still thinking…",
     translateFinishing: "Translating to {target}",
     commandReplied: "Answer shown in a notification and copied to the clipboard",
     commandOpened: "Opened in the default app",

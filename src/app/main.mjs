@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { createReadStream, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Readable } from "node:stream";
@@ -32,6 +33,7 @@ import { TRANSLATE_TARGETS } from "../server/refine/translate-prompt.mjs";
 import { formatModelChoice, PROVIDERS } from "../server/providers/index.mjs";
 import { findVendor, VENDORS } from "../server/vendors.mjs";
 import { mdLikeToHtml } from "./rich-text.mjs";
+import { launchTargetOf } from "./launch-app.mjs";
 import {
   addEntry,
   loadDictionary,
@@ -519,6 +521,14 @@ async function main() {
   let cardPendingHeight = null;
   let cardMouseTimer = null;
   let cardDisplayId = null;
+  // 卡片显示期间全局截 Esc（复用小帮手的 esc 截获，焦点在哪都能关卡片，对齐原版的全局键盘监听）。
+  // 条在截（录音中）时以条为准：esc 先取消录音；条不截而卡片开着时只截 esc（空区域，点击照常放行）
+  let barHoldingCapture = false;
+  const syncEscapeCapture = () => {
+    if (barHoldingCapture) return;
+    if (cardWindow && !cardWindow.isDestroyed()) helper.capture([]);
+    else helper.release();
+  };
 
   function cardTargetDisplay() {
     try {
@@ -595,6 +605,7 @@ async function main() {
     cardWindow.on("closed", () => {
       cardWindow = null;
       stopCardMouseTracking();
+      syncEscapeCapture();
     });
   }
 
@@ -608,6 +619,7 @@ async function main() {
     } else {
       createCardWindow();
     }
+    syncEscapeCapture();
     return true;
   }
 
@@ -621,6 +633,7 @@ async function main() {
     stopCardMouseTracking();
     if (cardWindow && !cardWindow.isDestroyed()) cardWindow.close();
     cardWindow = null;
+    syncEscapeCapture();
   }
 
   handle("card:get-payload", () => cardPending);
@@ -663,24 +676,28 @@ async function main() {
     bar.hide();
     // 条不在屏幕上时什么都不该截着。页面自己会说"不截了"，这里再说一遍是保险：
     // 万一它漏说了，esc 会一直被吞掉，在哪个应用里都按不出来
-    helper.release();
+    barHoldingCapture = false;
+    syncEscapeCapture();
   });
   // 页面崩了就更没人说"不截了"
   bar.webContents.on("render-process-gone", (_event, details) => {
     log.error("bar_gone", { reason: details.reason });
-    helper.release();
+    barHoldingCapture = false;
+    syncEscapeCapture();
   });
   // 听写进行中，页面让小帮手把 esc 和条上两个按钮的点击截下来（null 是不截了）。
   // 页面给的是按钮在窗口里的位置，小帮手要的是在屏幕上的位置
   ipcMain.on("bar:capture", (_event, regions) => {
     if (regions === null) {
-      helper.release();
+      barHoldingCapture = false;
+      syncEscapeCapture();
       return;
     }
     if (!Array.isArray(regions)) {
       log.error("bar_capture_invalid", { type: typeof regions });
       return;
     }
+    barHoldingCapture = true;
     const origin = bar.getBounds();
     const onScreen = regions.map(({ id, x, y, width, height }) => {
       const rect = { x: origin.x + x, y: origin.y + y, width, height };
@@ -752,6 +769,12 @@ async function main() {
       }
       case "escape":
       case "click":
+        // 卡片开着且条没在录音：Esc 直接关卡片（不用焦点，对齐原版的全局键盘监听）；
+        // 条在录音时以条为准（esc 先取消录音）
+        if (event.event === "escape" && !barHoldingCapture && cardWindow && !cardWindow.isDestroyed()) {
+          closeCard();
+          break;
+        }
         // 只在听写进行中才会有：那时页面让小帮手把它们截下来了
         // 字段不能叫 event：日志这一条的名字就记在 event 里，会被盖掉
         log.info("bar_input", { input: event.event, id: event.id });
@@ -969,6 +992,16 @@ async function main() {
   // 指令的 external 交付：只放行网页和邮件链接，其余协议一律不开
   handle("command:open-external", (_event, target) => {
     if (typeof target !== "string") throw new TypeError("要打开的目标是一个网址");
+    // 启动应用（对齐原版 launchApplicationByName）：目标形如 app:chrome。
+    // 只认白名单（launch-app.mjs）——模型的字符串绝不直接进命令行
+    if (target.startsWith("app:")) {
+      const name = target.slice(4);
+      const launch = launchTargetOf(name);
+      if (launch === null) throw new TypeError(`不认识要启动的应用：${name}`);
+      spawn("cmd", ["/c", "start", "", launch], { detached: true, stdio: "ignore" }).unref();
+      log.info("app_launched", { app: name });
+      return { launched: true };
+    }
     const protocol = new URL(target).protocol;
     if (!["http:", "https:", "mailto:"].includes(protocol)) throw new TypeError(`不放行 ${protocol} 协议的目标`);
     shell.openExternal(target);

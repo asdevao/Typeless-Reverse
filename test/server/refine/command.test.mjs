@@ -126,3 +126,10 @@ test("parseCommandJson：delivery 已知但 content 缺失——绝不把原始 
   assert.equal(blank.delivery, "replace");
   assert.equal(blank.text, "");
 });
+
+test("parseCommandJson：launch 启动应用（对齐原版 launchApplicationByName），target 编码成 app: 前缀、优先于 url", () => {
+  const launched = parseCommandJson('{"delivery":"open","content":"","url":"","launch":"chrome"}');
+  assert.deepEqual(launched, { delivery: "external", text: "chrome", target: "app:chrome" });
+  const both = parseCommandJson('{"delivery":"open","content":"","url":"https://www.baidu.com","launch":"notepad"}');
+  assert.equal(both.target, "app:notepad");
+});

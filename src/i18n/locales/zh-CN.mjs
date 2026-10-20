@@ -326,6 +326,7 @@ export default {
     commandRecording: "询问任何问题 · 说完再按一下 {key} · {esc} 取消",
     commandRecordingNoEsc: "询问任何问题 · 说完再按一下 {key}",
     commandFinishing: "正在思考…",
+    stillThinking: "还在想，稍等…",
     translateFinishing: "翻译成{target}中",
     commandReplied: "答案已弹出通知，并复制到剪贴板",
     commandOpened: "已在系统默认程序中打开",
