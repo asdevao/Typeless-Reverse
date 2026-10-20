@@ -239,7 +239,13 @@ export function createSettings({ refresh }) {
       for (const track of opened.getTracks()) track.stop();
       return;
     }
-    const bars = createVolumeBars({ container: $("microphone-volume") });
+    // 选定的设备已经不在列表里（拔了/休眠消失）：弹窗里没有选中行，也就没有竖条可画，光测不画
+    const container = $("microphone-volume");
+    if (!container) {
+      micMeter = createVolumeMeter({ stream: opened, onVolume: () => {} });
+      return;
+    }
+    const bars = createVolumeBars({ container });
     micMeter = createVolumeMeter({ stream: opened, onVolume: (volume) => bars.setVolume(volume) });
   }
 
