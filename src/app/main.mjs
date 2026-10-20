@@ -1194,11 +1194,12 @@ async function main() {
   }
 
   /** 换麦克风：存下来并推给悬浮条，下一次开麦就用新的。空串/null 当系统默认 */
+  /** 换麦克风：存下来并推给悬浮条，下一次开麦就用新的。空串/null 都当系统默认存成空串（存储层只收文本） */
   function setMicrophoneDevice(wanted) {
-    const deviceId = wanted === null || wanted === undefined || wanted === "" ? null : String(wanted);
-    if (deviceId !== null && deviceId.length > 256) throw new TypeError("deviceId 要是不超过 256 字的文本");
+    const deviceId = wanted === null || wanted === undefined ? "" : String(wanted);
+    if (deviceId.length > 256) throw new TypeError("deviceId 要是不超过 256 字的文本");
     saveSetting(PATHS.settingsFile, "microphoneDeviceId", deviceId);
-    log.info("microphone_changed", { device: deviceId === null ? "default" : "custom" });
+    log.info("microphone_changed", { device: deviceId === "" ? "default" : "custom" });
     tellBar("bar:microphone-device", deviceId);
     setupChanged();
     return {};
