@@ -209,7 +209,26 @@ function render(next) {
     window.speakmore.cardBounds(height).finally(() => {
       if (run !== generation) return;
       setTimeout(() => {
-        if (run === generation) stage.classList.add("shown");
+        if (run === generation) {
+          stage.classList.add("shown");
+          // 临时诊断：渐显时打印实际画出来的关键样式（排查透明度用，查完撤）
+          const painted = getComputedStyle(stage);
+          const card = document.querySelector(".card");
+          console.warn(
+            "card shown:",
+            JSON.stringify({
+              stageOpacity: painted.opacity,
+              cardBackground: card ? getComputedStyle(card).backgroundColor : null,
+              cardBorder: card ? getComputedStyle(card).borderColor : null,
+              bodyBackground: getComputedStyle(document.body).backgroundColor,
+              vars: {
+                surfaceSolid: getComputedStyle(document.documentElement).getPropertyValue("--surface-solid"),
+                surface: getComputedStyle(document.documentElement).getPropertyValue("--surface"),
+                bg: getComputedStyle(document.documentElement).getPropertyValue("--bg"),
+              },
+            }),
+          );
+        }
       }, REVEAL_DELAY_MS);
     });
   };

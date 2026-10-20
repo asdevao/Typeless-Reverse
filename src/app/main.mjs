@@ -575,6 +575,10 @@ async function main() {
     cardWindow.setAlwaysOnTop(true, "screen-saver", 1);
     cardWindow.setFullScreenable(false);
     cardWindow.loadFile(join(sourceDir, "renderer", "card", "card.html"));
+    // 临时诊断：把卡片渲染层的话转进主日志（排查透明度用，查完撤）
+    cardWindow.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+      log.warn("card_console", { level, message: String(message).slice(0, 300), line, source: String(sourceId).slice(-80) });
+    });
     // 光标挪到哪块屏，卡片跟到哪块屏（原版同款 100ms 轮询）
     cardMouseTimer = setInterval(() => {
       if (!cardWindow || cardWindow.isDestroyed()) return;
