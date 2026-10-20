@@ -171,6 +171,7 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
         refine_ms: Math.round(performance.now() - startedAt),
         text_length: outcome.text.length,
         translate: finished.translateTarget !== null,
+        command: finished.command,
         ...(outcome.notice ? { noticed: true } : {}),
       });
       // 后五项在普通听写里实测都是 null，照原样带上，客户端按同一套字段解析。

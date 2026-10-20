@@ -31,6 +31,8 @@ contextBridge.exposeInMainWorld("speakmore", {
   captureBarInput: (regions) => ipcRenderer.send("bar:capture", regions),
   deliver: (payload) => ipcRenderer.invoke("dictation:deliver", payload),
   reportFailure: (payload) => ipcRenderer.invoke("dictation:failed", payload),
+  // 指令会话要用的选中文本：主进程模拟复制抓当前选区（悬浮条在 Space 按下和点 ⌘ 时调）
+  captureSelection: () => ipcRenderer.invoke("dictation:capture-selection"),
 
   onHotkeyChanged: (callback) => ipcRenderer.on("bar:hotkey", (_event, hotkey) => callback(hotkey)),
   onTranslateHotkeyChanged: (callback) =>

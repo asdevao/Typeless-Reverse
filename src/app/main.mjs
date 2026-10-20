@@ -491,6 +491,10 @@ async function main() {
     bar.setIgnoreMouseEvents(true);
     bar.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     bar.loadFile(join(sourceDir, "renderer", "bar", "bar.html"));
+    // 临时诊断：把悬浮条渲染层的话转进主日志（排查组合键链路用，查完撤）
+    bar.webContents.on("console-message", (_event, level, message, line, sourceId) => {
+      log.warn("bar_console", { level, message: String(message).slice(0, 300), line, source: String(sourceId).slice(-80) });
+    });
     return bar;
   }
 
@@ -589,8 +593,9 @@ async function main() {
           onboardingWindow.webContents.send("onboarding:hotkey", { down: event.down });
           break;
         }
-        // 热键不灵时先看这条日志有没有：没有就是小帮手没收到按键（权限或键选错了）
-        log.info("key_event", { event: event.event, down: event.down });
+        // 热键不灵时先看这条日志有没有：没有就是小帮手没收到按键（权限或键选错了）。
+        // key：组合键那次按的是哪个键（Space 是 32）
+        log.info("key_event", { event: event.event, down: event.down, key: event.key });
         const { blocker } = summarizeSetup(currentSetup());
         if (blocker === null) tellBar("input", event);
         else if (event.event === "hotkey" && event.down) notify(blocker);

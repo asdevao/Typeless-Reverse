@@ -241,10 +241,12 @@ const INPUT_EVENTS = {
 };
 
 window.speakmore.onInput((event) => {
+  // 临时诊断：收到的原始事件 + 转换后的状态（排查组合键链路用，查完撤）
+  console.warn("bar onInput:", JSON.stringify(event));
   // ⌘ 的那一下要先抓选中文本（异步）再走结束流程，别的输入照旧直接进状态机
   if (event.event === "click" && event.id === "command") return commandFinish();
-  // 组合键的 Space：状态机会把这次会话转成指令（条件同 machine.mjs 的 OTHER_KEY）；
-  // 趁焦点还在目标窗口，异步抓选中文本补挂给服务端。抓不到（没有选区）就当无选区的指令问答
+  // 组合键的 Space：状态机会把这次会话转成指令；趁焦点还在目标窗口，异步抓选中文本补挂给服务端。
+  // 抓不到（没有选区、剪贴板被占）就当无选区的指令问答，不耽误
   if (
     event.event === "other_key" &&
     event.key === 0x20 &&
@@ -260,6 +262,7 @@ window.speakmore.onInput((event) => {
     return;
   }
   dispatch(typeof type === "string" ? { type } : type);
+  console.warn("bar dispatched:", JSON.stringify({ type: typeof type === "string" ? type : type.type, phase: state.phase, command: state.command, held: state.held }));
 });
 
 /** 组合键转指令时的选中文本抓取：fire-and-forget，抓到就补挂，抓不到拉倒（当无选区问答） */
