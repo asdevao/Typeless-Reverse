@@ -94,6 +94,7 @@ async function refreshSetup() {
   models.render(setup);
   modePicker.render(setup);
   presetPicker.render(setup);
+  history.renderSetup(setup);
   return setup;
 }
 

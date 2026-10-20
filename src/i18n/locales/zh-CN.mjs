@@ -639,7 +639,16 @@ export default {
   },
 
   history: {
-    title: "历史",
+    title: "历史记录",
+    tabAll: "全部",
+    tabDictations: "听写",
+    tabAsk: "问任何问题",
+    deleteAll: "删除所有",
+    deleteAllConfirm: "您所有的本地历史记录将被永久删除，无法恢复。确定删除所有历史记录？",
+    deleteAllError: "删除所有历史记录失败：{reason}",
+    emptyTitle: "尚无口述",
+    emptyDescription: "一旦您在不同应用中进行口述，您的所有口述历史将出现在这里。",
+    privacy: "您的语音口述是私密的。它们仅存储在您的设备上，无法从其他地方访问。",
     empty: "还没有记录 · 按 {keycap} 说第一句",
     loadError: "读不出历史：{reason}",
     today: "今天",

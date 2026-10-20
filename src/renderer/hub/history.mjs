@@ -1,8 +1,9 @@
 import { formatSeconds, formatTokens, formatUsd } from "../../usage/format.mjs";
 import { keycapOf, t } from "../shared/i18n.mjs";
 
-// 历史记录：按天分组（今天、昨天、再往前写日期），一行一条，鼠标移上去才出现复制和详情。
-// 和原版一样一行只有时间和文字；我们多出来的录音时长、模型用时和花费放在详情的悬停提示里。
+// 历史记录（1:1 复刻原版）：胶囊标签页筛选（全部/听写/问任何事）、
+// 保留期下拉和删除全部在头部、按天分组的卡片列表（条目文字+悬停操作）。
+// 保留期和删除全部走设置里已有的 historyRetentionDays 通道。
 
 const $ = (id) => document.getElementById(id);
 
@@ -49,12 +50,23 @@ function detailsOf(row) {
   return lines.join("\n");
 }
 
+/** 标签页筛选：all 全部 | dictations 听写 | commands 问任何事（对齐原版的三分） */
+function matchesTab(row, tab) {
+  if (tab === "all") return true;
+  if (tab === "commands") return row.command === true;
+  return row.command !== true;
+}
+
 export function createHistory() {
   const dayTemplate = $("history-day");
   const rowTemplate = $("history-row");
 
   /** 一次只播一条：点别处的 ▶ 会把上一次的播放器收掉 */
   let playing = null;
+  /** 现在选的标签页 */
+  let activeTab = "all";
+  /** 最近一次拿到的全部条目（标签页筛选在渲染前做，不用重新拉） */
+  let allRows = [];
 
   function toggleAudio(node, row) {
     const existing = node.querySelector("audio");
@@ -89,7 +101,6 @@ export function createHistory() {
       text.textContent = row.error;
       copy.hidden = true;
     } else if (row.refinedText === "") {
-      // 原版的说法：hub__history__item__empty__text
       node.dataset.kind = "silent";
       text.textContent = t("history.silent");
       copy.hidden = true;
@@ -111,12 +122,12 @@ export function createHistory() {
       });
     }
 
-    // 录音回放：有录音文件的条目给 ▶，点按切换一行内嵌播放器（一次只播一条）
+    // 录音回放
     const play = node.querySelector(".play");
     play.hidden = row.audioLocalPath === null;
     play.addEventListener("click", () => toggleAudio(node, row));
 
-    // 失败的条目给 ↻：把存下的录音按当前链路再跑一遍（结果贴出、这条历史更新）
+    // 失败重试
     const retry = node.querySelector(".retry");
     retry.hidden = row.status !== "failed" || row.audioLocalPath === null;
     retry.addEventListener("click", async () => {
@@ -136,31 +147,79 @@ export function createHistory() {
     return node;
   }
 
+  /** 画当前标签页下的条目（按天分组） */
+  function renderList() {
+    const rows = allRows.filter((row) => matchesTab(row, activeTab));
+    $("history-error").hidden = true;
+    $("history-empty").hidden = rows.length > 0;
+
+    const now = new Date();
+    const groups = [];
+    for (const row of rows) {
+      const day = startOfDay(new Date(row.createdAt));
+      const last = groups.at(-1);
+      if (last && last.day.getTime() === day.getTime()) last.rows.push(row);
+      else groups.push({ day, rows: [row] });
+    }
+    $("history-days").replaceChildren(
+      ...groups.map(({ day, rows: dayRows }) => {
+        const node = dayTemplate.content.firstElementChild.cloneNode(true);
+        node.querySelector(".day-title").textContent = dayTitle(day, now);
+        node.querySelector(".entries").replaceChildren(...dayRows.map(renderRow));
+        return node;
+      }),
+    );
+  }
+
+  /** 标签页切换 */
+  for (const tab of document.querySelectorAll(".history-tab")) {
+    tab.addEventListener("click", () => {
+      activeTab = tab.dataset.tab;
+      for (const el of document.querySelectorAll(".history-tab")) el.classList.toggle("active", el === tab);
+      renderList();
+    });
+  }
+
+  /** 删除全部：确认一次再执行（对齐原版的确认弹窗文案） */
+  $("history-delete-all").addEventListener("click", async () => {
+    if (!window.confirm(t("history.deleteAllConfirm"))) return;
+    try {
+      await window.speakmore.historyDeleteAll();
+    } catch (error) {
+      $("history-error").textContent = t("history.deleteAllError", { reason: String(error?.message ?? error) });
+      $("history-error").hidden = false;
+    }
+  });
+
+  /** 保留期下拉：复用设置里的 historyRetentionDays 通道（值和选项照搬） */
+  function renderRetention(setup) {
+    const select = $("history-retention");
+    const choices = ["forever", "1", "7", "30", "90", "365"];
+    const current = setup.historyRetentionDays?.value ?? "forever";
+    select.replaceChildren(
+      ...choices.map((id) => new Option(t(`preferences.retention.${id}`), id, false, id === current)),
+    );
+  }
+
+  $("history-retention").addEventListener("change", async (event) => {
+    try {
+      await window.speakmore.setHistoryRetention(event.target.value);
+    } catch {
+      // 改不了就什么都不说——设置页里还能改
+    }
+  });
+
   return {
     /**
      * @param {{ rows: object[], app: { hotkey: string } }} data
      */
     render({ rows, app }) {
-      $("history-error").hidden = true;
-      $("history-empty").hidden = rows.length > 0;
-      $("history-empty").textContent = t("history.empty", { keycap: keycapOf(app.hotkey) });
+      allRows = rows;
+      renderList();
+    },
 
-      const now = new Date();
-      const groups = [];
-      for (const row of rows) {
-        const day = startOfDay(new Date(row.createdAt));
-        const last = groups.at(-1);
-        if (last && last.day.getTime() === day.getTime()) last.rows.push(row);
-        else groups.push({ day, rows: [row] });
-      }
-      $("history-days").replaceChildren(
-        ...groups.map(({ day, rows: dayRows }) => {
-          const node = dayTemplate.content.firstElementChild.cloneNode(true);
-          node.querySelector(".day-title").textContent = dayTitle(day, now);
-          node.querySelector(".entries").replaceChildren(...dayRows.map(renderRow));
-          return node;
-        }),
-      );
+    renderSetup(setup) {
+      renderRetention(setup);
     },
 
     showError(message) {

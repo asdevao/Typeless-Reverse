@@ -279,12 +279,29 @@
           <p class="plaza-note" id="plaza-note"></p>
         </section>
 
-        <!-- 历史记录：按天分组，一行一条 -->
+        <!-- 历史记录：1:1 复刻原版——标签页筛选、保留期选择、删除全部、按天分组的卡片列表 -->
         <section class="page" data-route="history" aria-labelledby="history-title" hidden>
-          <h1 class="page-title" id="history-title" data-i18n="history.title">History</h1>
+          <div class="history-header">
+            <h1 class="page-title" id="history-title" data-i18n="history.title">History</h1>
+            <div class="history-actions">
+              <select class="select history-retention" id="history-retention"></select>
+              <button type="button" class="icon-button history-delete-all" id="history-delete-all" data-i18n-aria-label="history.deleteAll">
+                <svg class="icon" aria-hidden="true"><use href="#i-close" /></svg>
+              </button>
+            </div>
+          </div>
+          <div class="history-tabs" role="tablist">
+            <button type="button" class="history-tab active" data-tab="all" data-i18n="history.tabAll">All</button>
+            <button type="button" class="history-tab" data-tab="dictations" data-i18n="history.tabDictations">Dictations</button>
+            <button type="button" class="history-tab" data-tab="commands" data-i18n="history.tabAsk">Ask anything</button>
+          </div>
           <p class="problem load-error" id="history-error" role="alert" hidden></p>
-          <p class="empty-state" id="history-empty" hidden></p>
-          <div id="history-days"></div>
+          <div class="history-list" id="history-days"></div>
+          <div class="history-empty" id="history-empty" hidden>
+            <p class="history-empty-title" data-i18n="history.emptyTitle">No dictations yet</p>
+            <p class="history-empty-description" data-i18n="history.emptyDescription">Once you dictate in different apps, your dictation history will appear here.</p>
+          </div>
+          <p class="history-privacy" data-i18n="history.privacy">Your voice dictations are private. They're stored only on your device.</p>
         </section>
 
         <!-- 词典：专有名词热词表（说成的 → 要写成的），转写完自动纠正。CLI（speakmore dict）和这里改的是同一份 -->
@@ -315,8 +332,10 @@
     </template>
     <template id="history-row">
       <li class="entry">
-        <time class="entry-time"></time>
-        <p class="entry-text"></p>
+        <div class="entry-body">
+          <time class="entry-time"></time>
+          <p class="entry-text"></p>
+        </div>
         <div class="entry-actions">
           <button type="button" class="icon-button copy" data-i18n-aria-label="history.copy" data-i18n-title="history.copy">
             <svg class="icon" aria-hidden="true"><use href="#i-copy" /></svg>

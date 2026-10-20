@@ -599,6 +599,106 @@
   color: var(--ink-2);
 }
 
+/* 历史记录页：1:1 复刻原版——头部（标题+保留期+删除全部）、胶囊标签页、按天分组 */
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.history-header .page-title {
+  margin: 0;
+}
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.history-delete-all {
+  color: var(--ink-2);
+}
+
+.history-delete-all:hover {
+  color: var(--problem);
+}
+
+/* 胶囊标签页（对齐原版的 fill.container.tough + 9999px 圆角 + 4px 内边距） */
+.history-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--fill-hover);
+  border-radius: 9999px;
+  margin-bottom: 0.5rem;
+  width: fit-content;
+}
+
+.history-tab {
+  border: none;
+  background: transparent;
+  padding: 8px;
+  min-width: 3rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  line-height: 1rem;
+  text-align: center;
+  color: var(--ink-2);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.history-tab:hover {
+  background: var(--fill-hover);
+}
+
+.history-tab.active {
+  background: var(--surface-solid);
+  color: var(--ink);
+}
+
+/* 空态居中（对齐原版） */
+.history-empty {
+  padding: 4rem 0 2rem;
+  text-align: center;
+}
+
+.history-empty-title {
+  margin: 0 0 0.5rem;
+  font-size: var(--text-heading);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.history-empty-description {
+  margin: 0;
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  max-width: 20rem;
+  margin-inline: auto;
+}
+
+/* 隐私声明（对齐原版底部的 data_private） */
+.history-privacy {
+  margin: 2rem 0 0;
+  padding: 1rem;
+  text-align: center;
+  font-size: var(--text-small);
+  color: var(--ink-2);
+}
+
+/* 条目卡片化（对齐原版的 entry-body 左侧+entry-actions 悬停右侧） */
+.entry-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 /* 按天分组的标题：比一条记录的字重一档，和上一组空开 */
 .day-title {
   margin: 2rem 0.25rem 0.6rem;
@@ -618,7 +718,7 @@
 
 .entry {
   display: grid;
-  grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 0.75rem;
   padding: 0.85rem 1rem;

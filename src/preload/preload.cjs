@@ -101,6 +101,7 @@ contextBridge.exposeInMainWorld("speakmore", {
   setInteractionSounds: (value) => ipcRenderer.invoke("setup:set-interaction-sounds", value),
   setHistoryRetention: (value) => ipcRenderer.invoke("setup:set-history-retention", value),
   historyRetry: (audioId) => ipcRenderer.invoke("history:retry", audioId),
+  historyDeleteAll: () => ipcRenderer.invoke("history:delete-all"),
 
   // 首次引导
   captureHotkey: (capturing) => ipcRenderer.send("onboarding:capture-hotkey", capturing),

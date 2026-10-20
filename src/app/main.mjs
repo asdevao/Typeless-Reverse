@@ -947,8 +947,7 @@ async function main() {
     if (row === null) throw new TypeError(`历史里没有这一条：${audioId}`);
     if (row.audioLocalPath === null || !existsSync(row.audioLocalPath)) {
       throw new TypeError("这条的录音文件已经不在了，没法重试");
-    }
-    if (service === null) throw new TypeError("服务还没起来");
+    }    if (service === null) throw new TypeError("服务还没起来");
     const raw = readFileSync(row.audioLocalPath);
     const audio = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength);
     const outcome = await service.refineAudio(audio, { mimeType: "audio/webm", audioId });
@@ -957,6 +956,19 @@ async function main() {
     historyChanged();
     await helper.paste(text);
     return { text };
+  });
+  // 历史页的"删除所有"：全部条目和记账清空，录音文件一并删掉
+  handle("history:delete-all", () => {
+    const recordings = history.deleteAll();
+    for (const path of recordings) {
+      try {
+        rmSync(path, { force: true });
+      } catch {
+        // 删不掉就留着：数据库里已经没了，孤儿文件不碍事
+      }
+    }
+    historyChanged();
+    return { deleted: true };
   });
   // 设置页的个人词典：列表、增删、CSV 导入（文件选择框在主进程开，读文本交给词典模块解析）
   handle("dict:list", () => loadDictionary(PATHS.dictionaryFile));

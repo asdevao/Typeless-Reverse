@@ -650,6 +650,15 @@ export default {
 
   history: {
     title: "History",
+    tabAll: "All",
+    tabDictations: "Dictations",
+    tabAsk: "Ask anything",
+    deleteAll: "Delete all",
+    deleteAllConfirm: "All your local history will be permanently deleted and cannot be recovered. Delete all history?",
+    deleteAllError: "Failed to delete all history: {reason}",
+    emptyTitle: "No dictations yet",
+    emptyDescription: "Once you dictate in different apps, your dictation history will appear here.",
+    privacy: "Your voice dictations are private. They're stored only on your device.",
     empty: "Nothing yet · press {keycap} to say something",
     loadError: "Couldn't read history: {reason}",
     today: "Today",
