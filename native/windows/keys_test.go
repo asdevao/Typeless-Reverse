@@ -160,3 +160,42 @@ func TestClickReleasedAfterCaptureEndedIsSwallowedButNotReported(t *testing.T) {
 		t.Fatal("不截时的点击被吞了")
 	}
 }
+
+func TestChordSpaceSwallowedWhole(t *testing.T) {
+	s := newState("right_alt")
+	s.onKey(key(vkRMenu, true))
+	// 组合键的 Space 按下：吞掉、报一次带键码的 other_key
+	first := s.onKey(key(vkSpace, true))
+	if !first.swallow {
+		t.Fatalf("组合键的 Space 按下要吞掉：不吞的话系统拼成 Alt+Space 弹窗口系统菜单（白框）")
+	}
+	if got, want := eventsOf(first), []event{{"event": "other_key", "key": uint32(vkSpace)}}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	// 自动重复：吞掉、不再报
+	if repeat := s.onKey(key(vkSpace, true)); !repeat.swallow || len(eventsOf(repeat)) != 0 {
+		t.Fatalf("重复按住的 Space 要吞掉且不再报，got swallow=%v events=%v", repeat.swallow, eventsOf(repeat))
+	}
+	// 松开：也要吞掉（吞就吞完整，别给前台应用留半个事件）
+	if up := s.onKey(key(vkSpace, false)); !up.swallow || len(eventsOf(up)) != 0 {
+		t.Fatalf("吞掉的 Space 松开也要吞掉")
+	}
+	// 热键松开后，普通打字的 Space 照常放行
+	s.onKey(key(vkRMenu, false))
+	if typed := s.onKey(key(vkSpace, true)); typed.swallow {
+		t.Fatalf("没按热键时的 Space 是普通打字，不能吞")
+	}
+	// 先按 Space 再按热键（顺序无关的组合）：Space 的按下放行，松开也要放行
+	other := newState("right_alt")
+	other.onKey(key(vkSpace, true))
+	if pass := other.onKey(key(vkSpace, true)); pass.swallow {
+		t.Fatalf("热键没按住时的 Space 不吞")
+	}
+	hot := other.onKey(key(vkRMenu, true))
+	if len(eventsOf(hot)) != 2 {
+		t.Fatalf("热键按下应顺带报组合（顺序无关），got %v", eventsOf(hot))
+	}
+	if release := other.onKey(key(vkSpace, false)); release.swallow {
+		t.Fatalf("先放行按下的 Space，松开也要放行，不然前台应用 Space 卡住")
+	}
+}

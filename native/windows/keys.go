@@ -55,6 +55,9 @@ type keyState struct {
 	// 现在按着 Space 吗（组合键的另一半）。原版报的是"当前按住的全部键"，
 	// 两键谁先落地都算组合；我们靠这个标志把"先按 Space 再按热键"也认成组合
 	spaceDown bool
+	// 这次按下的 Space 被我们吞了吗：吞了它的松开和自动重复也要吞完整，
+	// 不然前台应用收到没头没尾的半个事件
+	spaceSwallowed bool
 
 	capturing bool
 	regions   []region
@@ -110,7 +113,24 @@ func (s *keyState) onKey(in keyInput) outcome {
 		}
 		return out
 	}
+	// 组合键的 Space：热键按住时按下的，整个吞掉（按下、自动重复、松开）。
+	// 不吞的话系统会拼成 Alt+Space，弹出前台窗口的系统菜单（那个白框）——原版没有白框就是吞了。
+	// 先按 Space 再按热键的那种不吞：按下已经到了前台应用，松开也得放出去，不然 Space 卡住
 	if in.vk == vkSpace && s.hotkey != vkSpace {
+		if in.down && s.hotkeyDown {
+			s.spaceSwallowed = true
+			s.spaceDown = true
+			if !s.reportedOther {
+				s.reportedOther = true
+				return outcome{swallow: true, events: []event{{"event": "other_key", "key": in.vk}}}
+			}
+			return outcome{swallow: true}
+		}
+		if !in.down && s.spaceSwallowed {
+			s.spaceSwallowed = false
+			s.spaceDown = false
+			return outcome{swallow: true}
+		}
 		s.spaceDown = in.down
 	}
 	if in.vk == vkLControl && in.scan == altGrFakeCtrlScan {
