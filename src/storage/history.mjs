@@ -226,7 +226,12 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
     },
     /** 删除全部（历史页的"删除所有"）：所有条目和记账全清，返回录音路径列表（调用方删文件） */
     deleteAll() {
-      return this.purgeOlderThan(new Date(0).toISOString());
+      // 不走 purgeOlderThan（"某个时刻之前"的语义对不上——epoch 之前没有记录）：
+      // 先取出所有录音路径，再全删
+      const paths = db.prepare(`SELECT audio_local_path AS p FROM history WHERE audio_local_path IS NOT NULL`).all();
+      db.prepare(`DELETE FROM model_calls`).run();
+      db.prepare(`DELETE FROM history`).run();
+      return paths.map((row) => row.p).filter((p) => p !== null);
     },
     /**
      * 所有完成了的听写，老的在前，只带首页统计要的几项（src/usage/insights.mjs）：字数、哪天说的要从文字和时间里数。
