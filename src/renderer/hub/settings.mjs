@@ -1,5 +1,6 @@
 import { LOCALES, SYSTEM_LOCALE } from "../../i18n/index.mjs";
 import { t } from "../shared/i18n.mjs";
+import { meterLevels, openMicrophone } from "../shared/level-meter.mjs";
 import { describeError, keyMissing, permissionDenied, permissionText } from "../shared/setup-text.mjs";
 
 // 设置对话框：原版的"设置中心"，左边一列菜单。我们的三页：通用（热键、主题、语言、本机模型的下载源、开机启动）、
@@ -206,6 +207,83 @@ export function createSettings({ refresh }) {
     await refresh();
   });
 
+  // ---------- 通用·麦克风：设备选择 + 实时指示条（对齐原版"选择麦克风"的调试体验） ----------
+
+  let micMeter = null;
+  let micStream = null;
+  /** 第几次开麦：换设备、关对话框都加一，等麦克风回来时对不上号的就是过时了的 */
+  let micRun = 0;
+
+  function stopMicMeter() {
+    micRun += 1;
+    micMeter?.stop();
+    micMeter = null;
+    for (const track of micStream?.getTracks() ?? []) track.stop();
+    micStream = null;
+    $("microphone-meter-bar").style.width = "0%";
+  }
+
+  /** 用当前选中的那台麦克风开一路只测音量：指示条动了就是它能收到声音 */
+  async function startMicMeter() {
+    const run = ++micRun;
+    const deviceId = $("microphone-device").value || null;
+    let opened;
+    try {
+      opened = await openMicrophone(deviceId);
+    } catch {
+      return; // 打不开（设备刚拔了）就让指示条静止：下面的提示文案已经教了换一台
+    }
+    if (run !== micRun) {
+      for (const track of opened.getTracks()) track.stop();
+      return;
+    }
+    micStream = opened;
+    const bar = $("microphone-meter-bar");
+    micMeter = meterLevels(opened, (level) => {
+      // 说话的音量一般只到满格的一两成，放大四倍才看得出在动（和引导页同一个倍数）
+      bar.style.width = `${Math.round(Math.min(1, level * 4) * 100)}%`;
+    });
+  }
+
+  /** 设备清单（要开过一次麦克风才显示得出名字）+ 现在选的是哪台 */
+  async function renderMicrophone(setup) {
+    let devices = [];
+    try {
+      devices = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === "audioinput");
+    } catch {
+      // 枚举不出就只剩系统默认一项
+    }
+    const saved = setup.microphoneDeviceId ?? "";
+    // 存过的设备已经不在了（拔了）：显示回系统默认，但不改存档——插回来还认它
+    const stillThere = saved === "" || devices.some((device) => device.deviceId === saved);
+    $("microphone-device").replaceChildren(
+      ...options(
+        [
+          ["", t("preferences.microphoneDefault")],
+          ...devices.map((device) => [device.deviceId, device.label || t("preferences.microphoneUnknown")]),
+        ],
+        stillThere ? saved : "",
+      ),
+    );
+    // 对话框开着就（重）开一路测音量：换设备、换设置后来刷新都会走到这里
+    if (dialog.open) startMicMeter();
+  }
+
+  $("microphone-device").addEventListener("change", async (event) => {
+    showNote("general-problem", null);
+    showNote("microphone-device-note", null);
+    try {
+      const result = await window.speakmore.setMicrophoneDevice(event.target.value);
+      showNote("microphone-device-note", result.note ?? null);
+      // 保存成功后 refresh 会重渲染并重启指示条，这里不用自己再开一路
+    } catch (error) {
+      showNote("general-problem", t("preferences.microphoneFailed", { reason: describeError(error) }), "problem");
+    }
+    await refresh();
+  });
+
+  dialog.addEventListener("close", stopMicMeter);
+
   $("bar-hint").addEventListener("change", async (event) => {
     showNote("general-problem", null);
     showNote("bar-hint-note", null);
@@ -275,10 +353,13 @@ export function createSettings({ refresh }) {
     open(pane = "general") {
       showPane(pane);
       if (!dialog.open) dialog.showModal();
+      // 麦克风调试跟着对话框走：开着才测（关掉时 close 事件里停）
+      startMicMeter();
     },
 
     render(setup) {
       renderGeneral(setup);
+      renderMicrophone(setup);
       renderPermissions(setup);
       $("about-version").textContent = `v${setup.version}`;
       $("about-home").textContent = setup.home;

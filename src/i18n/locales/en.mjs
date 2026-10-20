@@ -111,6 +111,7 @@ export default {
       language: "Interface language; system follows your Mac",
       historyRetentionDays:
         "How long to keep dictation history: forever keeps everything, a number is days. Expired entries are deleted along with their recordings (on startup and every 6 hours)",
+      microphoneDeviceId: "Which microphone to record with: empty means the system default, otherwise the deviceId from enumerateDevices (picked in Settings)",
     },
     unknown: "There's no setting called {name}. You can change: {names}",
     notText: "must be text",
@@ -657,6 +658,11 @@ export default {
     translateTarget: "Translation target language",
     historyRetention: "History retention",
     historyRetentionFailed: "Not changed: {reason}",
+    microphone: "Microphone",
+    microphoneHint: "Choose the microphone that captures your voice. If the indicator doesn't move, try another microphone.",
+    microphoneDefault: "System default",
+    microphoneUnknown: "Unknown device",
+    microphoneFailed: "Not changed: {reason}",
     retention: {
       forever: "Keep forever",
       "1": "Keep for 1 day",

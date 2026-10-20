@@ -19,6 +19,7 @@ const {
   hotkey: initialHotkey,
   translateHotkey: initialTranslateHotkey,
   translateTarget: initialTranslateTarget,
+  microphoneDeviceId: initialMicrophoneDeviceId,
   barControls,
   barHint,
 } = await window.speakmore.config();
@@ -27,6 +28,8 @@ let hotkey = initialHotkey;
 // 翻译键和目标语言能在设置里当场换（主进程会推过来），留成可变的
 let translateHotkey = initialTranslateHotkey;
 let translateTarget = initialTranslateTarget;
+// 设置里选的麦克风同理：换掉只是记下来，下一次开麦就用新的
+let microphoneDeviceId = initialMicrophoneDeviceId ?? null;
 const voice = new VoiceSocket(serverUrl);
 const ui = createBarUi({
   document,
@@ -51,6 +54,9 @@ window.speakmore.onTranslateHotkeyChanged((next) => {
 window.speakmore.onTranslateTargetChanged((next) => {
   translateTarget = next;
   ui.setTarget(t(`translate.targets.${translateTarget}`));
+});
+window.speakmore.onMicrophoneDeviceChanged((next) => {
+  microphoneDeviceId = next ?? null;
 });
 // 设置里换了语言：悬浮条不重新加载（可能正在听写），换掉翻译，下一句就是新的语言
 window.speakmore.onLocaleChanged((locale) => {
@@ -120,6 +126,7 @@ function start() {
       onChunk: (chunk) => voice.sendChunk(chunk),
       onLevel: ui.level,
       onError: (error) => dispatch({ type: "FAILED", message: describe(error) }),
+      deviceId: microphoneDeviceId,
     });
     // 等麦克风的这一小段时间里用户可能已经取消了
     if (current.cancelled) {

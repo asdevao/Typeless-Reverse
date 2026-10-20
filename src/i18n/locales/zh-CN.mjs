@@ -106,6 +106,7 @@ export default {
       language: "界面用哪种语言；system 是跟随系统",
       historyRetentionDays:
         "听写历史保留多久：forever 永久，数字是天数。到期的条目连录音一起删（启动时和每 6 小时清一遍）",
+      microphoneDeviceId: "录音用哪台麦克风：不填是系统默认，填 enumerateDevices 给的 deviceId（设置页里选）",
     },
     unknown: "没有 {name} 这项设置。能改的有：{names}",
     notText: "要是一段文字",
@@ -647,6 +648,11 @@ export default {
       translateTarget: "翻译目标语言",
       historyRetention: "历史保留",
       historyRetentionFailed: "没改成：{reason}",
+      microphone: "麦克风",
+      microphoneHint: "选择能捕捉到您声音的麦克风。如果指示条没有移动，请尝试其他麦克风。",
+      microphoneDefault: "系统默认",
+      microphoneUnknown: "未知设备",
+      microphoneFailed: "没改成：{reason}",
       retention: {
         forever: "永久保留",
         "1": "保留 1 天",

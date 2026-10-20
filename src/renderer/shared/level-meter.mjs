@@ -4,11 +4,18 @@
 
 /**
  * 打开麦克风。参数照原版（docs/11-audio-recorder.md）：单声道，回声消除、降噪、自动增益全部关掉，
- * 把未加工的声音交给模型
+ * 把未加工的声音交给模型。deviceId：设置里选定的那台（null = 系统默认）
  */
-export const openMicrophone = () =>
+export const openMicrophone = (deviceId = null) =>
   navigator.mediaDevices.getUserMedia({
-    audio: { channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+    audio: {
+      channelCount: 1,
+      echoCancellation: false,
+      noiseSuppression: false,
+      autoGainControl: false,
+      // 空串/null 都当系统默认（不约束设备）
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+    },
   });
 
 /** 每隔这么久报一次音量 */

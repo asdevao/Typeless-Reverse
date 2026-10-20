@@ -13,9 +13,10 @@ const MIME_TYPE = "audio/webm;codecs=opus";
  * @param {(chunk: Blob) => void} handlers.onChunk 每 3 秒一块，结束时还有最后一块
  * @param {(level: number) => void} handlers.onLevel 0–1 的瞬时音量，每 50 ms 一次（悬浮条的声波按这个节奏起波）
  * @param {(error: Error) => void} handlers.onError 录音中途出错
+ * @param {string | null} [handlers.deviceId] 用哪台麦克风（null = 系统默认，设置里选的那台）
  */
-export async function startRecording({ onChunk, onLevel, onError }) {
-  const stream = await openMicrophone();
+export async function startRecording({ onChunk, onLevel, onError, deviceId = null }) {
+  const stream = await openMicrophone(deviceId);
   const recorder = new MediaRecorder(stream, { mimeType: MIME_TYPE, audioBitsPerSecond: 32_000 });
   const chunks = [];
   let cancelled = false;

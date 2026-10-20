@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld("speakmore", {
     ipcRenderer.on("bar:translate-hotkey", (_event, translateHotkey) => callback(translateHotkey)),
   onTranslateTargetChanged: (callback) =>
     ipcRenderer.on("bar:translate-target", (_event, translateTarget) => callback(translateTarget)),
+  onMicrophoneDeviceChanged: (callback) =>
+    ipcRenderer.on("bar:microphone-device", (_event, deviceId) => callback(deviceId)),
   onBarHint: (callback) => ipcRenderer.on("bar:hint", (_event, value) => callback(value)),
 
   // 主窗口：首页、历史记录
@@ -79,6 +81,7 @@ contextBridge.exposeInMainWorld("speakmore", {
   setHotkey: (hotkey) => ipcRenderer.invoke("setup:set-hotkey", hotkey),
   setTranslateHotkey: (translateHotkey) => ipcRenderer.invoke("setup:set-translate-hotkey", translateHotkey),
   setTranslateTarget: (translateTarget) => ipcRenderer.invoke("setup:set-translate-target", translateTarget),
+  setMicrophoneDevice: (deviceId) => ipcRenderer.invoke("setup:set-microphone-device", deviceId),
   commandReply: (answer) => ipcRenderer.invoke("command:reply", answer),
   openExternalTarget: (target) => ipcRenderer.invoke("command:open-external", target),
   dictList: () => ipcRenderer.invoke("dict:list"),

@@ -125,6 +125,19 @@ export const SETTINGS = {
     },
     label: (value) => msg(`preferences.retention.${value}`),
   },
+  microphoneDeviceId: {
+    env: "SPEAKMORE_MICROPHONE_DEVICE_ID",
+    // 麦克风选择：空串 = 系统默认（和 customUrl 一个惯例）；否则是 enumerateDevices 给的 deviceId。
+    // 选定的设备拔了 getUserMedia 会报错，设置页换回默认即可恢复
+    default: "",
+    parse(value) {
+      if (value === null || value === undefined || value === "") return "";
+      const id = String(value);
+      if (id.length > 256) throw new TypeError("deviceId 要是不超过 256 字的文本");
+      return id;
+    },
+    label: (value) => (value === "" ? msg("preferences.microphoneDefault") : value),
+  },
   mode: {
     env: "SPEAKMORE_MODE",
     // 两条链路平级（server/modes.mjs）。原生是 0.6 以前唯一的一条，没选过的人照旧

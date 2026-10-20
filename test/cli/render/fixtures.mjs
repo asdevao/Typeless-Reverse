@@ -48,6 +48,7 @@ export const settings = {
   acceleration: { value: "auto", source: "default" },
   barHint: { value: "on", source: "default" },
   historyRetentionDays: { value: "forever", source: "default" },
+  microphoneDeviceId: { value: "", source: "default" },
   theme: { value: "ink", source: "default" },
   language: { value: "system", source: "default" },
 };

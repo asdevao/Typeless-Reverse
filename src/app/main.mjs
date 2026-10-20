@@ -722,6 +722,8 @@ async function main() {
     // 悬浮条翻译的那次要用：哪个键、翻成哪种（都是 id，页面按界面语言写名字）
     translateHotkey,
     translateTarget,
+    // 设置里选定的麦克风（null = 系统默认）：悬浮条开麦用这一台
+    microphoneDeviceId: resolveSettings({ file: PATHS.settingsFile, env: process.env }).microphoneDeviceId.value,
     barControls,
     barHint: currentBarHint(),
   }));
@@ -818,6 +820,8 @@ async function main() {
         value: resolveSettings({ file: PATHS.settingsFile, env: process.env }).historyRetentionDays.value,
         choices: ["forever", "1", "7", "30", "90", "365"],
       },
+      // 设置页的麦克风调试：选定的是哪台（null = 系统默认），设备清单由页面自己枚举
+      microphoneDeviceId: resolveSettings({ file: PATHS.settingsFile, env: process.env }).microphoneDeviceId.value,
       translateTarget: { value: translateTarget, choices: TRANSLATE_TARGETS },
       theme: { value: theme.id, choices: THEMES.map(({ id }) => id) },
       barHint: currentBarHint(),
@@ -1024,6 +1028,7 @@ async function main() {
   handle("setup:set-translate-hotkey", (_event, wanted) => setTranslateHotkey(wanted));
   handle("setup:set-history-retention", (_event, wanted) => setHistoryRetention(wanted));
   handle("setup:set-translate-target", (_event, wanted) => setTranslateTarget(wanted));
+  handle("setup:set-microphone-device", (_event, wanted) => setMicrophoneDevice(wanted));
   handle("setup:set-theme", (_event, wanted) => {
     saveSetting(PATHS.settingsFile, "theme", wanted);
     reloadTheme();
@@ -1186,6 +1191,17 @@ async function main() {
     }
     const variable = overridingEnv("translateTarget", process.env);
     return variable === null ? {} : { note: msg("notes.envNextLaunch", { variable }) };
+  }
+
+  /** 换麦克风：存下来并推给悬浮条，下一次开麦就用新的。空串/null 当系统默认 */
+  function setMicrophoneDevice(wanted) {
+    const deviceId = wanted === null || wanted === undefined || wanted === "" ? null : String(wanted);
+    if (deviceId !== null && deviceId.length > 256) throw new TypeError("deviceId 要是不超过 256 字的文本");
+    saveSetting(PATHS.settingsFile, "microphoneDeviceId", deviceId);
+    log.info("microphone_changed", { device: deviceId === null ? "default" : "custom" });
+    tellBar("bar:microphone-device", deviceId);
+    setupChanged();
+    return {};
   }
 
   // ---------- 菜单栏、主窗口和首次引导 ----------
