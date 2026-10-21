@@ -79,9 +79,9 @@ export function hintFor(view, { keycap, cancellable, shown = true, translate = f
   }
 }
 
-/** 这个样子下，条上哪几个按钮点得动 */
+/** 这个样子下，条上哪几个按钮点得动（翻译模式的语言胶囊由 bar-ui 按 translate 追加，不在这列） */
 export function controlsIn(view) {
   if (view === View.STARTING) return ["cancel"];
-  if (view === View.RECORDING) return ["cancel", "command", "confirm"];
+  if (view === View.RECORDING) return ["cancel", "confirm"];
   return [];
 }

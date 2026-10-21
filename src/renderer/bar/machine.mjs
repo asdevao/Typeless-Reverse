@@ -91,12 +91,6 @@ export function transition(state, event) {
       if (phase !== Phase.RECORDING) return unchanged(state);
       return { state: { ...state, phase: Phase.FINISHING, held: false, message: null }, actions: [Action.STOP] };
 
-    case "USER_COMMAND":
-      // 点条上的 ⌘：结束这次录音，并把它按指令会话处理（选中文本由宿主在点之前抓好）。
-      // 只有正在录音时点才算数：其他阶段点了当没看见
-      if (phase !== Phase.RECORDING) return unchanged(state);
-      return { state: { ...state, phase: Phase.FINISHING, held: false, command: true, message: null }, actions: [Action.STOP] };
-
     case "MIC_READY":
       return phase === Phase.STARTING ? unchanged({ ...state, phase: Phase.RECORDING }) : unchanged(state);
 

@@ -102,7 +102,7 @@ test("无选区的指令问答：start/end 都是 voice_command，服务端 refi
   assert.equal(seen.commandSelectedText, null);
 });
 
-test("点 ⌘ 的那次：选中文本随 end_audio 补挂，中途转的指令会话服务端也认", async () => {
+test("组合键转指令的那次：选中文本随 end_audio 补挂，中途转的指令会话服务端也认", async () => {
   let seen = null;
   const socket = await start(async (audio, options) => {
     seen = options;

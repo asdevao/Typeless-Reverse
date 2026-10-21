@@ -9,6 +9,7 @@ import {
   ServerType,
 } from "./protocol/protocol.mjs";
 import { parseCommandJson } from "./refine/command-prompt.mjs";
+import { TRANSLATE_TARGETS } from "./refine/translate-prompt.mjs";
 import { RecordingSession } from "./protocol/session.mjs";
 
 export const WS_PATH = "/ws/rt_voice_flow";
@@ -115,6 +116,10 @@ function handleConnection(socket, { refiner, log, maxAudioBytes }) {
         // 指令的那次：end 上带着悬浮条点"指令"按钮时抓好的选中文本；组合键或 ⌘ 中途转的指令会话由 mode 说清
         if (message.commandSelectedText !== null) finished.setCommandSelectedText(message.commandSelectedText);
         if (message.command) finished.markCommand();
+        // 翻译的那次说到一半在悬浮条上换了目标语言：end 带上最新的，翻译以说完那一刻的语言为准
+        if (message.translateTarget !== null && TRANSLATE_TARGETS.includes(message.translateTarget)) {
+          finished.retarget(message.translateTarget);
+        }
         session = null;
         // 整理要等上游一两秒，不能卡住这条连接上后面的消息
         finish(finished).catch((error) => failConnection(error));

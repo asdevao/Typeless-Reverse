@@ -32,7 +32,7 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   const { body } = document;
   const hint = document.getElementById("hint");
   const message = document.getElementById("message");
-  const buttons = { cancel: document.getElementById("cancel"), confirm: document.getElementById("confirm"), command: document.getElementById("command") };
+  const buttons = { cancel: document.getElementById("cancel"), confirm: document.getElementById("confirm"), language: document.getElementById("language") };
   const window = document.defaultView;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -57,8 +57,9 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   let command = false;
   /** 翻译键的短名字（结束翻译那次用它） */
   let translateKeycap = null;
-  /** 目标语言的名字，按界面语言翻好的一段字 */
-  let target = "";
+  /** 这一次会话翻译到哪种语言（id）。录音中点语言按钮换的是"下一次"的：提示说的得是会话开始时
+      锁定的那个，不然"正在翻成 X"和实际贴出来的语言对不上（提示按界面语言现翻，换语言跟着变） */
+  let sessionTargetId = null;
   const wave = createWave({ bars: WAVE_BARS });
   /** 正在听时每帧画一次声波；不在听是 null */
   let waveFrame = null;
@@ -98,7 +99,16 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
   }
 
   function drawHint() {
-    const parts = hintFor(view, { keycap, cancellable: controls, shown: hintShown, translate, translateKeycap, target, command }, t);
+    // 提示里说的目标语言按会话快照现翻（换界面语言也跟着对），不是按钮上最新的那个
+    const parts = hintFor(view, {
+      keycap,
+      cancellable: controls,
+      shown: hintShown,
+      translate,
+      translateKeycap,
+      target: sessionTargetId === null ? "" : t(`translate.targets.${sessionTargetId}`),
+      command,
+    }, t);
     hint.replaceChildren(
       ...parts.map((part) =>
         typeof part === "string" ? part : Object.assign(document.createElement("kbd"), { textContent: part.key }),
@@ -118,14 +128,23 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
     return { id, x, y, width: button.offsetWidth + 2 * HIT_SLOP, height: button.offsetHeight + 2 * HIT_SLOP };
   }
 
+  /** 翻译模式的语言按钮该不该露出来：正在听/正在开始才算 */
+  function drawLanguage() {
+    const shown = translate && (view === View.STARTING || view === View.RECORDING);
+    buttons.language.hidden = !shown;
+  }
+
   /** 这个样子下该截什么就让宿主截什么。和上一次一样就不重复说 */
   function syncCapture() {
-    const ids = controls ? controlsIn(view) : [];
-    const regions = ids.length > 0 ? ids.map(regionOf) : null;
-    const next = regions && JSON.stringify(regions);
+    // 语言按钮（翻译模式才有）与取消/确认一起截
+    const regions = [
+      ...(controls ? controlsIn(view).map(regionOf) : []),
+      ...(controls && translate && !buttons.language.hidden ? [regionOf("language")] : []),
+    ];
+    const next = JSON.stringify(regions);
     if (next === captured) return;
     captured = next;
-    host.capture(regions);
+    host.capture(regions.length > 0 ? regions : null);
   }
 
   function hide() {
@@ -158,6 +177,7 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
       body.dataset.view = next;
       message.textContent = text ?? "";
       drawHint();
+      drawLanguage();
       syncWave();
       if (body.dataset.shown !== "true") {
         host.setVisible(true);
@@ -197,7 +217,9 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
     /** 现在这一次是不是翻译的：提示换翻译的那几句（bar.mjs 在状态机换了状态后调） */
     setTranslate(on) {
       translate = on === true;
+      drawLanguage();
       if (view !== View.HIDDEN) drawHint();
+      syncCapture();
     },
 
     /** 现在这一次是不是指令的：提示换"询问任何问题"那几句（body 上带 data-command，样式可据此区分） */
@@ -212,9 +234,15 @@ export function createBarUi({ document, host, keycap: initialKeycap, t: initialT
       translateKeycap = next;
     },
 
-    /** 目标语言的名字（按界面语言翻好的一段字） */
-    setTarget(name) {
-      target = name;
+    /** 目标语言变了：按钮上的短名当场换（下一次翻译用它） */
+    setTarget(short) {
+      buttons.language.textContent = short;
+    },
+
+    /** 会话开始时锁定的目标语言（id）：提示里"正在翻成…"说的得是这个，不是按钮上最新的 */
+    setSessionTarget(id) {
+      sessionTargetId = id;
+      if (view !== View.HIDDEN) drawHint();
     },
 
     /**

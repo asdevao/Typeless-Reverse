@@ -139,13 +139,23 @@ body[data-shown="false"] .shell {
   background: var(--bar-go);
 }
 
-.command {
+/* 翻译模式的语言按钮：和取消/确认同一个家族的圆钮，写当前语言的短名（en/ja/…），点一下换下一种。
+   条上别的钮是 span，就它是真 button：浏览器给 button 的默认边框和字体得抹掉，不然长得不一样 */
+.control.language {
+  appearance: none;
+  border: none;
+  font: inherit;
+  padding: 0 2px;
   color: var(--bar-ink);
   background: var(--bar-ghost);
+  font-size: var(--text-micro);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
 }
 
-body[data-view="starting"] .command {
-  opacity: 0.35;
+/* 类里的 display 会盖掉浏览器对 [hidden] 的默认隐藏，这里补回来 */
+.control.language[hidden] {
+  display: none;
 }
 
 body[data-controls="false"] .control {

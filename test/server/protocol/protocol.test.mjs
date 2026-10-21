@@ -113,6 +113,7 @@ test("end_audio：要有 audio_id", () => {
     audioId: "abc",
     commandSelectedText: null,
     command: false,
+    translateTarget: null,
   });
   // 组合键或 ⌘ 中途转成指令的会话：end_audio 用 mode 说清（选中文本有就带上）
   const flipped = parseClientMessage(
@@ -120,9 +121,15 @@ test("end_audio：要有 audio_id", () => {
   );
   assert.equal(flipped.command, true);
   assert.equal(flipped.commandSelectedText, null);
+  // 说到一半在悬浮条上换了目标语言：end_audio 带上最新的，翻译以说完那一刻为准
+  const retargeted = parseClientMessage(
+    JSON.stringify({ type: "end_audio", audio_id: "abc", total_duration: 2, mode: "voice_translation", translate_target: "pt" }),
+  );
+  assert.equal(retargeted.translateTarget, "pt");
   rejects(JSON.stringify({ type: "end_audio" }), "invalid_field");
   rejects(JSON.stringify({ type: "end_audio", audio_id: "" }), "invalid_field");
   rejects(JSON.stringify({ type: "end_audio", audio_id: "x".repeat(129) }), "invalid_field");
+  rejects(JSON.stringify({ type: "end_audio", audio_id: "abc", translate_target: "not a tag" }), "invalid_field");
 });
 
 test("不是 JSON、不是对象、类型不认识，分别报不同的错", () => {

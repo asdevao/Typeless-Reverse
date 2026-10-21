@@ -128,7 +128,7 @@ export class VoiceSocket {
    *   text 是成品；notice 是服务端带的一句话（一句 msg，比如 private 模式翻不了时说的原因），没有是 null。
    *   没有人声时 text 是空字符串。delivery / externalTarget 只有指令会话可能有值
    */
-  async finish({ durationSeconds, timeoutMs = REFINE_TIMEOUT_MS, commandSelectedText = null, command = false } = {}) {
+  async finish({ durationSeconds, timeoutMs = REFINE_TIMEOUT_MS, commandSelectedText = null, command = false, translateTarget = null } = {}) {
     const current = this.#current;
     if (!current) throw new Error("还没有开始录音就结束了");
     await current.sending;
@@ -153,6 +153,8 @@ export class VoiceSocket {
             : this.#translateTarget === null
               ? "voice_transcript"
               : "voice_translation",
+        // 翻译的那次说到一半在悬浮条上换了目标语言：带最新的，翻译以说完那一刻为准
+        ...(translateTarget !== null && this.#translateTarget !== null ? { translate_target: translateTarget } : {}),
         ...(this.#commandSelectedText === null ? {} : { command_selected_text: this.#commandSelectedText }),
       }),
     );

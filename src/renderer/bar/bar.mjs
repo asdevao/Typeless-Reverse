@@ -3,6 +3,7 @@
 
 import { LocalizedError, msg, problemOf } from "../../i18n/index.mjs";
 import { keycapOf, localize, setLocale, t } from "../shared/i18n.mjs";
+import { TRANSLATE_TARGETS } from "../../server/refine/translate-prompt.mjs";
 import { createBarUi } from "./bar-ui.mjs";
 import { viewOf, View } from "./bar-view.mjs";
 import { Action, initialState, LONG_PRESS_MS, Phase, transition } from "./machine.mjs";
@@ -30,6 +31,16 @@ let hotkey = initialHotkey;
 // 翻译键和目标语言能在设置里当场换（主进程会推过来），留成可变的
 let translateHotkey = initialTranslateHotkey;
 let translateTarget = initialTranslateTarget;
+
+/** 点语言按钮：换成下一种目标语言（主进程存设置并推回来，按钮和提示当场变）。进行中的这一次不受影响 */
+async function cycleTargetLanguage() {
+  const next = TRANSLATE_TARGETS[(TRANSLATE_TARGETS.indexOf(translateTarget) + 1) % TRANSLATE_TARGETS.length];
+  try {
+    await window.speakmore.setTranslateTarget(next);
+  } catch (error) {
+    console.warn("切换翻译目标语言失败", error);
+  }
+}
 // 设置里选的麦克风同理：换掉只是记下来，下一次开麦就用新的
 let microphoneDeviceId = initialMicrophoneDeviceId ?? null;
 const voice = new VoiceSocket(serverUrl);
@@ -41,7 +52,8 @@ const ui = createBarUi({
 });
 // 翻译的那次：提示里写翻译键的短名字和目标语言的名字（都按界面语言）
 ui.setTranslateKeycap(keycapOf(translateHotkey));
-ui.setTarget(t(`translate.targets.${translateTarget}`));
+ui.setTarget(translateTarget);
+document.getElementById("language").title = t("bar.targetMenu");
 ui.setControls(barControls);
 ui.setHintShown(barHint === "on");
 window.speakmore.onBarHint((value) => ui.setHintShown(value === "on"));
@@ -58,7 +70,7 @@ window.speakmore.onTranslateHotkeyChanged((next) => {
 });
 window.speakmore.onTranslateTargetChanged((next) => {
   translateTarget = next;
-  ui.setTarget(t(`translate.targets.${translateTarget}`));
+  ui.setTarget(translateTarget);
 });
 window.speakmore.onMicrophoneDeviceChanged((next) => {
   microphoneDeviceId = next ?? null;
@@ -69,7 +81,7 @@ window.speakmore.onLocaleChanged((locale) => {
   ui.setTranslator(t, t.text(state.message));
   ui.setKeycap(keycapOf(hotkey));
   ui.setTranslateKeycap(keycapOf(translateHotkey));
-  ui.setTarget(t(`translate.targets.${translateTarget}`));
+  ui.setTarget(translateTarget);
 });
 
 let state = initialState;
@@ -119,6 +131,9 @@ function start() {
     // 指令热键直接开始的指令会话（组合键转的指令要到 Space 那一刻状态机才置位，这里还看不到）
     command: state.command === true,
   };
+  // 会话快照：这一次翻成哪种语言在此锁定。录音中点语言按钮换的是"下一次"的，
+  // 提示（正在翻成…）和实际译文说的得是同一个
+  ui.setSessionTarget(current.translate ? translateTarget : null);
   session = current;
   (async () => {
     // 翻译的那次在 start_audio 里说清要翻成哪种语言（服务端照它换翻译的提示词）；
@@ -167,27 +182,17 @@ function cancel() {
   voice.abandon();
 }
 
-/** 指令的那次：点 ⌘ 时先把选中文本抓下来（焦点还在目标窗口，选区还活着），再走结束流程 */
-async function commandFinish() {
-  if (state.phase !== Phase.RECORDING) return;
-  try {
-    pendingCommandSelection = await window.speakmore.captureSelection();
-  } catch (error) {
-    // 抓不到选中文本（剪贴板被占、权限拦了）就按普通听写收场，别卡住这次录音
-    console.warn("抓取选中文本失败", error);
-    pendingCommandSelection = null;
-  }
-  dispatch({ type: "USER_COMMAND" });
-}
-
+/** 结束录音：停麦、交给服务端整理、把成品交给主进程贴出去 */
 async function stop() {
   clearTimeout(maxDurationTimer);
   const current = session;
   session = null;
-  // 组合键或 ⌘ 转成的指令会话：状态机在 state.command 里记着；点 ⌘ 的那次把抓好的选中文本随 end 带给服务端
+  // 组合键转成的指令会话：状态机在 state.command 里记着；结束时把抓好的选中文本随 end 带给服务端
   const isCommand = state.command === true;
   const commandSelectedText = isCommand ? (pendingCommandSelection ?? null) : null;
   pendingCommandSelection = null;
+  // 翻译以说完那一刻的语言为准：提示（正在翻成…）跟着换成最新的，和实际将用的对上
+  if (state.translate) ui.setSessionTarget(translateTarget);
   let recorded = null;
   let stillThinking = null; // 整理慢时的"还在想"提示定时器
   try {
@@ -203,7 +208,14 @@ async function stop() {
     stillThinking = setTimeout(() => {
       if (state.phase === Phase.FINISHING) ui.show(View.FINISHING, t.text(msg("bar.stillThinking")));
     }, 10_000);
-    const outcome = await voice.finish({ durationSeconds: recorded.durationSeconds, commandSelectedText, command: isCommand, timeoutMs });
+    const outcome = await voice.finish({
+      durationSeconds: recorded.durationSeconds,
+      commandSelectedText,
+      command: isCommand,
+      // 翻译的那次：以说完那一刻的目标语言为准（说到一半点的按钮才算数）
+      ...(state.translate ? { translateTarget } : {}),
+      timeoutMs,
+    });
     clearTimeout(stillThinking);
     // 指令的那次按服务端定的交付方式分流（对齐原版：怎么投递服务端说了算）；听写和翻译照旧贴字
     // 无选区的指令：所有回答都进结果卡片（不再往文档里贴——往文档里贴必须是自己选了文字要改写）。
@@ -280,14 +292,14 @@ const INPUT_EVENTS = {
   // 带上键码（小帮手报的字段叫 key）：状态机靠它认"热键按住时按了 Space"的指令组合
   other_key: (event) => ({ type: "OTHER_KEY", vk: event.key }),
   escape: () => "USER_CANCEL",
-  click: (event) => ({ cancel: "USER_CANCEL", confirm: "USER_CONFIRM", command: "USER_COMMAND" })[event.id],
+  click: (event) => ({ cancel: "USER_CANCEL", confirm: "USER_CONFIRM" })[event.id],
 };
 
 window.speakmore.onInput((event) => {
   // 临时诊断：收到的原始事件 + 转换后的状态（排查组合键链路用，查完撤）
   console.warn("bar onInput:", JSON.stringify(event));
-  // ⌘ 的那一下要先抓选中文本（异步）再走结束流程，别的输入照旧直接进状态机
-  if (event.event === "click" && event.id === "command") return commandFinish();
+  // 语言按钮的点击不走状态机（不结束录音）：换下一种目标语言
+  if (event.event === "click" && event.id === "language") return cycleTargetLanguage();
   // 组合键的 Space：状态机会把这次会话转成指令；趁焦点还在目标窗口，异步抓选中文本补挂给服务端。
   // 抓不到（没有选区、剪贴板被占）就当无选区的指令问答，不耽误
   if (

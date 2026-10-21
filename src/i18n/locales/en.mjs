@@ -336,6 +336,7 @@ export default {
     finishing: "Refining",
     translateOpening: "Opening microphone (translation)…",
     translateRecording: "Press {key} to finish translating · {esc} to cancel",
+    targetMenu: "Click to switch translation target language",
     translateRecordingNoEsc: "Press {key} to finish translating",
     commandOpening: "Ask anything · opening the microphone",
     commandRecording: "Ask anything · press {key} when done · {esc} to cancel",

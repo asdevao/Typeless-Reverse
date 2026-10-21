@@ -326,6 +326,7 @@ export default {
     finishing: "整理中",
     translateOpening: "打开麦克风（翻译）…",
     translateRecording: "再按一下 {key} 完成翻译 · {esc} 取消",
+    targetMenu: "点一下换翻译的目标语言",
     translateRecordingNoEsc: "再按一下 {key} 完成翻译",
     commandOpening: "询问任何问题 · 正在打开麦克风",
     commandRecording: "询问任何问题 · 说完再按一下 {key} · {esc} 取消",

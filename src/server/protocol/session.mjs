@@ -35,6 +35,11 @@ export class RecordingSession {
     return this.#translateTarget;
   }
 
+  /** 翻译的那次说到一半换目标语言（悬浮条上点的）：end_audio 带上最新的换掉，翻译以说完那一刻为准 */
+  retarget(translateTarget) {
+    this.#translateTarget = translateTarget;
+  }
+
   /** 指令的那次：结束前把选中的文本挂上来；普通听写是 null */
   get commandSelectedText() {
     return this.#commandSelectedText;

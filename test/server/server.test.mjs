@@ -263,6 +263,46 @@ test("翻译的那次录音（voice_translation）：整理时带上目标语言
   assert.equal(seen[1].refine.audioId, "t1");
 });
 
+test("翻译说到一半换目标语言（悬浮条上点的）：end_audio 带上最新的，整理用新语言", async () => {
+  const seen = [];
+  const port = await start({
+    async prepare() {},
+    async refine(audio, options) {
+      seen.push({ refine: options });
+      return "Nós nos encontramos amanhã.";
+    },
+  });
+  const client = await connect(port);
+  client.sendJson({ type: "start_audio", audio_id: "t3", mode: "voice_translation", translate_target: "en" });
+  await client.next();
+  await sendChunk(client, "t3", 1, ogg("x"));
+  // 开始时是 en，说完那一刻带的是 pt：以 pt 为准
+  client.sendJson({ type: "end_audio", audio_id: "t3", mode: "voice_translation", translate_target: "pt" });
+  await client.next();
+  const completed = await client.next();
+  assert.equal(completed.V.refined_text, "Nós nos encontramos amanhã.");
+  assert.equal(seen[0].refine.translateTarget, "pt");
+});
+
+test("end_audio 带了不认识的翻译目标语言：不换，照开始时的来", async () => {
+  const seen = [];
+  const port = await start({
+    async prepare() {},
+    async refine(audio, options) {
+      seen.push({ refine: options });
+      return "We'll meet tomorrow.";
+    },
+  });
+  const client = await connect(port);
+  client.sendJson({ type: "start_audio", audio_id: "t4", mode: "voice_translation", translate_target: "en" });
+  await client.next();
+  await sendChunk(client, "t4", 1, ogg("x"));
+  client.sendJson({ type: "end_audio", audio_id: "t4", mode: "voice_translation", translate_target: "xx" });
+  await client.next();
+  await client.next();
+  assert.equal(seen[0].refine.translateTarget, "en");
+});
+
 test("整理交回一句话给用户的提示（private 模式翻译回退原文）时，随成品一起带给客户端", async () => {
   const problem = msg("translate.privateFallback");
   const port = await start({

@@ -203,23 +203,7 @@ test("翻译键上的其余事件和热键同样对待：松开、长按取消�
   assert.deepEqual(combo.state, initialState);
 });
 
-test("录音中点 ⌘：结束录音并标记指令", () => {
-  const { state, steps } = run("KEY_DOWN", "MIC_READY", "USER_COMMAND");
-  assert.deepEqual(steps, [
-    [Action.START, Action.ARM_HOLD_TIMER],
-    [],
-    [Action.STOP],
-  ]);
-  assert.equal(state.phase, Phase.FINISHING);
-  assert.equal(state.command, true);
-});
-
-test("非录音阶段点 ⌘ 不算数", () => {
-  assert.deepEqual(run("USER_COMMAND").steps, [[]]);
-  assert.deepEqual(run("USER_COMMAND").state, initialState);
-});
-
 test("指令失败散场时 command 标记一并清掉", () => {
-  const failed = run("KEY_DOWN", "MIC_READY", "USER_COMMAND", "FAILED");
+  const failed = run("KEY_DOWN", "MIC_READY", { type: "OTHER_KEY", vk: 0x20 }, "FAILED");
   assert.equal(failed.state.command, false);
 });

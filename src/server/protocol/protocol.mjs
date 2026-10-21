@@ -85,10 +85,20 @@ const PARSERS = new Map([
       size: positiveInteger(message, "size", MAX_CHUNK_BYTES),
     }),
   ],
-  [ClientType.END, (message) => ({ type: ClientType.END, audioId: audioIdOf(message), commandSelectedText: commandSelectedTextOf(message), command: (message.mode ?? "voice_transcript") === "voice_command" })],
+  [ClientType.END, (message) => ({ type: ClientType.END, audioId: audioIdOf(message), commandSelectedText: commandSelectedTextOf(message), command: (message.mode ?? "voice_transcript") === "voice_command", translateTarget: endTranslateTargetOf(message) })],
 ]);
 
 const MAX_COMMAND_TEXT_LENGTH = 100_000;
+
+/** end_audio 上带的翻译目标语言（说到一半在悬浮条上换的那种）：没带就是 null（不换），带了就按语言标签校验 */
+function endTranslateTargetOf(message) {
+  const value = message.translate_target;
+  if (value === undefined) return null;
+  if (typeof value !== "string" || value.length > MAX_TARGET_LENGTH || !LANGUAGE_TAG.test(value)) {
+    throw new ProtocolError("invalid_field", `translate_target 要是语言标签（en、zh、pt-BR），收到 ${String(value).slice(0, 64)}`);
+  }
+  return value;
+}
 
 /** end_audio 上带的选中文本（指令的那次）：没带就是 null */
 function commandSelectedTextOf(message) {
