@@ -84,14 +84,9 @@ export function createSettings({ refresh }) {
     );
     $("acceleration").replaceChildren(
       ...options(
-        (setup.acceleration?.choices ?? []).map((id) => [id, t(`accelerations.${id}`)]),
-        setup.acceleration?.value,
-      ),
-    );
-    $("history-retention").replaceChildren(
-      ...options(
-        (setup.historyRetentionDays?.choices ?? []).map((id) => [id, t(`preferences.retention.${id}`)]),
-        setup.historyRetentionDays?.value,
+        // 和 model-source 一样，acceleration 在主进程 setup 的 local 段里（describeModes 并进来的）
+        (setup.local?.acceleration?.choices ?? []).map((id) => [id, t(`accelerations.${id}`)]),
+        setup.local?.acceleration?.value,
       ),
     );
       $("bar-hint").checked = setup.barHint === "on";
@@ -192,18 +187,6 @@ export function createSettings({ refresh }) {
       showNote("acceleration-note", result.note ?? null);
     } catch (error) {
       showNote("general-problem", t("preferences.accelerationFailed", { reason: describeError(error) }), "problem");
-    }
-    await refresh();
-  });
-
-  $("history-retention").addEventListener("change", async (event) => {
-    showNote("general-problem", null);
-    showNote("history-retention-note", null);
-    try {
-      const result = await window.speakmore.setHistoryRetention(event.target.value);
-      showNote("history-retention-note", result.note ?? null);
-    } catch (error) {
-      showNote("general-problem", t("preferences.historyRetentionFailed", { reason: describeError(error) }), "problem");
     }
     await refresh();
   });

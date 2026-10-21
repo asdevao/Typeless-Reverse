@@ -679,8 +679,6 @@ export default {
       hotkey: "快捷键",
       translateHotkey: "翻译热键",
       translateTarget: "翻译目标语言",
-      historyRetention: "历史保留",
-      historyRetentionFailed: "没改成：{reason}",
       microphone: "麦克风",
       microphoneHint: "选择能捕捉到您声音的麦克风。如果指示条没有移动，请尝试其他麦克风。",
       microphoneDefault: "系统默认",

@@ -689,8 +689,6 @@ export default {
     hotkey: "Shortcut",
     translateHotkey: "Translation shortcut",
     translateTarget: "Translation target language",
-    historyRetention: "History retention",
-    historyRetentionFailed: "Not changed: {reason}",
     microphone: "Microphone",
     microphoneHint: "Choose the microphone that captures your voice. If the indicator doesn't move, try another microphone.",
     microphoneDefault: "System default",
