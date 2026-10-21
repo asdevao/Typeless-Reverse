@@ -59,6 +59,8 @@ test("成品：存录音、记历史、贴出去", async () => {
       duration: 4.2,
       audioLocalPath,
       createdAt: "2026-10-13T08:00:00.000Z",
+      // 正常口述不是指令会话，记 0（历史页的"问任何问题"标签靠它筛选）
+      command: 0,
     },
   ]);
   assert.deepEqual(pasted, ["我们后天开会。"]);

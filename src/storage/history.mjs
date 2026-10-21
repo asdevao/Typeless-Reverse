@@ -188,9 +188,11 @@ export function openHistory(dbPath, { readOnly = false } = {}) {
   );
 
   return {
-    /** @param {{ id: string, status: "completed" | "failed", refinedText: string, error: string | null, duration: number, audioLocalPath: string | null, createdAt: string }} entry */
+    /** @param {{ id: string, status: "completed" | "failed", refinedText: string, error: string | null, duration: number, audioLocalPath: string | null, createdAt: string, command?: boolean | 0 | 1 }} entry */
     add(entry) {
-      insert.run({ command: 0, ...entry });
+      // command 容忍布尔（调用方自然写法），库里统一存 0/1
+      const { command, ...rest } = entry;
+      insert.run({ ...rest, command: command === true || command === 1 ? 1 : 0 });
     },
     /**
      * 最近的记录，新的在前。每一条带上它的用量 usage：{ calls, inputTokens, outputTokens, costUsd, latencyMs }，

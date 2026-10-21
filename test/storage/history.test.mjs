@@ -25,6 +25,8 @@ const entry = (overrides = {}) => ({
   duration: 4.2,
   audioLocalPath: "/tmp/a1.webm",
   createdAt: "2026-10-13T08:00:00.000Z",
+  // list() 把库里的 0/1 映射成布尔（历史页的"问任何问题"标签用它筛选）
+  command: false,
   ...overrides,
 });
 
