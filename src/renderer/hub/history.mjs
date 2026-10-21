@@ -61,30 +61,10 @@ export function createHistory() {
   const dayTemplate = $("history-day");
   const rowTemplate = $("history-row");
 
-  /** 一次只播一条：点别处的 ▶ 会把上一次的播放器收掉 */
-  let playing = null;
   /** 现在选的标签页 */
   let activeTab = "all";
   /** 最近一次拿到的全部条目（标签页筛选在渲染前做，不用重新拉） */
   let allRows = [];
-
-  function toggleAudio(node, row) {
-    const existing = node.querySelector("audio");
-    if (existing) {
-      existing.pause();
-      existing.remove();
-      playing = null;
-      return;
-    }
-    for (const audio of document.querySelectorAll(".entry audio")) audio.pause();
-    if (playing !== null) playing.querySelector("audio")?.pause();
-    const audio = document.createElement("audio");
-    audio.controls = true;
-    audio.autoplay = true;
-    audio.src = `speakmore-audio://${row.id}.webm`;
-    node.querySelector(".entry-text").after(audio);
-    playing = node;
-  }
 
   function renderRow(row) {
     const node = rowTemplate.content.firstElementChild.cloneNode(true);
@@ -121,11 +101,6 @@ export function createHistory() {
         }, 1500);
       });
     }
-
-    // 录音回放
-    const play = node.querySelector(".play");
-    play.hidden = row.audioLocalPath === null;
-    play.addEventListener("click", () => toggleAudio(node, row));
 
     // 失败重试
     const retry = node.querySelector(".retry");
