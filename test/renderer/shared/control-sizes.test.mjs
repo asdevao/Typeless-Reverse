@@ -79,6 +79,7 @@ const RADIUS_EXCEPTIONS = [
   ["card/card.css:.answer pre", "代码块的 8px，对齐原版"],
   ["hub/hub.css:.history-tabs", "历史页胶囊标签组的 9999px，对齐原版"],
   ["hub/hub.css:.history-tab", "历史页胶囊标签项的 9999px，对齐原版"],
+  ["hub/hub.css:.shortcuts", "首页快捷键列表的 20px 圆角，对齐原版"],
 ];
 
 test("圆角只用 --radius-*（或者全圆的 50%），例外都写明了缘由", () => {

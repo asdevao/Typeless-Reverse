@@ -621,9 +621,12 @@ export default {
     cache: "Prompt cache {cost}",
     estimate: "Estimated at list prices",
     unpriced: "{models} unpriced; {count} not counted",
-    dictate: "Press to talk",
-    translate: "Press to translate",
-    command: "Hold + Space to ask anything",
+    dictate: "Dictate",
+    dictateDesc: "Messy thoughts → Clear writing",
+    translate: "Translate",
+    translateDesc: "Natural speech → Clear, native writing",
+    command: "Ask anything",
+    commandDesc: "Edit or ask about text",
     // The recognition mode menu next to the title (renderer/hub/mode-picker.mjs); mode names live in plaza.modes
     mode: {
       label: "Recognition",

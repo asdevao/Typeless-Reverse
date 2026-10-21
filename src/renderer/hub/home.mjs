@@ -267,10 +267,9 @@ export function createHome() {
       usage = report;
       renderSpend();
       $("home-keycap").textContent = keycapOf(app.hotkey);
-      // 翻译卡：键帽 + 标题（目标语言跟设置走，名字按界面语言写）
+      // 翻译行：键帽跟设置走；标题/描述由 i18n 静态提供，目标语言只在设置页体现（对齐原版）
       $("home-translate-keycap").textContent = keycapOf(app.translateHotkey);
-      $("home-translate-title").textContent = `${t("home.translate")} → ${t(`translate.targets.${app.translateTarget}`)}`;
-      // 指令卡：组合键 = 听写键按住 + 按一下 Space（跟着听写热键走，换键后这里同步换）
+      // 指令行：组合键 = 听写键按住 + 按一下 Space（跟着听写热键走，换键后这里同步换）
       $("home-command-keycap").textContent = `${keycapOf(app.hotkey)} + Space`;
       $("home-version").textContent = `v${app.version}`;
     },

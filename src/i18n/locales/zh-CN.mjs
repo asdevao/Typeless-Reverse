@@ -611,9 +611,12 @@ export default {
     cache: "提示词缓存 {cost}",
     estimate: "按各家官方标准价估算",
     unpriced: "{models} 无标价，{count} 次未计入",
-    dictate: "按一下说话",
-    translate: "按一下翻译",
-    command: "按住＋空格 问任何事",
+    dictate: "口述",
+    dictateDesc: "杂乱的想法 → 清晰的文字",
+    translate: "翻译",
+    translateDesc: "自然的语言 → 清晰、地道的写作",
+    command: "问任何问题",
+    commandDesc: "编辑或询问文本",
     // 标题右边的识别方式选单（renderer/hub/mode-picker.mjs）；三种方式的名字在 plaza.modes
     mode: {
       label: "识别方式",

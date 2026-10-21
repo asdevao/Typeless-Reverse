@@ -122,6 +122,32 @@
   position: relative;
   overflow-y: auto;
   padding: 3rem 3.5rem 3rem 3rem;
+  /* 滚动条对齐原版：8px 细条、透明轨道、半透明胶囊拇指（颜色由主题给，浅深各一档） */
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: var(--radius-full);
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--ink) 30%, transparent);
+}
+
+.content::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* 内容区最上面一条留给拖窗口。往下滚了以后它变成一条玻璃，滚上去的字在它底下变模糊 */
@@ -537,18 +563,48 @@
   gap: 0.75rem;
 }
 
-/* 口述卡：和别的卡一样的面，主题渐变只铺在键帽上 */
-.dictate {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.8rem 0.9rem;
-  background: var(--surface);
-  border-radius: var(--radius-card);
-  box-shadow: var(--edge), var(--lift);
+/* 快捷键三行列表（对齐原版：圆角 20px 容器，每行左边标题+描述、右边键帽，行间细分隔线） */
+.shortcuts {
+  border-radius: 20px;
+  background: var(--surface-solid);
+  padding: 4px 16px;
+  box-shadow: var(--edge);
 }
 
-.dictate-key {
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.shortcut-row:not(.last) {
+  border-bottom: 1px solid var(--line);
+}
+
+.shortcut-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.shortcut-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: 1rem;
+  color: var(--ink);
+}
+
+.shortcut-desc {
+  margin: 2px 0 0;
+  font-size: var(--text-small);
+  font-weight: var(--weight-regular);
+  line-height: 1.125rem;
+  color: var(--ink-2);
+  word-break: break-word;
+}
+
+.shortcut-key {
   flex: none;
   min-width: 2.75rem;
   padding: 0.3rem 0.55rem;
@@ -560,12 +616,6 @@
   box-shadow:
     inset 0 1px 0 var(--sheen),
     0 2px 6px -2px var(--primary);
-}
-
-.dictate-title {
-  white-space: nowrap;
-  font-weight: var(--weight-semibold);
-  line-height: 1.35;
 }
 
 .version {

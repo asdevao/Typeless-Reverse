@@ -232,18 +232,29 @@
             </div>
 
             <aside class="home-side">
-              <!-- 口述卡：一张小卡，主题渐变只在键帽上 -->
-              <div class="dictate">
-                <kbd class="dictate-key" id="home-keycap"></kbd>
-                <p class="dictate-title" data-i18n="home.dictate">Press to talk</p>
-              </div>
-              <div class="dictate">
-                <kbd class="dictate-key" id="home-translate-keycap"></kbd>
-                <p class="dictate-title" id="home-translate-title"></p>
-              </div>
-              <div class="dictate">
-                <kbd class="dictate-key" id="home-command-keycap"></kbd>
-                <p class="dictate-title" data-i18n="home.command">Hold + Space to ask anything</p>
+              <!-- 快捷键三行列表（对齐原版：每行左边标题+描述、右边键帽，行间细分隔线） -->
+              <div class="shortcuts">
+                <div class="shortcut-row">
+                  <div class="shortcut-text">
+                    <p class="shortcut-title" data-i18n="home.dictate">Dictate</p>
+                    <p class="shortcut-desc" data-i18n="home.dictateDesc">Messy thoughts → Clear writing</p>
+                  </div>
+                  <kbd class="shortcut-key" id="home-keycap"></kbd>
+                </div>
+                <div class="shortcut-row">
+                  <div class="shortcut-text">
+                    <p class="shortcut-title" data-i18n="home.translate">Translate</p>
+                    <p class="shortcut-desc" data-i18n="home.translateDesc">Natural speech → Clear, native writing</p>
+                  </div>
+                  <kbd class="shortcut-key" id="home-translate-keycap"></kbd>
+                </div>
+                <div class="shortcut-row last">
+                  <div class="shortcut-text">
+                    <p class="shortcut-title" data-i18n="home.command">Ask anything</p>
+                    <p class="shortcut-desc" data-i18n="home.commandDesc">Edit or ask about text</p>
+                  </div>
+                  <kbd class="shortcut-key" id="home-command-keycap"></kbd>
+                </div>
               </div>
               <p class="version" id="home-version"></p>
             </aside>

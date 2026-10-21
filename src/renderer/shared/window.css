@@ -11,6 +11,8 @@
   --fill-hover: color-mix(in oklch, var(--ink) 6%, transparent);
   --fill-selected: color-mix(in oklch, var(--ink) 10%, transparent);
   --line: color-mix(in oklch, var(--ink) 8%, transparent);
+  /* 滚动条的拇指：半透明的胶囊，浅色下是灰（原版 border.thick.default 浅色 15%） */
+  --scrollbar-thumb: color-mix(in oklch, var(--ink) 15%, transparent);
 
   /* 主题的渐变：主按钮、口述卡、进度、电平 */
   --gradient: linear-gradient(135deg, var(--primary), var(--glow));
@@ -45,6 +47,8 @@
     --glass-strong: color-mix(in oklch, var(--bg) 78%, transparent);
     --sheen: color-mix(in oklch, var(--ink) 9%, transparent);
     --lift: 0 1px 2px oklch(0 0 0 / 0.3), 0 12px 32px -12px oklch(0 0 0 / 0.5);
+    /* 深色下拇指更淡一点（原版 border.thick.default 深色 10%） */
+    --scrollbar-thumb: color-mix(in oklch, var(--ink) 10%, transparent);
   }
 }
 
