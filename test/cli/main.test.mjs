@@ -1167,7 +1167,7 @@ test("英文：帮助、面板、用错了时的说法都是英文的", async ()
   const { speakmore, output } = harness({ daemon: fakeDaemon({ running: READY }), locale: "en" });
   assert.equal(await speakmore("help"), 0);
   assert.match(output.out, /^Utterly: press a hotkey, speak/);
-  assert.match(output.out, /speakmore theme <name> +Switch theme \(ink Ink \/ cinnabar Cinnabar \/ indigo Indigo\)/);
+  assert.match(output.out, /speakmore theme <name> +Switch theme \(ink Ink \/ cinnabar Cinnabar \/ indigo Indigo \/ cobalt Cobalt\)/);
   assert.match(output.out, /latest 20 by default/);
 
   assert.equal(await speakmore("status"), 0);
