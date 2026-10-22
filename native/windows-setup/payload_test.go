@@ -31,7 +31,7 @@ func fakeSetup(t *testing.T, files map[string]string, mangle func([]byte) []byte
 	if mangle != nil {
 		data = mangle(data)
 	}
-	path := filepath.Join(t.TempDir(), "SpeakMore-Setup-x64.exe")
+	path := filepath.Join(t.TempDir(), "Utterly-Setup-x64.exe")
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		t.Fatal(err)
 	}

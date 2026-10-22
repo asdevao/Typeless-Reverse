@@ -4,12 +4,12 @@
 //   latest                                        一行：最新的版本号，比如 v0.2.0
 //   v0.2.0/speakmore-darwin-arm64.tar.gz          这个版本的包，两种芯片各一个
 //   v0.2.0/speakmore-darwin-arm64.tar.gz.sha256   和 shasum -a 256 的输出同一种格式
-//   v0.2.0/SpeakMore-arm64.dmg                    直接下载的安装包：签了名、过了公证的 SpeakMore.app，两种芯片各一个
-//   v0.2.0/SpeakMore-arm64.dmg.sha256             同上
+//   v0.2.0/Utterly-arm64.dmg                    直接下载的安装包：签了名、过了公证的 Utterly.app，两种芯片各一个
+//   v0.2.0/Utterly-arm64.dmg.sha256             同上
 //   v0.2.0/speakmore-win32-x64.zip                Windows 的包（0.9 起）：解开同样是 app\ 和 runtime\，install.ps1 照着装
 //   v0.2.0/speakmore-win32-x64.zip.sha256         同上
-//   v0.2.0/SpeakMore-Setup-x64.exe                Windows 直接下载的安装程序：身上带着上面那个包和 install.ps1，双击就装
-//   v0.2.0/SpeakMore-Setup-x64.exe.sha256         同上
+//   v0.2.0/Utterly-Setup-x64.exe                Windows 直接下载的安装程序：身上带着上面那个包和 install.ps1，双击就装
+//   v0.2.0/Utterly-Setup-x64.exe.sha256         同上
 //   install.ps1                                   Windows 的安装脚本：irm …/install.ps1 | iex
 
 import { createHash } from "node:crypto";
@@ -18,11 +18,11 @@ import { join } from "node:path";
 
 export const ARCHS = ["arm64", "x64"];
 export const archiveName = (arch) => `speakmore-darwin-${arch}.tar.gz`;
-export const dmgName = (arch) => `SpeakMore-${arch}.dmg`;
+export const dmgName = (arch) => `Utterly-${arch}.dmg`;
 /** Windows 只出 x64 的一个（Windows on ARM 靠系统自带的转译跑它） */
 export const WINDOWS_ARCHIVE = "speakmore-win32-x64.zip";
 /** Windows 直接下载的安装程序（scripts/build/windows-setup.mjs 打的） */
-export const WINDOWS_SETUP = "SpeakMore-Setup-x64.exe";
+export const WINDOWS_SETUP = "Utterly-Setup-x64.exe";
 export const versionDir = (version) => `v${version}`;
 
 /** 下载地址上，这个产品的东西都在这个前缀下面 */

@@ -1,4 +1,4 @@
-# SpeakMore 的 Windows 安装脚本：检查环境、下载、校验、装进 %USERPROFILE%\.speakmore，然后启动。
+# Utterly 的 Windows 安装脚本：检查环境、下载、校验、装进 %USERPROFILE%\.speakmore，然后启动。
 #
 #   irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 #
@@ -7,7 +7,7 @@
 # 装新版本是解进一个新目录、试过能跑再把 current 指过去，不挪、不覆盖已有的任何文件（为什么见下面"安装"一节开头）。
 # 目录以外只加两样，都记在 bin\links 里，speakmore uninstall 照着删：
 #   - 用户的 Path 里加上 .speakmore\bin（新开的终端里敲 speakmore 就找得到）
-#   - 开始菜单里一个"SpeakMore"快捷方式
+#   - 开始菜单里一个"Utterly"快捷方式
 # 升级时另外把指着旧版本的改指到新版本：开机启动那一项，固定到任务栏、发送到桌面的快捷方式副本。
 # 不需要 Node、npm、管理员权限。已经装过的话再运行一次就是升级：程序换成新的，你的东西不动。
 #
@@ -55,7 +55,7 @@
   function Pretty($path) { if ($path.StartsWith($HOME, [StringComparison]::OrdinalIgnoreCase)) { '~' + $path.Substring($HOME.Length) } else { $path } }
 
   # 跑一个外部程序，交出它的输出（标准错误一起）和退出码。临时放宽：5.1 会把标准错误当成异常；
-  # 输出按 UTF-8 读（SpeakMore 写的是 UTF-8，5.1 默认按系统编码读），读完把用户窗口的编码换回去
+  # 输出按 UTF-8 读（Utterly 写的是 UTF-8，5.1 默认按系统编码读），读完把用户窗口的编码换回去
   function Invoke-Native([string]$file, [string[]]$arguments, [hashtable]$environment = @{}) {
     $saved = @{}
     foreach ($name in $environment.Keys) { $saved[$name] = [Environment]::GetEnvironmentVariable($name); [Environment]::SetEnvironmentVariable($name, $environment[$name]) }
@@ -77,18 +77,18 @@
 
   function Test-System {
     $build = [Environment]::OSVersion.Version.Build
-    if ($build -lt $MinBuild) { Fail "Windows (build $build) is too old" "SpeakMore needs Windows 10 version 1809 or newer, or Windows 11." }
+    if ($build -lt $MinBuild) { Fail "Windows (build $build) is too old" "Utterly needs Windows 10 version 1809 or newer, or Windows 11." }
     $arch = $env:PROCESSOR_ARCHITECTURE
     if ($env:PROCESSOR_ARCHITEW6432) { $arch = $env:PROCESSOR_ARCHITEW6432 }
     switch ($arch) {
       'AMD64' { Ok "Windows (build $build), x64" }
       # Windows on ARM 跑得了 x64 的程序（系统自带的转译），本机转写用不上显卡加速
-      'ARM64' { Ok "Windows (build $build), ARM"; Note "SpeakMore is built for x64; it runs here through Windows' x64 emulation." }
-      default { Fail "Unsupported processor: $arch" "SpeakMore is built for 64-bit Windows (x64)." }
+      'ARM64' { Ok "Windows (build $build), ARM"; Note "Utterly is built for x64; it runs here through Windows' x64 emulation." }
+      default { Fail "Unsupported processor: $arch" "Utterly is built for 64-bit Windows (x64)." }
     }
   }
 
-  # 只让自己（和 SYSTEM）进得去：里面会有录音和 key。和 SpeakMore 自己（src/storage/owner-only.mjs）做的一样
+  # 只让自己（和 SYSTEM）进得去：里面会有录音和 key。和 Utterly 自己（src/storage/owner-only.mjs）做的一样
   function Protect-Home($dir) {
     $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $result = Invoke-Native 'icacls' @($dir, '/inheritance:r', '/grant:r', "*${sid}:(OI)(CI)F", '*S-1-5-18:(OI)(CI)F')
@@ -128,7 +128,7 @@
     $script:InstallLock = [Threading.Mutex]::new($false, "Local\speakmore-install-$id")
     # 上一个安装没放开就没了（被强行结束），互斥量算"被丢下"，可以接着用
     try { $script:LockHeld = $script:InstallLock.WaitOne(0) } catch [Threading.AbandonedMutexException] { $script:LockHeld = $true }
-    if (-not $script:LockHeld) { Fail "Another SpeakMore install is running" "Wait for it to finish. Run this again afterwards if you still need to." }
+    if (-not $script:LockHeld) { Fail "Another Utterly install is running" "Wait for it to finish. Run this again afterwards if you still need to." }
   }
   function Exit-Install {
     if ($script:LockHeld) { $script:InstallLock.ReleaseMutex() }
@@ -179,7 +179,7 @@
       Fail "The download server returned a bad version number" "URL: $($script:Base)/latest" "Try again in a bit. If it keeps happening, please open an issue at $RepoUrl/issues."
     }
     if ([version]($version.Substring(1) -replace '[-+].*$', '') -lt $MinVersion) {
-      Fail "This installer can't install $version" "Versions before v$MinVersion are laid out differently." "To go back to one, first run: speakmore uninstall --keep-data" "then run that version's setup: $DownloadUrl/$version/SpeakMore-Setup-x64.exe"
+      Fail "This installer can't install $version" "Versions before v$MinVersion are laid out differently." "To go back to one, first run: speakmore uninstall --keep-data" "then run that version's setup: $DownloadUrl/$version/Utterly-Setup-x64.exe"
     }
     $script:Version = $version
     Ok "Version $version"
@@ -233,7 +233,7 @@
     $result = Invoke-NewCopy @('--version')
     if ($result.Code -ne 0) { Fail "The downloaded app won't run on this PC" $result.Output "Please open an issue at $RepoUrl/issues with your Windows version." }
     $script:NewVersion = $result.Output.Trim()
-    Ok "Unpacked SpeakMore $($script:NewVersion)"
+    Ok "Unpacked Utterly $($script:NewVersion)"
   }
 
   # 用刚下到的那一份程序跑一条命令。让它说英文：下面要靠它说的话判断停没停
@@ -259,11 +259,11 @@
   # 切到新版本：停掉正在跑的（它跑的是旧版本），把 current 指过去，再写启动脚本。只写这两个小文件，不挪、不删任何东西
   function Use-Version {
     $result = Invoke-NewCopy @('stop')
-    if ($result.Code -ne 0) { Fail "Couldn't stop the running SpeakMore" $result.Output "Quit it first, then install again." }
-    if ($result.Output -match 'SpeakMore stopped\.|force-quit') { Ok "Stopped the running SpeakMore"; $script:Stopped = $true }
+    if ($result.Code -ne 0) { Fail "Couldn't stop the running Utterly" $result.Output "Quit it first, then install again." }
+    if ($result.Output -match 'Utterly stopped\.|force-quit') { Ok "Stopped the running Utterly"; $script:Stopped = $true }
 
     try { [IO.File]::WriteAllText($script:CurrentFile, $script:VersionName, [Text.Encoding]::ASCII) } catch {
-      $restart = if ($script:Stopped) { "SpeakMore was stopped; run speakmore to start it again." } else { "" }
+      $restart = if ($script:Stopped) { "Utterly was stopped; run speakmore to start it again." } else { "" }
       Fail "Couldn't switch to the new version" "Another program has $(Pretty $script:CurrentFile) open. Run again in a moment. $restart" "($($_.Exception.Message))"
     }
     $script:Switched = $true
@@ -364,12 +364,12 @@
 
   function Add-Shortcut {
     $programs = [Environment]::GetFolderPath('Programs')
-    $link = Join-Path $programs 'SpeakMore.lnk'
+    $link = Join-Path $programs 'Utterly.lnk'
     $shortcut = (New-Object -ComObject WScript.Shell).CreateShortcut($link)
-    $shortcut.Description = 'SpeakMore: press a hotkey, speak, and polished text is pasted in'
+    $shortcut.Description = 'Utterly: press a hotkey, speak, and polished text is pasted in'
     Set-Shortcut $shortcut
     Add-Link "shortcut $link"
-    Ok "Start menu: SpeakMore"
+    Ok "Start menu: Utterly"
   }
 
   # 固定到任务栏、发送到桌面的是开始菜单那个快捷方式的副本，还指着换下来的版本，旧版本删掉后就打不开了。
@@ -396,19 +396,19 @@
         } catch { Note "Couldn't update the shortcut $(Pretty $file.FullName): $($_.Exception.Message)" }
       }
     }
-    if ($updated -gt 0) { Ok "Pinned shortcuts: SpeakMore $($script:NewVersion)" }
+    if ($updated -gt 0) { Ok "Pinned shortcuts: Utterly $($script:NewVersion)" }
   }
 
   # App 设置里开了开机启动的话，Run 里那一项指着旧版本的程序：改指到新版本，写法和 Electron 一样（程序、参数各加引号）。
   # Electron 读回来认开没开只比程序路径；任务管理器里停用与否另记在 StartupApproved 里，这里不动。只认程序在这个家目录里的
   function Update-LoginItem {
     $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-    $value = (Get-ItemProperty -Path $key -Name 'SpeakMore' -ErrorAction SilentlyContinue).SpeakMore
+    $value = (Get-ItemProperty -Path $key -Name 'Utterly' -ErrorAction SilentlyContinue).Utterly
     if (-not $value) { return }
     $program = if ($value.StartsWith('"')) { $value.Substring(1).Split('"')[0] } else { $value.Split(' ')[0] }
     if (-not $program.StartsWith("$($script:HomeDir.TrimEnd('\'))\", [StringComparison]::OrdinalIgnoreCase)) { return }
-    Set-ItemProperty -Path $key -Name 'SpeakMore' -Value ('"{0}" "{1}"' -f $script:NewElectron, $script:NewApp)
-    Ok "Start at login: SpeakMore $($script:NewVersion)"
+    Set-ItemProperty -Path $key -Name 'Utterly' -Value ('"{0}" "{1}"' -f $script:NewElectron, $script:NewApp)
+    Ok "Start at login: Utterly $($script:NewVersion)"
   }
 
   # ---------- 入口 ----------
@@ -421,7 +421,7 @@
     $script:LocalBase = $script:Base -notmatch '^[a-z]+://'
 
     Write-Host ""
-    Write-Host "  SpeakMore installer"
+    Write-Host "  Utterly installer"
     $requested = if ($env:SPEAKMORE_HOME) { $env:SPEAKMORE_HOME } else { Join-Path $env:USERPROFILE '.speakmore' }
     if (-not [IO.Path]::IsPathRooted($requested)) { Fail "SPEAKMORE_HOME must be an absolute path, not $requested" }
     # 规范成完整的写法（/ 换成 \、去掉 ..）：下面要拿它和开机启动、快捷方式里记的路径比前缀
@@ -451,7 +451,7 @@
     if ($script:InstalledVersion -and $script:InstalledVersion -ne $script:NewVersion) {
       Write-Host "  Upgraded: $($script:InstalledVersion) -> $($script:NewVersion)"
     } else {
-      Write-Host "  Installed SpeakMore $($script:NewVersion)"
+      Write-Host "  Installed Utterly $($script:NewVersion)"
     }
     Note "To remove it: speakmore uninstall deletes all of $(Pretty $script:HomeDir)."
 
@@ -460,7 +460,7 @@
       & $script:Launcher
     } else {
       Write-Host ""
-      Write-Host "  Run speakmore in a new terminal to start, or open SpeakMore from the Start menu."
+      Write-Host "  Run speakmore in a new terminal to start, or open Utterly from the Start menu."
       Write-Host ""
     }
   } catch {

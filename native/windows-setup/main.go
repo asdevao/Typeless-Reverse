@@ -1,4 +1,4 @@
-// SpeakMore 的 Windows 安装程序（SpeakMore-Setup-x64.exe）：双击就装好，装完打开 App 进首次引导。
+// Utterly 的 Windows 安装程序（Utterly-Setup-x64.exe）：双击就装好，装完打开 App 进首次引导。
 //
 // 它身上带着这个版本的程序包和 install.ps1（见 payload.go），解到临时目录，把那里当成下载地址跑 install.ps1：
 // 怎么装只有 install.ps1 这一份，和 PowerShell 里 irm | iex 那一行装出来的一模一样，装的时候也不用联网。
@@ -22,7 +22,7 @@ import (
 const runInstall = "& ([scriptblock]::Create([IO.File]::ReadAllText($env:SPEAKMORE_INSTALL_SCRIPT, [Text.Encoding]::UTF8))); exit $LASTEXITCODE"
 
 func main() {
-	setTitle("SpeakMore Setup")
+	setTitle("Utterly Setup")
 	code := install()
 	if code != 0 {
 		fmt.Print("\n  Press Enter to close this window.")
@@ -67,10 +67,10 @@ func install() int {
 		home = filepath.Join(os.Getenv("USERPROFILE"), ".speakmore")
 	}
 	if err := openApp(home); err != nil {
-		fmt.Printf("  Couldn't open SpeakMore (%v). Open it from the Start menu.\n", err)
+		fmt.Printf("  Couldn't open Utterly (%v). Open it from the Start menu.\n", err)
 		return 0
 	}
-	fmt.Println("  Opening SpeakMore…")
+	fmt.Println("  Opening Utterly…")
 	// 留一会儿让人看见装好了，再关窗口
 	time.Sleep(3 * time.Second)
 	return 0
