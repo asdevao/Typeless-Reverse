@@ -438,12 +438,6 @@ async function main() {
   // ---------- 主题 ----------
 
   let theme = findTheme(SETTINGS.theme.value);
-  /** 深浅跟系统还是锁死（设置里的 themeMode）：nativeTheme 一变，页面的深浅色媒体查询和窗口底色全跟着走 */
-  const applyThemeMode = () => {
-    const mode = resolveSettings({ file: PATHS.settingsFile, env: process.env }).themeMode.value;
-    nativeTheme.themeSource = mode;
-  };
-  applyThemeMode();
   // 每个窗口的预加载脚本一上来就同步来取，赶在页面画出第一帧之前
   ipcMain.on("theme:get", (event) => {
     event.returnValue = themeCss(theme);
@@ -451,7 +445,6 @@ async function main() {
   /** 重新读一遍设置里的主题，开着的窗口当场换。别的设置要重启才生效，主题不用 */
   function reloadTheme() {
     theme = findTheme(resolveSettings({ file: PATHS.settingsFile, env: process.env }).theme.value);
-    applyThemeMode();
     const css = themeCss(theme);
     for (const window of BrowserWindow.getAllWindows()) window.webContents.send("theme:changed", css);
     recolorCaptionButtons();
@@ -1080,10 +1073,6 @@ async function main() {
       interactionSounds: resolveSettings({ file: PATHS.settingsFile, env: process.env }).interactionSounds.value,
       translateTarget: { value: translateTarget, choices: TRANSLATE_TARGETS },
       theme: { value: theme.id, choices: THEMES.map(({ id }) => id) },
-      themeMode: {
-        value: resolveSettings({ file: PATHS.settingsFile, env: process.env }).themeMode.value,
-        choices: ["system", "light", "dark"],
-      },
       barHint: currentBarHint(),
       language: { value: languageSetting, locale },
       // 开机启动登记的是"这个应用"；从终端启动时登记上去的会是 Electron 本身，所以只在装成应用后开放
@@ -1308,17 +1297,6 @@ async function main() {
     setupChanged();
     // 和热键一样：被环境变量盖着时，存是存下了，眼前不会变，要交代一句
     const variable = overridingEnv("theme", process.env);
-    return variable === null ? {} : { note: msg("notes.envRemove", { variable }) };
-  });
-  // 深浅跟系统还是锁死：nativeTheme 一变，页面媒体查询、窗口底色、标题栏按钮全跟着走
-  handle("setup:set-theme-mode", (_event, wanted) => {
-    saveSetting(PATHS.settingsFile, "themeMode", wanted);
-    applyThemeMode();
-    const css = themeCss(theme);
-    for (const window of BrowserWindow.getAllWindows()) window.webContents.send("theme:changed", css);
-    recolorCaptionButtons();
-    setupChanged();
-    const variable = overridingEnv("themeMode", process.env);
     return variable === null ? {} : { note: msg("notes.envRemove", { variable }) };
   });
   handle("setup:set-model-source", (_event, wanted) => {

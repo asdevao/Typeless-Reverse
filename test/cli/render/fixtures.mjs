@@ -51,7 +51,6 @@ export const settings = {
   microphoneDeviceId: { value: "", source: "default" },
   interactionSounds: { value: "on", source: "default" },
   theme: { value: "ink", source: "default" },
-  themeMode: { value: "system", source: "default" },
   language: { value: "system", source: "default" },
 };
 export const noStats = { today: null, total: null };

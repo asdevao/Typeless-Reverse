@@ -65,10 +65,7 @@ export default {
     ink: { name: "墨", describe: "黑白。状态靠形状和动作来说，只有出错才出现颜色" },
     cinnabar: { name: "朱砂", describe: "一种暖红，用在声波和最主要的按钮上" },
     indigo: { name: "靛青", describe: "颜色代表阶段：绿是在听，蓝紫是在整理，琥珀是出了问题" },
-    cobalt: { name: "钴蓝", describe: "照着 Windows 的深浅色配：炭灰底、系统蓝做强调，和系统原生观感一致" },
   },
-
-  themeModes: { system: "跟随系统", light: "浅色", dark: "深色" },
 
   providers: {
     gemini: { name: "Google Gemini", getKey: "去 Google AI Studio 申请" },
@@ -106,7 +103,6 @@ export default {
         "本机模型用不用显卡：auto 有显卡就用，出问题自动退回 CPU；cpu 只用 CPU（显卡驱动有问题、或者想把显卡让给别的程序时）",
       barHint: "悬浮条上方那行操作提示（再按一下 … 完成 · esc 取消）显示不显示：on 显示，off 不显示",
       theme: "界面用哪套主题",
-      themeMode: "深浅跟系统还是锁死：锁深色时整个界面用深色那一组",
       language: "界面用哪种语言；system 是跟随系统",
       historyRetentionDays:
         "听写历史保留多久：forever 永久，数字是天数。到期的条目连录音一起删（启动时和每 6 小时清一遍）",
@@ -726,7 +722,6 @@ export default {
       dictImported: "从 CSV 导入 {count} 条，现在共 {total} 条",
       dictEmpty: "还没有词条。在上面两栏填好后点“加入词典”，或用 CSV 批量导入。",
     theme: "主题",
-    themeMode: "深浅模式",
     language: "语言",
     modelSource: "本地模型下载源",
     acceleration: "本机模型加速",
@@ -736,7 +731,6 @@ export default {
       translateHotkeyFailed: "翻译热键没换成：{reason}",
       translateTargetFailed: "翻译目标没改成：{reason}",
     themeFailed: "主题没换成：{reason}",
-    themeModeFailed: "深浅模式没换成：{reason}",
     languageFailed: "语言没换成：{reason}",
     loginFailed: "开机启动没设上：{reason}",
     sourceFailed: "下载源未能更换：{reason}",

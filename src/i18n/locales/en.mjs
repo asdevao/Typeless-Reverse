@@ -66,10 +66,7 @@ export default {
     ink: { name: "Ink", describe: "Black and white. Shape and motion show the state; color only for errors" },
     cinnabar: { name: "Cinnabar", describe: "A warm red on the wave and the main buttons" },
     indigo: { name: "Indigo", describe: "Color shows the stage: green listening, indigo refining, amber trouble" },
-    cobalt: { name: "Cobalt", describe: "Modeled on Windows light and dark: charcoal surfaces, system blue accents" },
   },
-
-  themeModes: { system: "Follow system", light: "Light", dark: "Dark" },
 
   providers: {
     gemini: { name: "Google Gemini", getKey: "Get one at Google AI Studio" },
@@ -111,7 +108,6 @@ export default {
         "Whether on-device models use the GPU: auto uses it when there is one and falls back to the CPU if it fails; cpu uses only the CPU (for GPU driver trouble, or to leave the GPU to other programs)",
       barHint: "Whether the hint line above the voice bar (press … to finish · esc to cancel) shows: on or off",
       theme: "Which theme the windows use",
-      themeMode: "Whether to follow the system or lock light/dark; locked dark uses the dark set everywhere",
       language: "Interface language; system follows your Mac",
       historyRetentionDays:
         "How long to keep dictation history: forever keeps everything, a number is days. Expired entries are deleted along with their recordings (on startup and every 6 hours)",
@@ -736,7 +732,6 @@ export default {
     dictImported: "Imported {count} from CSV; {total} entries now",
     dictEmpty: "No entries yet. Fill in the two fields and press Add, or import a CSV.",
     theme: "Theme",
-    themeMode: "Dark mode",
     language: "Language",
     modelSource: "Model download source",
     acceleration: "On-device model acceleration",
@@ -746,7 +741,6 @@ export default {
     translateHotkeyFailed: "Translation shortcut not changed: {reason}",
     translateTargetFailed: "Translation target not changed: {reason}",
     themeFailed: "Theme not changed: {reason}",
-    themeModeFailed: "Dark mode not changed: {reason}",
     languageFailed: "Language not changed: {reason}",
     loginFailed: "Couldn't set launch at login: {reason}",
     sourceFailed: "Download source not changed: {reason}",

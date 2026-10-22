@@ -3,12 +3,11 @@
 
 import { LOCALES } from "../i18n/index.mjs";
 import cinnabar from "./cinnabar.mjs";
-import cobalt from "./cobalt.mjs";
 import indigo from "./indigo.mjs";
 import ink from "./ink.mjs";
 
 /** 按这个顺序列给用户看。加一套：照着 ink.mjs 写一个文件，在这里加一行，再给每种语言的文案添上它的名字和介绍 */
-export const THEMES = [ink, cinnabar, indigo, cobalt];
+export const THEMES = [ink, cinnabar, indigo];
 
 /** 没选过时用哪一套 */
 export const DEFAULT_THEME = ink.id;

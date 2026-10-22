@@ -34,7 +34,7 @@ test("id 和每种语言里的名字都不重复；默认的那一套在册；�
   }
   assert.deepEqual(
     THEMES.map((theme) => theme.id),
-    ["ink", "cinnabar", "indigo", "cobalt"],
+    ["ink", "cinnabar", "indigo"],
   );
   assert.equal(findTheme(DEFAULT_THEME).id, DEFAULT_THEME);
   assert.equal(findTheme("cinnabar").id, "cinnabar");
