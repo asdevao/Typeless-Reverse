@@ -127,7 +127,6 @@ const WINDOW_ICON = join(import.meta.dirname, "../../assets/icon.ico");
  * Windows 上标题栏藏起来以后，系统的最小化、最大化、关闭三个按钮叠在页面右上角这么高的一条里。
  * 和主窗口内容区最上面那条拖动区（hub.css 的 .content::before，2.75rem）一样高
  */
-const HOMEPAGE = "https://github.com/zephyr4123/speakmore";
 const CAPTION_HEIGHT = 44;
 /** 这台机器是哪类芯片：本地模型的实测按它挑（models/catalog.mjs 的 CHIPS） */
 const CHIP = chipOf();
@@ -157,7 +156,9 @@ async function askMicrophone() {
 }
 
 // Windows 认应用靠这个 id：任务栏把窗口归到一起、通知写谁发的。和 macOS 应用包的标识一样
-if (WINDOWS) app.setAppUserModelId("com.zephyrxiang.speakmore");
+// Windows 上不设 AppUserModelId：设了之后任务栏按钮的图标由「开始菜单里带相同 id 的快捷方式」决定，
+// 而 install.ps1 建的快捷方式没写这个属性，找不到就显示空白方块（实测）。窗口自己带了 icon，
+// 不设 id 时按钮直接用窗口图标，显示是正常的。要给快捷方式补 AUMID 属性之后这里再恢复。
 
 // 所有东西都放在 paths.mjs 定的那一个目录里，命令行和这里用同一处。Electron 默认会按应用名在
 // ~/Library/Application Support 下另开一个目录放 Chromium 的缓存和状态，把它也收进来，和我们的数据分开放
@@ -390,6 +391,8 @@ async function main() {
   const provider = () => (service ? keys.provider : PROVIDER);
 
   const currentSetup = () => ({
+    // 从来没配置过：settings.json 还没建立。引导用它决定从第一页开始（见 onboarding/steps.mjs）
+    firstRun: !existsSync(PATHS.settingsFile),
     // 缺的是路线里另一家的 key（第一跳交给云端）时点名那一家。按界面语言写它的名字（阿里云百炼，不是日志里的 Bailian）
     providerName: vendorTitle(keys.current.vendor ?? provider()),
     key: keys.current,
@@ -1047,7 +1050,6 @@ async function main() {
   handle("usage:report", () => usageReport(history, { now: new Date() }));
   handle("insights:get", () => insights(history.dictations(), { now: new Date() }));
   handle("app:info", () => ({ version: app.getVersion(), hotkey, translateHotkey, translateTarget }));
-  handle("app:open-homepage", () => shell.openExternal(HOMEPAGE));
   handle("clipboard:write", (_event, text) => {
     if (typeof text !== "string") throw new TypeError("要复制的不是文字");
     clipboard.writeText(text);
