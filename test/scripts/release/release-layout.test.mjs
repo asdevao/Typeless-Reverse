@@ -57,16 +57,16 @@ test("清单：先是这个版本的包、安装包和校验值（Mac 两种芯�
     [
       "speakmore/v1.2.3/speakmore-darwin-arm64.tar.gz",
       "speakmore/v1.2.3/speakmore-darwin-arm64.tar.gz.sha256",
-      "speakmore/v1.2.3/SpeakMore-arm64.dmg",
-      "speakmore/v1.2.3/SpeakMore-arm64.dmg.sha256",
+      "speakmore/v1.2.3/Utterly-arm64.dmg",
+      "speakmore/v1.2.3/Utterly-arm64.dmg.sha256",
       "speakmore/v1.2.3/speakmore-darwin-x64.tar.gz",
       "speakmore/v1.2.3/speakmore-darwin-x64.tar.gz.sha256",
-      "speakmore/v1.2.3/SpeakMore-x64.dmg",
-      "speakmore/v1.2.3/SpeakMore-x64.dmg.sha256",
+      "speakmore/v1.2.3/Utterly-x64.dmg",
+      "speakmore/v1.2.3/Utterly-x64.dmg.sha256",
       "speakmore/v1.2.3/speakmore-win32-x64.zip",
       "speakmore/v1.2.3/speakmore-win32-x64.zip.sha256",
-      "speakmore/v1.2.3/SpeakMore-Setup-x64.exe",
-      "speakmore/v1.2.3/SpeakMore-Setup-x64.exe.sha256",
+      "speakmore/v1.2.3/Utterly-Setup-x64.exe",
+      "speakmore/v1.2.3/Utterly-Setup-x64.exe.sha256",
       "speakmore/install.sh",
       "speakmore/install.ps1",
       "speakmore/latest",
@@ -104,11 +104,11 @@ test("发布目录不齐或对不上：不出清单", () => {
 
   makeRelease();
   rmSync(join(dir, "v1.2.3", dmgName("arm64")));
-  assert.throws(() => planUpload(dir), /少了 v1\.2\.3\/SpeakMore-arm64\.dmg/);
+  assert.throws(() => planUpload(dir), /少了 v1\.2\.3\/Utterly-arm64\.dmg/);
 
   makeRelease();
   writeFileSync(join(dir, "v1.2.3", dmgName("x64")), "签完名又改过");
-  assert.throws(() => planUpload(dir), /SpeakMore-x64\.dmg 和它的 \.sha256 对不上/);
+  assert.throws(() => planUpload(dir), /Utterly-x64\.dmg 和它的 \.sha256 对不上/);
 
   makeRelease();
   writeFileSync(join(dir, "latest"), "最新的\n");
@@ -147,16 +147,16 @@ test("上传：发新版本时旧版本的不碰，安装脚本和 latest 换成
   assert.deepEqual(store.puts, [
     "speakmore/v1.3.0/speakmore-darwin-arm64.tar.gz",
     "speakmore/v1.3.0/speakmore-darwin-arm64.tar.gz.sha256",
-    "speakmore/v1.3.0/SpeakMore-arm64.dmg",
-    "speakmore/v1.3.0/SpeakMore-arm64.dmg.sha256",
+    "speakmore/v1.3.0/Utterly-arm64.dmg",
+    "speakmore/v1.3.0/Utterly-arm64.dmg.sha256",
     "speakmore/v1.3.0/speakmore-darwin-x64.tar.gz",
     "speakmore/v1.3.0/speakmore-darwin-x64.tar.gz.sha256",
-    "speakmore/v1.3.0/SpeakMore-x64.dmg",
-    "speakmore/v1.3.0/SpeakMore-x64.dmg.sha256",
+    "speakmore/v1.3.0/Utterly-x64.dmg",
+    "speakmore/v1.3.0/Utterly-x64.dmg.sha256",
     "speakmore/v1.3.0/speakmore-win32-x64.zip",
     "speakmore/v1.3.0/speakmore-win32-x64.zip.sha256",
-    "speakmore/v1.3.0/SpeakMore-Setup-x64.exe",
-    "speakmore/v1.3.0/SpeakMore-Setup-x64.exe.sha256",
+    "speakmore/v1.3.0/Utterly-Setup-x64.exe",
+    "speakmore/v1.3.0/Utterly-Setup-x64.exe.sha256",
     "speakmore/latest",
   ]);
   assert.deepEqual(store.objects.get("speakmore/v1.2.3/speakmore-darwin-arm64.tar.gz"), old);

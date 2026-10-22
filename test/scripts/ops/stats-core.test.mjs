@@ -24,8 +24,8 @@ const line = ({
 }) => `${t} ${ip} dl.zephyrxiang.com ${path} ${bytes} 22 2 ${status} NULL 12 "${ua}" "(null)" ${method} HTTPS hit 443`;
 const rowsOf = (...specs) => specs.map((spec) => parseLogLine(line(spec)));
 
-const DMG = "/speakmore/v0.9.3/SpeakMore-arm64.dmg";
-const SETUP = "/speakmore/v0.9.3/SpeakMore-Setup-x64.exe";
+const DMG = "/speakmore/v0.9.3/Utterly-arm64.dmg";
+const SETUP = "/speakmore/v0.9.3/Utterly-Setup-x64.exe";
 const BROWSER_WIN = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/141.0";
 const PHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15";
 
@@ -47,7 +47,7 @@ test("日志行：拆出时间、日期、IP、路径（去掉查询串）、字
 
 test("安装包按文件名归类，校验值、脚本、latest 不算包", () => {
   assert.deepEqual(packageKind(DMG), { key: "mac-dmg-arm64", label: "Mac 安装包（Apple 芯片）", platform: "mac" });
-  assert.equal(packageKind("/speakmore/v0.9.3/SpeakMore-x64.dmg").key, "mac-dmg-x64");
+  assert.equal(packageKind("/speakmore/v0.9.3/Utterly-x64.dmg").key, "mac-dmg-x64");
   assert.equal(packageKind("/speakmore/v0.9.3/speakmore-darwin-arm64.tar.gz").key, "mac-cli");
   assert.equal(packageKind("/speakmore/v0.9.3/speakmore-darwin-x64.tar.gz").key, "mac-cli");
   assert.equal(packageKind(SETUP).key, "win-setup");
