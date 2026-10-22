@@ -23,10 +23,12 @@ export const GROUPS = ["model", "setup", "try"];
 export const firstStepOf = (group) => STEPS.find((step) => GROUP_OF[step] === group);
 
 /**
- * 打开引导时从哪一步开始：现在用的那一套什么都不差就从设置开始（模型那几步退回去还能改）；
- * 连着单独启动的服务端时用哪种方式由那边定，也从设置开始
+ * 打开引导时从哪一步开始：第一次用（settings.json 还没建立，哪怕环境变量里有 key 什么都不缺）
+ * 从第一页开始——第一次打开的人要看到完整流程；现在用的那一套什么都不差就从设置开始
+ * （模型那几步退回去还能改）；连着单独启动的服务端时用哪种方式由那边定，也从设置开始
  */
 export function startStep(setup) {
+  if (setup.firstRun === true) return "way";
   if (!setup.switchable) return "permissions";
   return needsOf(planOf(setup), setup).length === 0 ? "permissions" : "way";
 }
