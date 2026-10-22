@@ -69,6 +69,12 @@ export function createSettings({ refresh }) {
         setup.theme?.value,
       ),
     );
+    $("theme-mode").replaceChildren(
+      ...options(
+        (setup.themeMode?.choices ?? []).map((id) => [id, t(`themeModes.${id}`)]),
+        setup.themeMode?.value,
+      ),
+    );
     // 跟随系统，再列出每种语言（名字用它自己的语言写）
     $("language").replaceChildren(
       ...options(
@@ -150,6 +156,18 @@ export function createSettings({ refresh }) {
       showNote("theme-note", result.note ?? null);
     } catch (error) {
       showNote("general-problem", t("preferences.themeFailed", { reason: describeError(error) }), "problem");
+    }
+    await refresh();
+  });
+
+  $("theme-mode").addEventListener("change", async (event) => {
+    showNote("general-problem", null);
+    showNote("theme-mode-note", null);
+    try {
+      const result = await window.speakmore.setThemeMode(event.target.value);
+      showNote("theme-mode-note", result.note ?? null);
+    } catch (error) {
+      showNote("general-problem", t("preferences.themeModeFailed", { reason: describeError(error) }), "problem");
     }
     await refresh();
   });

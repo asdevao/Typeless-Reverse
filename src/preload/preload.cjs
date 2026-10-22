@@ -110,5 +110,6 @@ contextBridge.exposeInMainWorld("speakmore", {
   onOnboardingHotkey: (callback) => ipcRenderer.on("onboarding:hotkey", (_event, key) => callback(key)),
   finishOnboarding: () => ipcRenderer.invoke("onboarding:finish"),
   setTheme: (theme) => ipcRenderer.invoke("setup:set-theme", theme),
+  setThemeMode: (mode) => ipcRenderer.invoke("setup:set-theme-mode", mode),
   setLanguage: (language) => ipcRenderer.invoke("setup:set-language", language),
 });

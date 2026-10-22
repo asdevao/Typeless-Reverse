@@ -291,6 +291,18 @@ export const SETTINGS = {
     },
     label: (value) => msg(`themes.${value}.name`),
   },
+  themeMode: {
+    env: "SPEAKMORE_THEME_MODE",
+    // 深浅跟系统还是锁死：配色一套，深浅跟着这个走（主进程把它设进 nativeTheme.themeSource）
+    default: "system",
+    choices: ["system", "light", "dark"],
+    parse(value) {
+      const id = String(value).trim().toLowerCase();
+      if (!["system", "light", "dark"].includes(id)) throw oneOf(["system", "light", "dark"]);
+      return id;
+    },
+    label: (value) => msg(`themeModes.${value}`),
+  },
   language: {
     env: "SPEAKMORE_LANGUAGE",
     // 跟随系统，认不出系统的语言时用英文（src/i18n）

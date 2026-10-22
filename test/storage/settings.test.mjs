@@ -54,6 +54,7 @@ test("没有文件也没有环境变量时全用默认值", () => {
     acceleration: { value: "auto", source: "default" },
     barHint: { value: "on", source: "default" },
     theme: { value: "ink", source: "default" },
+    themeMode: { value: "system", source: "default" },
     language: { value: "system", source: "default" },
   });
 });
@@ -173,8 +174,8 @@ test("主题：写 id 或写名字都行，存下来的是 id；没有的那一�
     value: "cinnabar",
     source: "env",
   });
-  assert.throws(() => saveSetting(file, "theme", "neon"), said(/ink \/ cinnabar \/ indigo/));
-  assert.deepEqual(SETTINGS.theme.choices, ["ink", "cinnabar", "indigo"]);
+  assert.throws(() => saveSetting(file, "theme", "neon"), said(/ink \/ cinnabar \/ indigo \/ cobalt/));
+  assert.deepEqual(SETTINGS.theme.choices, ["ink", "cinnabar", "indigo", "cobalt"]);
 });
 
 test("带说明的设置项：热键给出键的名字，主题给出主题的名字，按界面语言写；语言的名字用它自己的语言写", () => {
@@ -216,7 +217,8 @@ test("写错时的说法也跟着语言换", () => {
   assert.throws(
     () => resolveSettings({ file, env: { SPEAKMORE_THEME: "neon" } }),
     (error) =>
-      en.text(error.problem) === 'The SPEAKMORE_THEME env var is "neon": must be one of ink / cinnabar / indigo',
+      en.text(error.problem) ===
+      'The SPEAKMORE_THEME env var is "neon": must be one of ink / cinnabar / indigo / cobalt',
   );
 });
 
