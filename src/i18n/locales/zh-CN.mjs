@@ -739,7 +739,6 @@ export default {
     recheck: "重新检查",
     version: "版本",
     dataFolder: "数据目录",
-    source: "源代码",
   },
 
   keyPanel: {

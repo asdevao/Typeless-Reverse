@@ -749,7 +749,6 @@ export default {
     recheck: "Check again",
     version: "Version",
     dataFolder: "Data folder",
-    source: "Source code",
   },
 
   keyPanel: {
