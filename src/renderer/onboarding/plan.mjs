@@ -9,14 +9,14 @@ export const WAYS = ["native", "local", "private"];
 
 const vendorOf = (choice) => choice.split("/")[0];
 
-/** 某种方式里能挑的那几家：原生是收音频的，转写 + 润色是润色的（自定义服务要填地址和模型名，留给模型页） */
+/** 某种方式里能挑的那几家：原生是收音频的，转写 + 润色是润色的（自定义服务排在最后，展开时多填地址和模型名） */
 export function vendorsFor(setup, mode) {
   if (mode === "native") return setup.native.providers;
-  if (mode === "local") return setup.local.vendors.filter(({ id }) => id !== "custom");
+  if (mode === "local") return setup.local.vendors;
   return [];
 }
 
-/** 现在的打算：照现在的设置。润色用的是自定义服务时就是 custom（引导里不列它，点了别家才换） */
+/** 现在的打算：照现在的设置。润色用的是自定义服务时就是 custom（列表里排在最后，展开时多填地址和模型名） */
 export function planOf(setup) {
   return { mode: setup.mode.value, native: vendorOf(setup.native.model), polish: vendorOf(setup.local.polish) };
 }

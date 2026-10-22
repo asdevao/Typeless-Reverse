@@ -91,11 +91,11 @@ export function createSettings({ refresh }) {
     );
       $("bar-hint").checked = setup.barHint === "on";
       $("interaction-sounds").checked = setup.interactionSounds === "on";
-    $("open-at-login").checked = setup.openAtLogin?.enabled === true;
-    $("open-at-login-row").hidden = setup.openAtLogin?.supported !== true;
-  }
+      $("open-at-login").checked = setup.openAtLogin?.enabled === true;
+      $("open-at-login-row").hidden = setup.openAtLogin?.supported !== true;
+    }
 
-  function showNote(id, message, tone = "") {
+    function showNote(id, message, tone = "") {
     $(id).textContent = t.text(message);
     $(id).dataset.tone = tone;
     $(id).hidden = !message;

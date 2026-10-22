@@ -39,7 +39,13 @@ const wayRows = new Map();
 
 async function refresh() {
   setup = await window.speakmore.getSetup();
-  if (applying === 0) plan = planOf(setup);
+  if (applying === 0) {
+    // 自定义服务是"选了先填表单"的例外：主进程设置要等保存时才换过去。照 setup 重算会把选中弹回
+    // 上一家，填了一半的表单也跟着收起——选着 custom 的时候重算，custom 这个选择要留住
+    const customPending = plan?.polish === "custom";
+    plan = planOf(setup);
+    if (customPending) plan.polish = "custom";
+  }
   render();
   return setup;
 }
@@ -333,7 +339,12 @@ function keySection() {
         vendors: (current) => vendorsFor(current, mode),
         hasKey: (current, id) => hasKey(current, mode, id),
         picked: () => (mode === "native" ? plan.native : plan.polish),
-        pick: (id) => changePlan(mode === "native" ? { native: id } : { polish: id }),
+        // 自定义服务不是"点了就换"：那行只是展开表单（polish 只写 custom 不是合法设置值），填完保存才连
+        // 地址、模型一起换上（key-panel 的保存里走 setPolish）。别家照旧当场换
+        pick: (id) =>
+          id === "custom" && mode === "local"
+            ? ((plan = { ...plan, polish: "custom" }), render())
+            : changePlan(mode === "native" ? { native: id } : { polish: id }),
         // 检测时只看这一家：原生换成它的默认模型，润色只验它（第一跳用本机模型，见 app/modes.mjs 的 check）
         checkChanges: (id) => (mode === "native" ? changesOf({ ...plan, native: id }, setup) : { polish: id }),
         refresh,

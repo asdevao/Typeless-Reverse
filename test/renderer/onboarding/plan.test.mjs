@@ -79,14 +79,14 @@ function setup({
   };
 }
 
-test("能挑的几家：原生是收音频的三家；转写 + 润色是润色的几家，自定义服务留给模型页", () => {
+test("能挑的几家：原生是收音频的三家；转写 + 润色是润色的几家，自定义服务排在最后（展开时多填地址和模型名）", () => {
   assert.deepEqual(
     vendorsFor(setup(), "native").map(({ id }) => id),
     ["gemini", "openai", "bailian"],
   );
   assert.deepEqual(
     vendorsFor(setup(), "local").map(({ id }) => id),
-    ["deepseek", "bailian", "moonshot", "zhipu", "minimax"],
+    ["deepseek", "bailian", "moonshot", "zhipu", "minimax", "custom"],
   );
   assert.deepEqual(vendorsFor(setup(), "private"), []);
 });

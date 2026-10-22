@@ -504,6 +504,7 @@ export default {
       paramsTip: '发给这个服务的额外请求参数，如 {"reasoning_effort": "minimal"}，检测和润色都会带上',
       keyKept: "密钥已配置，留空则不更改",
       modelMissing: "请填写模型名",
+      remove: "删除自定义服务",
     },
     empty: { title: "无匹配模型", search: "搜索 “{query}”", clear: "清除筛选" },
     keys: {
@@ -530,6 +531,7 @@ export default {
       keySavedOnly: "密钥已保存",
       customUpdated: "自定义服务设置已更新",
       customChecked: "检测通过 · 启用后生效",
+      customRemoved: "自定义服务已删除",
       keyRemoved: "{platform} 密钥已删除",
       canceled: "已取消下载",
       removed: "{model} 已删除",
@@ -745,6 +747,7 @@ export default {
     verifying: "验证中",
     failed: "未完成：{reason}",
     clipboardEmpty: "剪贴板为空",
+    customKeyRequired: "自定义服务要填 API key（改地址不换 key 的话，去主窗口的模型页改）",
     confirmForget: "删除 {provider} 密钥？",
     confirmForgetInUse: "删除 {provider} 密钥？删除后需重新填写方可使用",
     other: {
@@ -888,6 +891,7 @@ export default {
   speakmore stop                停掉
   speakmore restart             重启
   speakmore status [--json]     看状态：在不在运行、key、系统权限、今天和累计说了多少
+  speakmore guide               重看一遍首次引导（选识别方式、权限、麦克风、热键、试一句）
   speakmore update              更新到最新版本（Mac 上装着 Utterly.app 的话连它一起）。设置、key、历史和录音不动
 
   speakmore history [-n 条数] [--json]
@@ -939,6 +943,7 @@ export default {
     extraArgs: "多了参数 {args}。用法：{usage}",
     positiveInteger: "{flag} 后面要跟一个正整数",
     starting: "正在启动 Utterly…",
+    guide: { opened: "首次引导已打开：跟着走一遍，或点底下的跳过" },
     runRestart: "运行 speakmore restart",
     packagedRelaunch: "在菜单栏点“听写”→“退出”，再打开一次 Utterly.app",
     syntax: {

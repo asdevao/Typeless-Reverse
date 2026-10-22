@@ -514,6 +514,7 @@ export default {
         'Extra request parameters for this service, e.g. {"reasoning_effort": "minimal"}; sent with checks and polishing',
       keyKept: "Key configured; leave blank to keep it",
       modelMissing: "Enter a model name",
+      remove: "Remove custom service",
     },
     empty: { title: "No matching models", search: "Search “{query}”", clear: "Clear filters" },
     keys: {
@@ -539,6 +540,7 @@ export default {
       keySavedOnly: "Key saved",
       customUpdated: "Custom service settings updated",
       customChecked: "Check passed · takes effect when enabled",
+      customRemoved: "Custom service removed",
       keyRemoved: "{platform} key removed",
       canceled: "Download canceled",
       removed: "{model} removed",
@@ -755,6 +757,7 @@ export default {
     verifying: "Verifying",
     failed: "Failed: {reason}",
     clipboardEmpty: "Clipboard is empty",
+    customKeyRequired: "A custom service needs its API key (to change the URL without re-entering the key, use the Models page)",
     confirmForget: "Delete the {provider} key?",
     confirmForgetInUse: "Delete the {provider} key? You'll need to add it again to dictate",
     other: {
@@ -902,6 +905,7 @@ export default {
   speakmore stop                Stop
   speakmore restart             Restart
   speakmore status [--json]     Status: running or not, key, system permissions, how much you said today and in total
+  speakmore guide               Reopen the first-run guide (choose a mode, permissions, microphone, hotkey, try a phrase)
   speakmore update              Update to the latest version (on a Mac, Utterly.app too if you have it). Settings, keys, history, and recordings are kept
 
   speakmore history [-n count] [--json]
@@ -955,6 +959,7 @@ export default {
     extraArgs: "Unexpected argument {args}. Usage: {usage}",
     positiveInteger: "{flag} needs a positive integer",
     starting: "Starting Utterly…",
+    guide: { opened: "First-run guide opened: follow along, or use Skip at the bottom" },
     runRestart: "run speakmore restart",
     packagedRelaunch: "click the Utterly menu bar icon → Quit Utterly, then open Utterly.app again",
     syntax: {

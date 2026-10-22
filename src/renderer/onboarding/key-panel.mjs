@@ -80,6 +80,29 @@ export function createKeyPanel(
     autocomplete: "off",
     spellcheck: "false",
   });
+  // 自定义服务比别家多两格：服务地址和模型名（额外参数不进引导，去模型页改）。预填只在切到它时做一次，
+  // 用户改过就不动（render 每次都来，照值重摆会打字打到一半被换掉）
+  const customUrl = h("input", {
+    type: "url",
+    class: "key-input",
+    autocomplete: "off",
+    spellcheck: "false",
+    placeholder: t("plaza.custom.urlPlaceholder"),
+    "aria-label": t("plaza.custom.url"),
+  });
+  const customModel = h("input", {
+    class: "key-input",
+    autocomplete: "off",
+    spellcheck: "false",
+    placeholder: t("plaza.custom.modelPlaceholder"),
+    "aria-label": t("plaza.custom.model"),
+  });
+  const customFields = h(
+    "div",
+    { class: "custom-fields", hidden: true },
+    h("label", { class: "key-field" }, svg("i-cloud"), customUrl),
+    h("label", { class: "key-field" }, svg("i-letter-text"), customModel),
+  );
   const pasteButton = h(
     "button",
     {
@@ -95,6 +118,8 @@ export function createKeyPanel(
   const form = h(
     "form",
     { class: "key-form", novalidate: true, onsubmit: save },
+    // 自定义服务：地址和模型名在上，key 独占下一行（框里还有粘贴按钮，挤一行提示文字显示不完）
+    customFields,
     h("label", { class: "key-field" }, svg("i-key-round"), input, pasteButton),
     saveButton,
   );
@@ -115,12 +140,6 @@ export function createKeyPanel(
     svg("i-external-link"),
   );
   const replaceButton = h("button", { type: "button", class: "key-link", onclick: toggleReplace });
-  const forgetButton = h("button", {
-    type: "button",
-    class: "key-link",
-    text: t("plaza.keys.remove"),
-    onclick: forget,
-  });
   const stateRow = h("div", { class: "key-state-row" }, state, checkButton);
   const body = h(
     "div",
@@ -130,7 +149,7 @@ export function createKeyPanel(
     form,
     keyProblem,
     keyNote,
-    h("p", { class: "links" }, keyPage, replaceButton, forgetButton),
+    h("p", { class: "links" }, keyPage, replaceButton),
   );
   const list = h("div", { class: "vendor-list", role: "radiogroup", "aria-label": label });
   container.replaceChildren(list);
@@ -178,12 +197,41 @@ export function createKeyPanel(
     input.value = "";
     show(keyProblem, null);
     show(keyNote, null);
+    // 切到自定义服务：两格先摆上设置里存的（没有就空着），改过字就不重摆
+    if (id === "custom") prefillCustom(latest);
     pick(id);
     // 点选了一家：有 key 就当场查一次它现在能不能用
     if (hasKey(latest, id)) check();
   }
 
-  /** 查一次选中的那家：拿它的 key 发一个最小的请求，不换掉正在用的 */
+  /** 设置里存的自定义服务（没配过是空串）。照 model-plaza 的 plaza.chosen 切出来 */
+  function storedCustom(setup) {
+    const { polish, customUrl: url, customParams: params } = setup?.plaza?.chosen ?? {};
+    return { model: polish?.startsWith("custom/") ? polish.slice("custom/".length) : "", url: url ?? "", params: params ?? "" };
+  }
+
+  /** 自定义服务那两格现在写的字 */
+  const customTyped = () => ({ url: customUrl.value.trim(), model: customModel.value.trim() });
+
+  /** 自定义服务连地址、模型名一起交的设置（polish 写成 custom/模型名；额外参数不进引导，没给的照设置里的）。
+   *  格子里没填的回退设置里存的（检测一把已存的服务时不用重新抄一遍地址和模型名）；两处都没有就是 {} */
+  function customChanges() {
+    const typed = customTyped();
+    const stored = storedCustom(latest);
+    const model = typed.model || stored.model;
+    const url = typed.url || stored.url;
+    if (model === "") return {};
+    return { polish: `custom/${model}`, ...(url === "" ? {} : { customUrl: url }) };
+  }
+
+  function prefillCustom(setup) {
+    const stored = storedCustom(setup);
+    // 只填空着的格子：填了一半切走又切回来的，自己写的内容不能被预填冲掉
+    if (customUrl.value === "") customUrl.value = stored.url;
+    if (customModel.value === "") customModel.value = stored.model;
+  }
+
+  /** 查一次选中的那家：拿它的 key 发一个最小的请求，不换掉正在用的。自定义服务连两格里的地址、模型名一起验 */
   async function check() {
     const id = picked();
     const ticket = {};
@@ -191,7 +239,18 @@ export function createKeyPanel(
     render(latest);
     let result;
     try {
-      result = await window.speakmore.checkModel(mode, checkChanges(id));
+      if (id === "custom") {
+        const extra = customChanges();
+        // 地址和模型名一处都没有：检测无从发起，提示去填，不发非法请求
+        if (extra.polish === undefined) {
+          checks.set(id, { tone: "problem", text: t("plaza.custom.modelMissing"), ticket });
+          render(latest);
+          return;
+        }
+        result = await window.speakmore.checkModel(mode, { ...checkChanges(id), ...extra });
+      } else {
+        result = await window.speakmore.checkModel(mode, checkChanges(id));
+      }
     } catch (error) {
       result = { ok: false, problem: t("keyPanel.failed", { reason: describeError(error) }) };
     }
@@ -234,11 +293,14 @@ export function createKeyPanel(
     state.textContent = said?.[0] ?? "";
     state.dataset.tone = said?.[1] ?? "";
     // 环境变量和外部服务端的 key 不归这里管，不提供"删除"
-    forgetButton.hidden = (holding ? setup.key.source : vendor.key) !== "stored";
     const editable = setup.key.source !== "external";
     // 有 key 的不摆输入框，点"更换"才出来；没有或者不能用的直接摆出来
     const keyed = hasKey(setup, vendor.id);
     form.hidden = !editable || (keyed && !replacing);
+    // 自定义服务多一组（地址、模型名）；保存中一并锁住
+    customFields.hidden = vendor.id !== "custom";
+    customUrl.disabled = !editable || saving;
+    customModel.disabled = !editable || saving;
     replaceButton.hidden = !editable || !keyed;
     replaceButton.textContent = t(replacing ? "plaza.keys.cancel" : "plaza.keys.replace");
     input.disabled = !editable || saving;
@@ -259,7 +321,18 @@ export function createKeyPanel(
     if (saving) return;
     const id = picked();
     const value = input.value;
-    // 服务正拿着这家的 key：当场换上；别家的只存下（拿它自己的默认模型验过）
+    // 自定义服务：地址和模型名一起交（模型名写在 polish 里）；引导里 key 必填，改地址不重贴 key 的走模型页
+    if (id === "custom") {
+      const typed = customTyped();
+      if (value.trim() === "") {
+        show(keyProblem, t("keyPanel.customKeyRequired"));
+        return;
+      }
+      if (typed.model === "") {
+        show(keyProblem, t("plaza.custom.modelMissing"));
+        return;
+      }
+    }
     const holding = id === latest.provider?.id;
     saving = true;
     saveButton.replaceChildren(svg("i-loader-circle", "icon spin"), t("keyPanel.verifying"));
@@ -267,13 +340,18 @@ export function createKeyPanel(
     show(keyNote, null);
     render(latest);
     try {
-      const result = await (holding ? window.speakmore.saveKey(value) : window.speakmore.saveKey(value, id, {}));
+      const changes = id === "custom" ? customChanges() : {};
+      const result = await (holding ? window.speakmore.saveKey(value) : window.speakmore.saveKey(value, id, changes));
       if (result.ok) {
         input.value = "";
         replacing = false;
         // 换了 key：之前查的那次说的是旧的那把
         checks.delete(id);
         show(keyNote, result.note ?? null);
+        // 自定义服务：key 存下了，再把地址、模型一起换上（润色当场切到它，别只存着不用）
+        if (id === "custom" && changes.polish) {
+          await window.speakmore.setPolish(changes.polish, { customUrl: changes.customUrl });
+        }
         onSaved();
       } else show(keyProblem, result.problem);
     } catch (error) {
@@ -294,17 +372,6 @@ export function createKeyPanel(
     show(keyProblem, null);
     input.value = text;
     input.focus();
-  }
-
-  async function forget() {
-    const id = picked();
-    const inUse = id === latest.provider?.id;
-    const question = t(inUse ? "keyPanel.confirmForgetInUse" : "keyPanel.confirmForget", { provider: nameOf(id) });
-    if (!window.confirm(question)) return;
-    await window.speakmore.forgetKey(id);
-    checks.delete(id);
-    replacing = false;
-    await refresh();
   }
 
   function toggleReplace() {

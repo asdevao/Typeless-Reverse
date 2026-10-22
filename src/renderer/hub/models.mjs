@@ -214,6 +214,12 @@ export function createModels({ refresh, pickMode }) {
   /** 润色正在交给自定义服务 */
   const customInUse = () => setup.plaza.mode === "local" && setup.plaza.chosen.polish.startsWith("custom/");
 
+  /** 自定义服务槽位里填过东西（地址或模型名）：填过就能删，不然"删除服务"按钮没意义 */
+  function customConfigured() {
+    const { url, model } = storedCustom();
+    return url !== null || model !== "";
+  }
+
   /**
    * 自定义服务已经有 key 时改它的地址、模型名、额外参数：正在用它就当场换上（同启用，key 在后台验），
    * 没在用就拿现有的 key 检测一下；填的留在这次的表单里，启用时一起交
@@ -1044,7 +1050,23 @@ export function createModels({ refresh, pickMode }) {
           draw();
         },
       }),
-      platform.key === "stored" &&
+      // 自定义服务那行是"删除服务"：key、地址、参数一起清（光删 key 的话配置还挂在货架上，删不干净）；
+      // key 存过、或者槽位里填过东西（地址/模型名）就能删
+      custom && (platform.key === "stored" || customConfigured()) ?
+        h("button", {
+          type: "button",
+          class: "button ghost",
+          text: t("plaza.custom.remove"),
+          onclick: () =>
+            act(key, () => window.speakmore.removeCustomService(), {
+              done: () => {
+                state.openKey = null;
+                state.custom = { form: null, draft: null };
+                toast(t("plaza.toast.customRemoved"));
+              },
+            }),
+        }) :
+      !custom && platform.key === "stored" &&
         h("button", {
           type: "button",
           class: "button ghost",

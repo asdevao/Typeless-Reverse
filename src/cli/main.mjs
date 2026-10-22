@@ -28,7 +28,7 @@ import { config, settings, theme } from "./commands/config.mjs";
 import { dict } from "./commands/dict.mjs";
 import { DEFAULT_HISTORY_LIMIT, history } from "./commands/history.mjs";
 import { key } from "./commands/key.mjs";
-import { restart, start, status, stop } from "./commands/lifecycle.mjs";
+import { guide, restart, start, status, stop } from "./commands/lifecycle.mjs";
 import { polish, transcriber } from "./commands/local.mjs";
 import { logs } from "./commands/logs.mjs";
 import { mode } from "./commands/mode.mjs";
@@ -61,6 +61,7 @@ const COMMANDS = {
   stop,
   restart,
   status,
+  guide,
   update,
   key,
   mode,

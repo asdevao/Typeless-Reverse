@@ -1,6 +1,7 @@
 import { TimeoutError } from "../../control.mjs";
 import {
   currentSettings,
+  ensureRunning,
   noPositionals,
   PACKAGED_RELAUNCH,
   parse,
@@ -77,6 +78,16 @@ const STOPPED = {
 export async function stop(args, io) {
   noPositionals(parse(args).positionals, "stop");
   io.out(io.t(STOPPED[await io.daemon.stop()]));
+  return 0;
+}
+
+/** 重看一遍首次引导（选识别方式、权限、麦克风、热键、试一句）。引导只在第一次用且缺权限时自动弹，
+ *  用过的人（权限齐、模式选过）永远不会自动再见它——想回看从这里进 */
+export async function guide(args, io) {
+  noPositionals(parse(args).positionals, "guide");
+  await ensureRunning(io);
+  await io.daemon.request("show-settings", { onboarding: true });
+  io.out(io.t("cli.guide.opened"));
   return 0;
 }
 

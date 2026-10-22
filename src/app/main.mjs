@@ -54,6 +54,7 @@ import {
   resolveSettings,
   routeOf,
   saveSetting,
+  SETTINGS as SETTING_SCHEMA,
 } from "../storage/settings.mjs";
 import { toHex } from "../themes/color.mjs";
 import { themeCss } from "../themes/contract.mjs";
@@ -126,9 +127,8 @@ const WINDOW_ICON = join(import.meta.dirname, "../../assets/icon.ico");
  * Windows 上标题栏藏起来以后，系统的最小化、最大化、关闭三个按钮叠在页面右上角这么高的一条里。
  * 和主窗口内容区最上面那条拖动区（hub.css 的 .content::before，2.75rem）一样高
  */
-const CAPTION_HEIGHT = 44;
-/** 关于里"在 GitHub 上看"打开的地方 */
 const HOMEPAGE = "https://github.com/zephyr4123/speakmore";
+const CAPTION_HEIGHT = 44;
 /** 这台机器是哪类芯片：本地模型的实测按它挑（models/catalog.mjs 的 CHIPS） */
 const CHIP = chipOf();
 /** 主窗口的大小，照原版（targets/typeless 的 hub 窗口：1080×750，最小 988×685） */
@@ -413,11 +413,18 @@ async function main() {
     if (offeredSettings || !startupChecked || setup.key.state === "checking" || setup.permissions.listen === null)
       return;
     const summary = summarizeSetup(setup);
-    if (summary.missing.length === 0 && summary.degraded === null) return;
+    // settings.json 还没建立 = 从来没配置过：哪怕环境变量里恰好有一把能用的 key，也要走一遍引导——
+    // 装完第一次打开就被扔进主窗口的人不知道该干什么。引导每一步都能跳过，跳过就是原来的样子
+    const firstRunEver = !existsSync(PATHS.settingsFile);
+    if (summary.missing.length === 0 && summary.degraded === null && !firstRunEver) return;
     offeredSettings = true;
-    log.info("settings_offered", { missing: summary.missing, degraded: summary.degraded !== null });
+    log.info("settings_offered", {
+      missing: summary.missing,
+      degraded: summary.degraded !== null,
+      firstRunEver,
+    });
     // 缺的是路线里另一家（第一跳交给的云端）的 key：首次引导只认正在用的那一家，在那里填会填错。去模型页的密钥表
-    if (setup.key.vendor) showHub({ pane: "auto" });
+    if (setup.key.vendor && !firstRunEver) showHub({ pane: "auto" });
     else showOnboarding();
   }
 
@@ -1203,6 +1210,19 @@ async function main() {
     }),
   );
   handle("setup:forget-key", (_event, id) => keys.forget({ provider: id ?? keys.provider?.id }));
+  // 删除自定义服务：key、地址、额外参数一并清；润色正在用它时换回默认的润色模型（不然货架清了、设置还指着它）
+  handle("setup:remove-custom", () => {
+    keys.forget({ provider: "custom" });
+    saveSetting(PATHS.settingsFile, "customUrl", "");
+    saveSetting(PATHS.settingsFile, "customParams", "");
+    const settings = resolveSettings({ file: PATHS.settingsFile, env: process.env });
+    if (settings.polish.value.startsWith("custom/")) {
+      // 默认值在 schema 里（SETTINGS.polish.default）；resolveSettings 给的每项只有 value/source，没有 default
+      saveSetting(PATHS.settingsFile, "polish", SETTING_SCHEMA.polish.default);
+    }
+    setupChanged();
+    return {};
+  });
   // 设置里的"检查"：哪种模式里都能查，按页面上选的（还没换过去的）设置查
   handle("setup:check-model", (_event, mode, changes) => viaModes((m) => m.check(mode, changes ?? {})));
   // 模式这一层，和各模式里的模型：分开的几件事
