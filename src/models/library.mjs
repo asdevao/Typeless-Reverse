@@ -1,7 +1,7 @@
 import { existsSync, statfsSync } from "node:fs";
 import { dirname } from "node:path";
 import { msg, problemOf } from "../i18n/index.mjs";
-import { downloadSize, findModel, MODELS } from "./catalog.mjs";
+import { downloadSize, downloadUrls, findModel, MODELS } from "./catalog.mjs";
 import { sizeText } from "./describe.mjs";
 import { createModelStore } from "./store.mjs";
 
@@ -74,7 +74,13 @@ export function createLocalModels({
     problems.delete(model.id);
     let reportedAt = Number.NEGATIVE_INFINITY;
     const startedAt = performance.now();
-    log.info("model_downloading", { model: model.id, bytes: job.total, source });
+    log.info("model_downloading", {
+      model: model.id,
+      bytes: job.total,
+      source,
+      // 实际会依次试的地址（以第一个文件为例，每个文件的都一个排法）：排查"卡在 0%"时看第一个就够
+      urls: downloadUrls(model, Object.values(model.files)[0], source).map(({ url }) => url),
+    });
     onChange(model.id);
     store
       .install(model, {

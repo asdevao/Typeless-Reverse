@@ -5,7 +5,6 @@ import { test } from "node:test";
 import { createTranslator } from "../../src/i18n/index.mjs";
 import {
   CHIPS,
-  CN_BASE,
   chipOf,
   DEFAULT_SOURCE,
   DEFAULT_TRANSCRIBER,
@@ -15,7 +14,8 @@ import {
   findSource,
   MODELS,
   measuredOn,
-  mirrorKey,
+  mirrorRepo,
+  MODELSCOPE_OWNER,
   SOURCES,
   TAGS,
   tagsOn,
@@ -213,17 +213,32 @@ test("型号的名字分成名字和量化档两段；没有括号的整个是�
   for (const { name } of MODELS) assert.notEqual(nameParts(name).variant, null, name);
 });
 
-test("下载源：默认国内源在前，原始地址垫后；选了原始地址就倒过来。都按 sha256 校验，从哪下的都一样", () => {
+test("下载源：默认国内源（魔搭）在前，原始地址垫后；选了原始地址就倒过来。都按 sha256 校验，从哪下的都一样", () => {
   assert.ok(findSource(DEFAULT_SOURCE));
   assert.equal(new Set(SOURCES.map(({ id }) => id)).size, SOURCES.length);
   const model = findModel("sensevoice-small-q8");
   const file = model.files.gguf;
   const { revision, repo } = model.origin;
-  const cn = `${CN_BASE}/sensevoice-small-q8/${revision}/SenseVoiceSmall-Q8_0.gguf`;
+  const cn = `https://modelscope.cn/models/${MODELSCOPE_OWNER}/sensevoice-small-q8/resolve/${model.mirror.revision}/SenseVoiceSmall-Q8_0.gguf`;
   const hf = `https://huggingface.co/${repo}/resolve/${revision}/SenseVoiceSmall-Q8_0.gguf`;
   const mirror = `https://hf-mirror.com/${repo}/resolve/${revision}/SenseVoiceSmall-Q8_0.gguf`;
-  assert.equal(mirrorKey(model, file.path), `sensevoice-small-q8/${revision}/SenseVoiceSmall-Q8_0.gguf`);
+  assert.equal(mirrorRepo(model), `${MODELSCOPE_OWNER}/sensevoice-small-q8`);
   assert.deepEqual(downloadUrls(model, file), [cn, hf, mirror]);
   assert.deepEqual(downloadUrls(model, file, "original"), [hf, mirror, cn]);
   assert.throws(() => downloadUrls(model, file, "ftp"), /ftp.*cn \/ original/);
+});
+
+test("每个模型都钉在魔搭的一次提交上（sync-models.mjs 传完报出来的），原始地址也钉在一次提交上", () => {
+  for (const model of MODELS) {
+    assert.match(
+      model.mirror.revision,
+      /^[0-9a-f]{40}$/,
+      `${model.id} 的 mirror.revision 还没填：跑 sync-models 传到魔搭`,
+    );
+    assert.match(model.origin.revision, /^[0-9a-f]{40}$/, model.id);
+  }
+});
+
+test("配置表全是数据：整项能原样复制（装本机模型时交给转写进程；混进函数就装不上）", () => {
+  assert.deepEqual(structuredClone(MODELS), MODELS);
 });

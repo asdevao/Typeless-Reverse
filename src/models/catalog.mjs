@@ -14,11 +14,19 @@
 
 // ---------- 下载源 ----------
 
-/** 国内源：Utterly 自己的 COS 桶，前面是 CDN（全球加速，在国外也能用）。scripts/release/sync-models.mjs 往上传 */
-export const CN_BASE = "https://models.speakmore.zephyrxiang.com";
+/**
+ * 国内源：魔搭（ModelScope）上这个账号名下的模型仓库，一个模型一个仓库，仓库名就是模型 id。
+ * 魔搭对下载不收钱、在国内有自己的 CDN，也认 Range（断点续传）。scripts/release/sync-models.mjs 往上传。
+ * 魔搭建组织要人工审核，先放在作者的个人账号下；换到组织名下时重传一遍、改这里和各项的 mirror 就行
+ */
+export const MODELSCOPE_OWNER = "ardsfsw";
 
-/** 国内源上的对象名：<模型 id>/<原始地址钉住的提交>/<文件路径>。换了提交就是新地址，CDN 可以一直缓存 */
-export const mirrorKey = (model, path) => `${model.id}/${model.origin.revision}/${path}`;
+/** 一个模型在魔搭上的仓库 */
+export const mirrorRepo = (model) => `${MODELSCOPE_OWNER}/${model.id}`;
+
+/** 国内源：魔搭上钉在那次提交（mirror.revision）的文件。换了提交就是新地址，内容不会再变 */
+const modelScope = (model, file) =>
+  `https://modelscope.cn/models/${mirrorRepo(model)}/resolve/${model.mirror.revision}/${file.path}`;
 
 /** 原始地址：Hugging Face 上钉在那次提交的文件 */
 const huggingFace = (model, file) =>
@@ -34,7 +42,7 @@ const hfMirror = (model, file) =>
  * urls 是这个源里依次试的地址
  */
 export const SOURCES = Object.freeze([
-  Object.freeze({ id: "cn", urls: Object.freeze([(model, file) => `${CN_BASE}/${mirrorKey(model, file.path)}`]) }),
+  Object.freeze({ id: "cn", urls: Object.freeze([modelScope]) }),
   Object.freeze({ id: "original", urls: Object.freeze([huggingFace, hfMirror]) }),
 ]);
 
@@ -111,6 +119,7 @@ const freeze = (model) =>
   Object.freeze({
     ...model,
     origin: Object.freeze(model.origin),
+    mirror: model.mirror ? Object.freeze(model.mirror) : undefined,
     files: Object.freeze(model.files),
     tags: Object.freeze(model.tags),
     measured: Object.freeze(model.measured.map((entry) => Object.freeze({ run: ROUND1, ...entry }))),
@@ -143,6 +152,7 @@ export const MODELS = Object.freeze(
         revision: "7e7c69a577fa2725dfedbe34b5e999336e30a19b",
         notice: "NOTICE",
       },
+      mirror: { revision: "275debc0a82a6d29ed40d72cc0be5bd66bc43e26" },
       files: {
         gguf: {
           path: "Qwen3-ASR-0.6B-Q8_0.gguf",
@@ -210,6 +220,7 @@ export const MODELS = Object.freeze(
         revision: "ff8f085a8fa2e5ccae0e849ef19ebc6dc18e608b",
         notice: "NOTICE",
       },
+      mirror: { revision: "b569f1bc9765ce41d43d90fca5d997060861733f" },
       files: {
         gguf: {
           path: "SenseVoiceSmall-Q8_0.gguf",
@@ -268,6 +279,7 @@ export const MODELS = Object.freeze(
         repo: "csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25",
         revision: "68818b2313fe77bd06f6a7c5068ff3ef59d02b8a",
       },
+      mirror: { revision: "0d32a807e2af129074fb0bf6766fd9080c64141d" },
       files: {
         convFrontend: {
           path: "conv_frontend.onnx",
@@ -336,6 +348,7 @@ export const MODELS = Object.freeze(
         repo: "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09",
         revision: "355f4d4884d8afd08aef04b9007a8556d7b463b2",
       },
+      mirror: { revision: "d706ce3dbf2c6b046c9f5d589354d9844e29dff0" },
       files: {
         model: {
           path: "model.int8.onnx",

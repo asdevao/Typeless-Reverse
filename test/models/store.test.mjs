@@ -4,7 +4,6 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, test } from "node:test";
-import { CN_BASE } from "../../src/models/catalog.mjs";
 import { createModelStore } from "../../src/models/store.mjs";
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -13,6 +12,7 @@ const fileOf = (path) => ({ path, size: BYTES[path].length, sha256: sha256(BYTES
 const MODEL = {
   id: "fake-asr",
   origin: { repo: "someone/fake-asr", revision: "a".repeat(40) },
+  mirror: { revision: "c".repeat(40) },
   files: { model: fileOf("a.onnx"), vocab: fileOf("tokenizer/vocab.json") },
 };
 
@@ -21,9 +21,9 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-const CN_HOST = new URL(CN_BASE).host;
-/** 地址里那次提交后面的就是文件的路径：国内源和原始地址都这么排 */
-const pathOf = (url) => url.split(`/${MODEL.origin.revision}/`)[1];
+const CN_HOST = "modelscope.cn";
+/** 地址里 resolve/<提交> 后面的就是文件的路径：魔搭和 Hugging Face 都这么排 */
+const pathOf = (url) => url.split(/\/resolve\/[^/]+\//)[1];
 
 /** 一个临时的仓，下载走假的 fetch：按地址最后的路径给内容，记下下了哪些 */
 function setUp({ serve = (path) => new Response(BYTES[path]) } = {}) {
