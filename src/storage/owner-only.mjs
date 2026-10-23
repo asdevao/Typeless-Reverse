@@ -13,7 +13,10 @@ const SYSTEM_SID = "S-1-5-18";
 
 /** 当前用户的 SID：whoami /user 的 CSV 输出是 "机器名\用户名","S-1-5-21-…" */
 export function currentUserSid(run = execFileSync) {
-  const line = run("whoami", ["/user", "/fo", "csv", "/nh"], { encoding: "utf8", windowsHide: true });
+  // 用绝对路径：PATH 被污染（Git Bash、用户自定义工具链）时同名 whoami 抢先，/user 会被当成参数报错，
+  // 启动直接失败。System32 在每台 Windows 上都有，写死在这里是对的
+  const whoami = process.platform === "win32" ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "whoami.exe") : "whoami";
+  const line = run(whoami, ["/user", "/fo", "csv", "/nh"], { encoding: "utf8", windowsHide: true });
   const sid = line.trim().split(",").at(-1)?.replace(/"/g, "");
   if (!sid?.startsWith("S-1-")) throw new Error(`whoami /user 没给出 SID：${JSON.stringify(line.slice(0, 200))}`);
   return sid;

@@ -1,25 +1,41 @@
 import { createHash } from "node:crypto";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 import { homedir } from "node:os";
-import { posix, win32 } from "node:path";
+import { join, posix, win32 } from "node:path";
 import { LocalizedError, msg } from "../i18n/index.mjs";
 import { restrictToOwner } from "./owner-only.mjs";
 
-// SpeakMore 的家：程序、运行环境、设置、key、历史、录音、日志，全在这一个目录里。
+// Utterly 的家：程序、运行环境、设置、key、历史、录音、日志，全在这一个目录里。
 // 装的时候往里放，删的时候删掉它就干净了。命令行和后台应用是两个进程，靠这一份约定找到同一批文件。
 //
-//   ~/.speakmore/
+//   ~/.utterly/
 //     bin/ app/ runtime/           程序本身：安装时放进去，升级时整个换掉（macOS）
 //     bin\ versions\ current       Windows：每个版本装进 versions 下自己的目录，current 记着现在用哪个
 //     settings.json <厂商>-key.bin data/    你的东西（每家模型一把 key：gemini-key.bin、openai-key.bin）
 //     models/                      本地转写用的模型：用到时自动下载，删了下次用时再下
 //     logs/ run/ cache/            运行时产生的，删了会自己再建
 //
-// Windows 上也是这一个目录（%USERPROFILE%\.speakmore），只有控制通道不在里面：那里用的是 named pipe，
+// Windows 上也是这一个目录（%USERPROFILE%\.utterly），只有控制通道不在里面：那里用的是 named pipe，
 // 名字在系统的 \\.\pipe\ 下，按家目录取，不在磁盘上留任何东西。
 
 /** macOS 上 Unix 套接字的路径最长 103 个字节（sockaddr_un.sun_path 是 104，含结尾的 0） */
 const MAX_SOCKET_PATH_BYTES = 103;
+
+/**
+ * 目录改名迁移：老版本（0.9.4 及以前）的家叫 ~/.speakmore，现在是 ~/.utterly。
+ * 整体改名，设置、key、历史、录音、模型一个都不动。SPEAKMORE_HOME 显式指定的不走这里。
+ * 两个进程同时启动时只有一个能改成功，另一个 ENOENT 照样往下走（目录已经被挪过去了）
+ */
+function migrateHomeDir(userHome, renameFn = renameSync) {
+  const oldHome = join(userHome, ".speakmore");
+  const newHome = join(userHome, ".utterly");
+  if (!existsSync(oldHome) || existsSync(newHome)) return;
+  try {
+    renameFn(oldHome, newHome);
+  } catch {
+    // 改名失败（被占用、权限）：照旧用老目录，不拦启动
+  }
+}
 
 /**
  * 控制通道在哪。macOS 是 run/ 下的一个 Unix 套接字；Windows 没有放在目录里的套接字，用 named pipe，
@@ -40,8 +56,10 @@ function controlEndpoint(home, path, platform) {
 export function resolvePaths(env = process.env, userHome = homedir(), platform = process.platform) {
   const path = platform === "win32" ? win32 : posix;
   const join = path.join;
-  // SPEAKMORE_HOME：把整个目录换到别处。测试用它指到临时目录，不碰真实的历史
-  const home = env.SPEAKMORE_HOME || join(userHome, ".speakmore");
+  // SPEAKMORE_HOME：把整个目录换到别处。测试用它指到临时目录，不碰真实的历史。
+  // 没指定时用 ~/.utterly；老的 ~/.speakmore 还在就先整体改名迁过来（见 migrateHomeDir）
+  if (!env.SPEAKMORE_HOME) migrateHomeDir(userHome);
+  const home = env.SPEAKMORE_HOME || join(userHome, ".utterly");
   // 相对路径会随着"在哪个目录运行命令"而变：换个目录就找不到正在运行的那个，还会再起一个
   if (!path.isAbsolute(home)) {
     throw new LocalizedError(msg("paths.homeNotAbsolute", { home: JSON.stringify(home) }));
