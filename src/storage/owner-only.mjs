@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { chmodSync } from "node:fs";
+import { join } from "node:path";
 
 // 让一个目录只有自己进得去：里面有录音和 key。目录里新建的文件跟着目录走，不用一个个设。
 //   macOS：权限位 700。
