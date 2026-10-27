@@ -92,7 +92,7 @@ const ARCH = process.arch === "arm64" ? "arm64" : "x64";
  * 在 parent 里做一个假的 SpeakMore.app：程序是系统的 sleep 换了个名字。sign 为 true 时做临时签名（没有开发者），
  * 和装着的、下载的两边一样，开发者都是"没有"，比得上
  */
-function fakeApp(parent, version, { sign = true, bundleId = "com.zephyrxiang.speakmore" } = {}) {
+function fakeApp(parent, version, { sign = true, bundleId = "com.zephyrxiang.utterly" } = {}) {
   const app = join(parent, "SpeakMore.app");
   mkdirSync(join(app, "Contents", "MacOS"), { recursive: true });
   copyFileSync("/bin/sleep", join(app, "Contents", "MacOS", "SpeakMore"));
@@ -242,7 +242,7 @@ test("打开 App：不把命令行自己的 ELECTRON_RUN_AS_NODE 带过去（带
     join(app, "Contents", "Info.plist"),
     `<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0"><dict>
-<key>CFBundleIdentifier</key><string>com.zephyrxiang.speakmore.open-test</string>
+<key>CFBundleIdentifier</key><string>com.zephyrxiang.utterly.open-test</string>
 <key>CFBundleExecutable</key><string>run</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 </dict></plist>

@@ -1,18 +1,18 @@
-# Utterly 的 Windows 安装脚本：检查环境、下载、校验、装进 %USERPROFILE%\.speakmore，然后启动。
+# Utterly 的 Windows 安装脚本：检查环境、下载、校验、装进 %USERPROFILE%\.utterly，然后启动。
 #
 #   irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 #
-# 和 install.sh 是同一件事：程序、运行环境，以及之后的设置、key、历史和录音全在 .speakmore 这一个目录里。
+# 和 install.sh 是同一件事：程序、运行环境，以及之后的设置、key、历史和录音全在 .utterly 这一个目录里。
 # 程序按版本放：versions\<版本>-<编号>\ 里是 app\ 和 runtime\，current 记着现在用哪个，bin\speakmore.cmd 照它找程序。
 # 装新版本是解进一个新目录、试过能跑再把 current 指过去，不挪、不覆盖已有的任何文件（为什么见下面"安装"一节开头）。
 # 目录以外只加两样，都记在 bin\links 里，speakmore uninstall 照着删：
-#   - 用户的 Path 里加上 .speakmore\bin（新开的终端里敲 speakmore 就找得到）
+#   - 用户的 Path 里加上 .utterly\bin（新开的终端里敲 speakmore 就找得到）
 #   - 开始菜单里一个"Utterly"快捷方式
 # 升级时另外把指着旧版本的改指到新版本：开机启动那一项，固定到任务栏、发送到桌面的快捷方式副本。
 # 不需要 Node、npm、管理员权限。已经装过的话再运行一次就是升级：程序换成新的，你的东西不动。
 #
 # 可以用环境变量调整（irm | iex 传不了参数，所以都走环境变量）：
-#   SPEAKMORE_HOME          装到哪（默认 %USERPROFILE%\.speakmore）
+#   SPEAKMORE_HOME          装到哪（默认 %USERPROFILE%\.utterly）
 #   SPEAKMORE_VERSION       装哪个版本，比如 v0.9.3（默认最新的；0.9.3 以前的放法不同，这个脚本不装）
 #   SPEAKMORE_INSTALL_BASE  从哪下载：一个网址前缀，或者本机的一个目录（npm run release 打出来的 dist\release）
 #   SPEAKMORE_NO_START=1    只装不启动
@@ -334,9 +334,9 @@
       $raw = [string]$key.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
       $entries = @($raw -split ';' | Where-Object { $_ })
       $present = $entries | Where-Object { [Environment]::ExpandEnvironmentVariables($_).TrimEnd('\') -ieq $binDir.TrimEnd('\') }
-      # 默认的位置写成 %USERPROFILE%\.speakmore\bin：换了用户名、挪了用户目录也对
+      # 默认的位置写成 %USERPROFILE%\.utterly\bin：换了用户名、挪了用户目录也对
       $entry = $binDir
-      if ($binDir -ieq (Join-Path $env:USERPROFILE '.speakmore\bin')) { $entry = '%USERPROFILE%\.speakmore\bin' }
+      if ($binDir -ieq (Join-Path $env:USERPROFILE '.utterly\bin')) { $entry = '%USERPROFILE%\.utterly\bin' }
       if (-not $present) {
         $key.SetValue('Path', (($entries + $entry) -join ';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
         # 借设一个环境变量让系统广播一次"环境变了"：之后新开的终端才认新的 Path
@@ -422,7 +422,7 @@
 
     Write-Host ""
     Write-Host "  Utterly installer"
-    $requested = if ($env:SPEAKMORE_HOME) { $env:SPEAKMORE_HOME } else { Join-Path $env:USERPROFILE '.speakmore' }
+    $requested = if ($env:SPEAKMORE_HOME) { $env:SPEAKMORE_HOME } else { Join-Path $env:USERPROFILE '.utterly' }
     if (-not [IO.Path]::IsPathRooted($requested)) { Fail "SPEAKMORE_HOME must be an absolute path, not $requested" }
     # 规范成完整的写法（/ 换成 \、去掉 ..）：下面要拿它和开机启动、快捷方式里记的路径比前缀
     $script:HomeDir = [IO.Path]::GetFullPath($requested)

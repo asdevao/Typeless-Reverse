@@ -64,7 +64,7 @@ func install() int {
 
 	home := os.Getenv("SPEAKMORE_HOME")
 	if home == "" {
-		home = filepath.Join(os.Getenv("USERPROFILE"), ".speakmore")
+		home = filepath.Join(os.Getenv("USERPROFILE"), ".utterly")
 	}
 	if err := openApp(home); err != nil {
 		fmt.Printf("  Couldn't open Utterly (%v). Open it from the Start menu.\n", err)

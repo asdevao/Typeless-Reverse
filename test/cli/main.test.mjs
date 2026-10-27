@@ -456,7 +456,7 @@ test("别家已经有 key 时标出来；选它就不用再填，直接用它启
 test("设置里或环境变量里已经定了用哪家：不再问选哪家，直接问那一家的 key", async () => {
   writeFileSync(paths.settingsFile, JSON.stringify({ model: "openai/gpt-audio-1.5" }));
   const fromFile = harness({ daemon: fakeDaemon({ afterStart: NO_KEY }), secrets: ["sk-key"] });
-  assert.equal(await fromFile.speakmore(), 0);
+  assert.equal(await fromFile.utterly(), 0);
   assert.equal(fromFile.questions.length, 0);
   assert.match(fromFile.asked[0], /OpenAI/);
   rmSync(paths.settingsFile);
@@ -466,7 +466,7 @@ test("设置里或环境变量里已经定了用哪家：不再问选哪家，�
     env: { SPEAKMORE_MODEL: "gemini" },
     secrets: ["AIza"],
   });
-  assert.equal(await fromEnv.speakmore(), 0);
+  assert.equal(await fromEnv.utterly(), 0);
   assert.equal(fromEnv.questions.length, 0);
 });
 
@@ -483,12 +483,12 @@ test("选哪家时按了 Ctrl-C：不问 key，照默认的启动，面板里说
 test("已经有 key（存着的，或者环境变量给的）时直接启动，不问", async () => {
   haveStoredKey();
   const stored = harness();
-  assert.equal(await stored.speakmore(), 0);
+  assert.equal(await stored.utterly(), 0);
   assert.equal(stored.asked.length, 0);
   rmSync(keyFile(paths, "gemini"));
 
   const fromEnv = harness({ env: { GEMINI_API_KEY: "AIza-env" } });
-  assert.equal(await fromEnv.speakmore(), 0);
+  assert.equal(await fromEnv.utterly(), 0);
   assert.equal(fromEnv.asked.length, 0);
 });
 
@@ -522,14 +522,14 @@ test("存着的 key 启动后发现已经不能用了：这时再问一把", asy
 test("不是 key 的问题时不问 key：模型名写错、环境变量里的 key 不对，都只在面板里说", async () => {
   haveStoredKey();
   const wrongModel = harness({ daemon: fakeDaemon({ afterStart: WRONG_MODEL }) });
-  assert.equal(await wrongModel.speakmore(), 0);
+  assert.equal(await wrongModel.utterly(), 0);
   assert.equal(wrongModel.asked.length, 0);
   assert.match(wrongModel.output.out, /gemini-nope is not found/);
   assert.match(wrongModel.output.out, /speakmore config/);
 
   const badEnv = { ...REVOKED_KEY, key: { ...REVOKED_KEY.key, source: "env" } };
   const fromEnv = harness({ daemon: fakeDaemon({ afterStart: badEnv }), env: { GEMINI_API_KEY: "AIza-env" } });
-  assert.equal(await fromEnv.speakmore(), 0);
+  assert.equal(await fromEnv.utterly(), 0);
   assert.equal(fromEnv.asked.length, 0);
   assert.match(fromEnv.output.out, /环境变量 GEMINI_API_KEY/);
 });
@@ -601,13 +601,13 @@ test("启动不起来时把原因说出来，以非零退出", async () => {
 
 test("stop：在运行就停掉，没在运行就照实说，是强行结束的也照实说", async () => {
   const running = harness({ daemon: fakeDaemon({ running: READY }) });
-  assert.equal(await running.speakmore("stop"), 0);
+  assert.equal(await running.utterly("stop"), 0);
   assert.match(running.output.out, /已经停掉/);
   const idle = harness();
-  assert.equal(await idle.speakmore("stop"), 0);
+  assert.equal(await idle.utterly("stop"), 0);
   assert.match(idle.output.out, /没有在运行/);
   const stuck = harness({ daemon: fakeDaemon({ hung: true, stopped: "killed" }) });
-  assert.equal(await stuck.speakmore("stop"), 0);
+  assert.equal(await stuck.utterly("stop"), 0);
   assert.match(stuck.output.out, /强行结束/);
 });
 
@@ -629,13 +629,13 @@ test("restart：它卡住不答话时照样能重启", async () => {
 test("正在运行的是装成应用的那一个：不代它重启（会被换成终端启动的，权限和 key 是另一套），说怎么办", async () => {
   const packaged = { ...READY, packaged: true };
   const restarting = harness({ daemon: fakeDaemon({ running: packaged }) });
-  assert.equal(await restarting.speakmore("restart"), 1);
+  assert.equal(await restarting.utterly("restart"), 1);
   assert.deepEqual(restarting.daemon.calls, []);
   assert.match(restarting.output.err, /Utterly\.app/);
   assert.match(restarting.output.err, /退出/);
 
   const configuring = harness({ daemon: fakeDaemon({ running: packaged }) });
-  assert.equal(await configuring.speakmore("config", "set", "hotkey", OTHER_HOTKEY), 0);
+  assert.equal(await configuring.utterly("config", "set", "hotkey", OTHER_HOTKEY), 0);
   assert.deepEqual(JSON.parse(readFileSync(paths.settingsFile, "utf8")), { hotkey: OTHER_HOTKEY });
   assert.deepEqual(configuring.daemon.calls, []);
   assert.match(configuring.output.out, /Utterly\.app/);
@@ -663,17 +663,17 @@ test("命令做到一半它没了：照实说没有在运行", async () => {
 
 test("status：只看不动；能用是 0，没在运行或还差东西是 1", async () => {
   const idle = harness();
-  assert.equal(await idle.speakmore("status"), 1);
+  assert.equal(await idle.utterly("status"), 1);
   // 只会让它重新查一遍系统权限，不会把它启动起来
   assert.deepEqual(idle.daemon.calls, ["recheck"]);
   assert.match(idle.output.out, /没有运行/);
 
   const ready = harness({ daemon: fakeDaemon({ running: READY }) });
-  assert.equal(await ready.speakmore("status"), 0);
+  assert.equal(await ready.utterly("status"), 0);
   assert.ok(!ready.daemon.calls.includes("show-settings"));
 
   const incomplete = harness({ daemon: fakeDaemon({ running: NO_KEY }) });
-  assert.equal(await incomplete.speakmore("status"), 1);
+  assert.equal(await incomplete.utterly("status"), 1);
 });
 
 test("status --json：给程序读的，一行 JSON，带运行状态、设置和统计", async () => {
@@ -700,7 +700,7 @@ test("update：下载地址上有更新的版本，就让安装脚本装上它�
 
   // 安装脚本没装成：它已经把原因说了，这边只把退出码交出去
   const failing = harness({ latest: "v0.2.0", installerExit: 1 });
-  assert.equal(await failing.speakmore("update"), 1);
+  assert.equal(await failing.utterly("update"), 1);
 });
 
 const APP = "/Applications/Utterly.app";
@@ -834,12 +834,12 @@ test("update（Windows）：程序在家目录 versions 下某个版本里的才
   const version = join(paths.versionsDir, "0.1.0-1a2b3c4d", "app");
   mkdirSync(version, { recursive: true });
   const current = harness({ latest: "v0.2.0", platform: "win32", packageDir: version });
-  assert.equal(await current.speakmore("update"), 0);
+  assert.equal(await current.utterly("update"), 0);
   assert.deepEqual(current.updates.installs, ["v0.2.0"]);
 
   installed();
   const legacy = harness({ latest: "v0.2.0", platform: "win32", packageDir: paths.appDir });
-  assert.equal(await legacy.speakmore("update"), 1);
+  assert.equal(await legacy.utterly("update"), 1);
   assert.deepEqual(legacy.updates.installs, []);
 });
 
@@ -850,17 +850,17 @@ test("update：问不到最新版本、问到的不像版本号，都照实说�
       msg("cli.update.unreachable", { url: "https://x/latest", reason: "curl: (6) 解析不了" }),
     ),
   });
-  assert.equal(await offline.speakmore("update"), 1);
+  assert.equal(await offline.utterly("update"), 1);
   assert.match(offline.output.err, /https:\/\/x\/latest/);
   assert.match(offline.output.err, /curl: \(6\)/);
   assert.deepEqual(offline.updates.installs, []);
 
   const garbled = harness({ latest: "<html>出错了</html>" });
-  assert.equal(await garbled.speakmore("update"), 1);
+  assert.equal(await garbled.utterly("update"), 1);
   assert.match(garbled.output.err, /<html>/);
   assert.deepEqual(garbled.updates.installs, []);
 
-  assert.equal(await harness().speakmore("update", "now"), 2);
+  assert.equal(await harness().utterly("update", "now"), 2);
 });
 
 test("status：有新版本时提醒一句；一天只问一次下载地址", async () => {
@@ -884,32 +884,32 @@ const forgetUpdateCheck = () => rmSync(paths.updateCheckFile, { force: true });
 test("status：没有新版本、问不到、从源码跑的，都不提，也不影响退出码", async () => {
   installed();
   const same = harness({ daemon: fakeDaemon({ running: READY }) });
-  assert.equal(await same.speakmore("status"), 0);
+  assert.equal(await same.utterly("status"), 0);
   assert.doesNotMatch(same.output.out, /新版本/);
 
   forgetUpdateCheck();
   const offline = harness({ daemon: fakeDaemon({ running: READY }), latest: new Error("没网") });
-  assert.equal(await offline.speakmore("status"), 0);
+  assert.equal(await offline.utterly("status"), 0);
   assert.doesNotMatch(offline.output.out + offline.output.err, /新版本|没网/);
   // 没问到也记下：一天之内不再每看一次状态都等它
-  await offline.speakmore("status");
+  await offline.utterly("status");
   assert.equal(offline.updates.checks.length, 1);
 
   forgetUpdateCheck();
   outside = mkdtempSync(join(tmpdir(), "sm-src-"));
   const source = harness({ daemon: fakeDaemon({ running: READY }), latest: "v0.2.0", packageDir: outside });
-  await source.speakmore("status");
+  await source.utterly("status");
   assert.deepEqual(source.updates.checks, []);
 });
 
 test("status --json：带上有没有新版本（newVersion，没有是 null）", async () => {
   installed();
   const newer = harness({ daemon: fakeDaemon({ running: READY }), latest: "v0.2.0" });
-  await newer.speakmore("status", "--json");
+  await newer.utterly("status", "--json");
   assert.equal(JSON.parse(newer.output.out).newVersion, "0.2.0");
   forgetUpdateCheck();
   const same = harness({ daemon: fakeDaemon({ running: READY }) });
-  await same.speakmore("status", "--json");
+  await same.utterly("status", "--json");
   assert.equal(JSON.parse(same.output.out).newVersion, null);
 });
 
@@ -974,13 +974,13 @@ test("key --forget：共用的那份和 0.7.0 及以前 App 另存的那份都�
   };
   seed();
   const running = harness({ daemon: fakeDaemon({ running: READY }) });
-  assert.equal(await running.speakmore("key", "--forget"), 0);
+  assert.equal(await running.utterly("key", "--forget"), 0);
   assert.deepEqual(running.daemon.calls, ["forget-key"]);
   assert.deepEqual([existsSync(keyFile(paths, "gemini")), existsSync(oldAppKeyFile(paths, "gemini"))], [false, false]);
 
   seed();
   const idle = harness();
-  assert.equal(await idle.speakmore("key", "--forget"), 0);
+  assert.equal(await idle.utterly("key", "--forget"), 0);
   assert.deepEqual([existsSync(keyFile(paths, "gemini")), existsSync(oldAppKeyFile(paths, "gemini"))], [false, false]);
   assert.deepEqual(idle.daemon.calls, []);
   assert.match(idle.output.out, /已经删掉/);
@@ -1004,7 +1004,7 @@ test("config set：存进文件；在运行的话重启让它生效", async () =
   assert.match(output.out, /已经生效/);
 
   const idle = harness();
-  assert.equal(await idle.speakmore("config", "set", "thinking", "low"), 0);
+  assert.equal(await idle.utterly("config", "set", "thinking", "low"), 0);
   assert.deepEqual(idle.daemon.calls, []);
   assert.match(idle.output.out, /下次启动生效/);
 });
@@ -1056,15 +1056,15 @@ test("config set 是不检查的后门：模式那一层管的几项照写，说
   assert.match(output.out, /现在是 native 模式，这一项切到 local 模式时才用上/);
 
   const native = harness();
-  assert.equal(await native.speakmore("config", "set", "model", "openai"), 0);
+  assert.equal(await native.utterly("config", "set", "model", "openai"), 0);
   assert.match(native.output.out, /平时用 speakmore model 换/);
   assert.doesNotMatch(native.output.out, /才用上/);
 
   // 只有 config set 能改的几项不提别的命令
   const plain = harness();
-  assert.equal(await plain.speakmore("config", "set", "thinking", "low"), 0);
+  assert.equal(await plain.utterly("config", "set", "thinking", "low"), 0);
   assert.doesNotMatch(plain.output.out, /平时用|才用上/);
-  assert.equal(await plain.speakmore("config", "set", "hotkey", OTHER_HOTKEY), 0);
+  assert.equal(await plain.utterly("config", "set", "hotkey", OTHER_HOTKEY), 0);
   assert.doesNotMatch(plain.output.out, /平时用|才用上/);
 });
 
@@ -1113,7 +1113,7 @@ test("theme <名字>：存进设置；在运行的话让它当场换，不重启
   assert.match(output.out, /现在用的是朱砂（cinnabar）.*存在设置文件里/);
 
   const idle = harness();
-  assert.equal(await idle.speakmore("theme", "indigo"), 0);
+  assert.equal(await idle.utterly("theme", "indigo"), 0);
   assert.deepEqual(idle.daemon.calls, []);
   assert.match(idle.output.out, /下次启动生效/);
 });
@@ -1195,7 +1195,7 @@ test("英文：有新版本的提醒、update 说的话", async () => {
     latest: "v0.2.0",
     app: { path: APP, version: "0.1.0" },
   });
-  assert.equal(await withApp.speakmore("update"), 0);
+  assert.equal(await withApp.utterly("update"), 0);
   assert.match(withApp.output.out, /Updating Utterly\.app 0\.1\.0 → 0\.2\.0/);
   assert.match(withApp.output.out, /Reopened Utterly\.app/);
   output.out += withApp.output.out;
@@ -1221,7 +1221,7 @@ test("英文：后台报上来的原因（msg）按命令行的语言翻；0.5 �
   assert.match(output.out, /Check failed: Gemini rejected the request: models\/gemini-nope is not found\./);
 
   const old = harness({ daemon: fakeDaemon({ running: WRONG_MODEL }), locale: "en" });
-  assert.equal(await old.speakmore("status"), 1);
+  assert.equal(await old.utterly("status"), 1);
   assert.match(old.output.out, /Missing: Gemini 验证\./);
 });
 
@@ -1236,11 +1236,11 @@ test("config set language：存进设置；在运行的话让它当场换，不�
   assert.match(output.out, /language 回到了默认值 system/);
 
   const idle = harness();
-  assert.equal(await idle.speakmore("config", "set", "language", "en"), 0);
+  assert.equal(await idle.utterly("config", "set", "language", "en"), 0);
   assert.deepEqual(idle.daemon.calls, []);
   assert.match(idle.output.out, /下次启动生效/);
 
-  assert.equal(await idle.speakmore("config", "set", "language", "fr"), 2);
+  assert.equal(await idle.utterly("config", "set", "language", "fr"), 2);
   assert.match(idle.output.err, /system \/ en \/ zh-CN/);
 });
 
@@ -1258,7 +1258,7 @@ test("config set language：环境变量盖着时照实说它用的还是哪种�
     },
   });
   const old = harness({ daemon: legacy });
-  assert.equal(await old.speakmore("config", "set", "language", "en"), 0);
+  assert.equal(await old.utterly("config", "set", "language", "en"), 0);
   assert.match(old.output.out, /旧版本.*speakmore restart/);
 });
 
@@ -1271,7 +1271,7 @@ test("面板里写着界面语言：跟随系统时带上实际用的那种", as
     daemon: fakeDaemon({ running: { ...READY, language: "zh-CN", locale: "zh-CN" } }),
     locale: "en",
   });
-  assert.equal(await english.speakmore("status"), 0);
+  assert.equal(await english.utterly("status"), 0);
   assert.match(english.output.out, /Language +简体中文/);
 });
 
@@ -1318,12 +1318,12 @@ test("history：一次都没用过时说一句，不凭空建库", async () => {
 test("history：按天分组列出来；-n 限制条数；后台应用在不在运行都能看", async () => {
   seedHistory();
   const all = harness();
-  assert.equal(await all.speakmore("history"), 0);
+  assert.equal(await all.utterly("history"), 0);
   assert.match(all.output.out, /今天 · 10月13日\n {2}14:32 {2}今天说的\n\n昨天 · 10月12日\n {2}09:05 {2}昨天说的/);
   assert.deepEqual(all.daemon.calls, []);
 
   const one = harness();
-  assert.equal(await one.speakmore("history", "-n", "1"), 0);
+  assert.equal(await one.utterly("history", "-n", "1"), 0);
   assert.doesNotMatch(one.output.out, /昨天说的/);
   assert.match(one.output.out, /显示最近 1 条，共 2 条/);
 });
@@ -1347,12 +1347,12 @@ test("history -n 要是正整数", async () => {
 test("有历史时面板里带上今天和累计的数；记过账的话带上花了多少钱", async () => {
   seedHistory();
   const before = harness({ daemon: fakeDaemon({ running: READY }) });
-  await before.speakmore("status");
+  await before.utterly("status");
   assert.match(before.output.out, /累计\s+2 次 · 8 字 · 8 秒\n/);
 
   seedCall();
   const after = harness({ daemon: fakeDaemon({ running: READY }) });
-  await after.speakmore("status");
+  await after.utterly("status");
   assert.match(after.output.out, /累计\s+2 次 · 8 字 · 8 秒 · \$0\.0011\n/);
   assert.match(after.output.out, /speakmore usage/);
 });
@@ -1398,7 +1398,7 @@ test("usage：列出花了多少钱、多少 token、模型多久回话；后台
 
 test("usage --json：原样给出报表；还没有历史库时是 null", async () => {
   const empty = harness();
-  await empty.speakmore("usage", "--json");
+  await empty.utterly("usage", "--json");
   assert.equal(JSON.parse(empty.output.out), null);
 
   seedHistory();
@@ -1482,7 +1482,7 @@ test("uninstall（Windows）：用户 Path 里的那一项、开始菜单的快�
   // 照 install.ps1 真写出来的样子：Windows PowerShell 5.1 的 Add-Content -Encoding UTF8 开头带 BOM、按 CRLF 换行
   writeFileSync(
     paths.linksFile,
-    `\uFEFFpath %USERPROFILE%\\.speakmore\\bin\r\nshortcut ${ours}\r\nshortcut ${theirs}\r\n`,
+    `\uFEFFpath %USERPROFILE%\\.utterly\\bin\r\nshortcut ${ours}\r\nshortcut ${theirs}\r\n`,
   );
   const { speakmore, output, windows } = harness({
     platform: "win32",
@@ -1490,7 +1490,7 @@ test("uninstall（Windows）：用户 Path 里的那一项、开始菜单的快�
     system: { ourShortcut: (file) => file === ours, loginItem: true },
   });
   assert.equal(await speakmore("uninstall", "--yes"), 0);
-  assert.deepEqual(windows.pathEntries, ["%USERPROFILE%\\.speakmore\\bin"]);
+  assert.deepEqual(windows.pathEntries, ["%USERPROFILE%\\.utterly\\bin"]);
   assert.equal(existsSync(ours), false);
   assert.equal(readFileSync(theirs, "utf8"), "别人的快捷方式");
   assert.match(output.out, /用户 Path 里的 %USERPROFILE%/);
@@ -1568,14 +1568,14 @@ test("uninstall --keep-data：只删程序，设置、key、历史和录音留�
 test("uninstall：先说清楚要删什么再问一句；不答应就什么都不动", async () => {
   seedInstalled();
   const declined = harness({ daemon: fakeDaemon({ running: READY }), confirms: [false] });
-  assert.equal(await declined.speakmore("uninstall"), 1);
+  assert.equal(await declined.utterly("uninstall"), 1);
   assert.equal(declined.confirmed.length, 1);
   assert.match(declined.output.out, /历史和录音/);
   assert.deepEqual(declined.daemon.calls, []);
   assert.equal(existsSync(paths.historyDb), true);
 
   const agreed = harness({ confirms: [true] });
-  assert.equal(await agreed.speakmore("uninstall"), 0);
+  assert.equal(await agreed.utterly("uninstall"), 0);
   assert.equal(existsSync(paths.home), false);
 });
 
@@ -1617,7 +1617,7 @@ test("uninstall：钥匙串里的条目删不掉时照样把别的删完，并�
 
 test("logs：把日志文件的最后几行打出来，-f 一直跟着；还没有日志时照实说", async () => {
   const empty = harness();
-  assert.equal(await empty.speakmore("logs"), 0);
+  assert.equal(await empty.utterly("logs"), 0);
   assert.match(empty.output.out, /还没有日志/);
 
   mkdirSync(join(dir, "logs"), { recursive: true });
@@ -1633,10 +1633,10 @@ test("logs：把日志文件的最后几行打出来，-f 一直跟着；还没�
 
 test("settings：在运行时打开设置；没在运行时说先启动", async () => {
   const running = harness({ daemon: fakeDaemon({ running: READY }) });
-  assert.equal(await running.speakmore("settings"), 0);
+  assert.equal(await running.utterly("settings"), 0);
   assert.deepEqual(running.daemon.calls, ["show-settings"]);
   const idle = harness();
-  assert.equal(await idle.speakmore("settings"), 1);
+  assert.equal(await idle.utterly("settings"), 1);
   assert.match(idle.output.err, /speakmore/);
 });
 
@@ -1699,7 +1699,7 @@ test("model <厂商>：有它的 key 就直接换；在运行的话让它当场�
   assert.match(output.out, /已经换上，不用重启/);
 
   const notRunning = harness();
-  assert.equal(await notRunning.speakmore("model", "openai/gpt-audio-1.5"), 0);
+  assert.equal(await notRunning.utterly("model", "openai/gpt-audio-1.5"), 0);
   assert.equal(savedModel(), "openai/gpt-audio-1.5");
   assert.match(notRunning.output.out, /下次启动生效/);
 });
@@ -1741,12 +1741,12 @@ test("model <厂商>：还没有它的 key 时先问；问到的交给后台验�
 
 test("model <厂商>：没有它的 key 又没法问（不在终端里）、或者问了没给：不换，说清先做什么", async () => {
   const quiet = harness({ interactive: false });
-  assert.equal(await quiet.speakmore("model", "openai"), 1);
+  assert.equal(await quiet.utterly("model", "openai"), 1);
   assert.match(quiet.output.err, /还没有 OpenAI 的 key.*speakmore key openai/);
   assert.equal(savedModel(), "gemini/gemini-3.6-flash");
 
   const declined = harness({ daemon: fakeDaemon({ running: READY }), secrets: [""] });
-  assert.equal(await declined.speakmore("model", "openai"), 1);
+  assert.equal(await declined.utterly("model", "openai"), 1);
   assert.match(declined.output.err, /没有换/);
   assert.equal(savedModel(), "gemini/gemini-3.6-flash");
 
@@ -1754,7 +1754,7 @@ test("model <厂商>：没有它的 key 又没法问（不在终端里）、或�
     daemon: fakeDaemon({ running: READY, saveKey: () => ({ ok: false, problem: "这把 key 无效" }) }),
     secrets: ["sk-bad", "", ""],
   });
-  assert.equal(await rejected.speakmore("model", "openai"), 1);
+  assert.equal(await rejected.utterly("model", "openai"), 1);
   assert.match(rejected.output.err, /这把 key 没有通过：这把 key 无效/);
   assert.equal(savedModel(), "gemini/gemini-3.6-flash");
 });
@@ -1784,7 +1784,7 @@ test("model check <模型>：查别的；不能用时说原因和下一步，以
       checkModel: () => ({ ok: false, cause: "missing", problem: "还没有 OpenAI 的 key：运行 speakmore key openai" }),
     }),
   });
-  assert.equal(await missing.speakmore("model", "check", "openai"), 1);
+  assert.equal(await missing.utterly("model", "check", "openai"), 1);
   assert.deepEqual(missing.daemon.requests.at(-1).params, { model: "openai/gpt-audio-mini" });
   assert.match(missing.output.err, /不能用：还没有 OpenAI 的 key/);
 
@@ -1794,13 +1794,13 @@ test("model check <模型>：查别的；不能用时说原因和下一步，以
       checkModel: () => ({ ok: false, cause: "other", problem: "OpenAI 没有这个模型，或者这把 key 用不了它：…" }),
     }),
   });
-  assert.equal(await wrong.speakmore("model", "check", "openai/gpt-audio-9"), 1);
+  assert.equal(await wrong.utterly("model", "check", "openai/gpt-audio-9"), 1);
   assert.match(wrong.output.err, /不能用：OpenAI 没有这个模型/);
 });
 
 test("model check：没在运行就先启动；正在运行的是旧版本、不认识这条命令时说要重启", async () => {
   const fresh = harness();
-  assert.equal(await fresh.speakmore("model", "check"), 0);
+  assert.equal(await fresh.utterly("model", "check"), 0);
   assert.deepEqual(fresh.daemon.calls, ["start", "check-model"]);
 
   const old = fakeDaemon({ running: READY });
@@ -1808,7 +1808,7 @@ test("model check：没在运行就先启动；正在运行的是旧版本、不
     throw new Error(`不认识的命令：${cmd}`);
   };
   const outdated = harness({ daemon: old });
-  assert.equal(await outdated.speakmore("model", "check"), 1);
+  assert.equal(await outdated.utterly("model", "check"), 1);
   assert.match(outdated.output.err, /旧版本.*speakmore restart/);
 });
 
@@ -1830,7 +1830,7 @@ test("key <厂商>：问的是那一家的 key，存进它那一份；不是正�
   assert.match(output.out, /要换成用它：speakmore model openai/);
 
   const deepseek = harness({ daemon: fakeDaemon({ running: READY }), secrets: ["sk-ds"] });
-  assert.equal(await deepseek.speakmore("key", "deepseek"), 0);
+  assert.equal(await deepseek.utterly("key", "deepseek"), 0);
   assert.match(deepseek.asked[0], /DeepSeek API key/);
   // 录音不发给它，只发转出来的文字
   assert.match(deepseek.asked[0], /本机/);
@@ -1839,7 +1839,7 @@ test("key <厂商>：问的是那一家的 key，存进它那一份；不是正�
   assert.match(deepseek.output.out, /要换成用它：speakmore mode local --polish deepseek/);
 
   const fromLocal = harness({ daemon: fakeDaemon({ running: LOCAL_READY }), secrets: ["sk-ds", "sk-oa"] });
-  assert.equal(await fromLocal.speakmore("key", "openai"), 0);
+  assert.equal(await fromLocal.utterly("key", "openai"), 0);
   assert.match(fromLocal.output.out, /要换成用它：speakmore mode native --model openai/);
 });
 
@@ -1913,19 +1913,19 @@ test("后台是 0.3 的：给别家存 key、删别家的 key 都先拦下，说
   haveStoredKey();
   haveOpenAIKey();
   const forget = harness({ daemon: fakeDaemon({ running: LEGACY_DAEMON }) });
-  assert.equal(await forget.speakmore("key", "--forget", "openai"), 1);
+  assert.equal(await forget.utterly("key", "--forget", "openai"), 1);
   assert.match(forget.output.err, /旧版本.*speakmore restart/);
   assert.ok(!forget.daemon.calls.includes("forget-key"));
   assert.ok(existsSync(keyFile(paths, "openai")) && existsSync(keyFile(paths, "gemini")));
 
   const save = harness({ daemon: fakeDaemon({ running: LEGACY_DAEMON }), secrets: ["sk-new"] });
-  assert.equal(await save.speakmore("key", "openai"), 1);
+  assert.equal(await save.utterly("key", "openai"), 1);
   assert.ok(!save.daemon.calls.includes("set-key"));
   assert.equal(save.asked.length, 0);
 
   // Gemini 的 key 旧后台本来就会存
   const gemini = harness({ daemon: fakeDaemon({ running: LEGACY_DAEMON }), secrets: ["AIza-new"] });
-  assert.equal(await gemini.speakmore("key", "gemini"), 0);
+  assert.equal(await gemini.utterly("key", "gemini"), 0);
 });
 
 /** 0.6 及以前的后台应用：状态里没有 mode，只认 Gemini 和 OpenAI 的 key */
@@ -1946,7 +1946,7 @@ test("后台是 0.6 的：切 local 要给 DeepSeek 存 key 时先拦下，说�
   assert.equal(asked.length, 0);
 
   const openai = harness({ daemon: fakeDaemon({ running: BEFORE_MODES_DAEMON }), secrets: ["sk-openai"] });
-  assert.equal(await openai.speakmore("key", "openai"), 0);
+  assert.equal(await openai.utterly("key", "openai"), 0);
   assert.ok(openai.daemon.calls.includes("set-key"));
 });
 
@@ -2105,7 +2105,7 @@ test("speakmore mode private：不问 key，本机模型下好了就切；状态
   assert.match(output.out, /本机的 qwen3-asr-0\.6b-q8，不润色、不上传/);
 
   const panel = harness({ daemon: fakeDaemon({ running: PRIVATE_READY }) });
-  assert.equal(await panel.speakmore("status"), 0);
+  assert.equal(await panel.utterly("status"), 0);
   assert.match(panel.output.out, /不用 key（数据隐私模式）/);
   assert.match(panel.output.out, /数据隐私：只用本机模型转写，什么都不上传/);
 });
@@ -2127,7 +2127,7 @@ test("数据隐私模式里 speakmore transcriber 换的是它自己的那一项
 
 test("第一跳交给云端（审查 4 号）：换成云端、检查、下载、切进 local、第一次启动，都照常说话，不崩", async () => {
   const cloud = harness({ daemon: fakeDaemon({ running: LOCAL_READY }), secrets: ["sk-ws-bailian"] });
-  assert.equal(await cloud.speakmore("transcriber", "bailian/qwen3-asr-flash"), 0);
+  assert.equal(await cloud.utterly("transcriber", "bailian/qwen3-asr-flash"), 0);
   assert.deepEqual(cloud.daemon.requests.find(({ cmd }) => cmd === "set-key").params, {
     key: "sk-ws-bailian",
     provider: "bailian",
@@ -2135,25 +2135,25 @@ test("第一跳交给云端（审查 4 号）：换成云端、检查、下载�
   });
   assert.ok(cloud.daemon.calls.includes("set-transcriber"));
 
-  assert.equal(await cloud.speakmore("transcriber", "check", "bailian/qwen3-asr-flash"), 0);
+  assert.equal(await cloud.utterly("transcriber", "check", "bailian/qwen3-asr-flash"), 0);
   assert.deepEqual(cloud.daemon.requests.find(({ cmd }) => cmd === "check-mode").params, {
     mode: "local",
     changes: { transcriber: "bailian/qwen3-asr-flash" },
   });
-  assert.equal(await cloud.speakmore("transcriber", "download", "bailian/qwen3-asr-flash"), 2);
+  assert.equal(await cloud.utterly("transcriber", "download", "bailian/qwen3-asr-flash"), 2);
   assert.match(cloud.output.err, /云端模型，不用下载/);
 
   // 设置里第一跳已经是云端的：切进 local 时两家的 key 都问
   writeFileSync(paths.settingsFile, JSON.stringify({ transcriber: "bailian/qwen3-asr-flash" }));
   const switching = harness({ daemon: fakeDaemon({ running: READY }), secrets: ["sk-ws-bailian", "sk-deepseek"] });
-  assert.equal(await switching.speakmore("mode", "local"), 0);
+  assert.equal(await switching.utterly("mode", "local"), 0);
   assert.deepEqual(
     switching.daemon.requests.filter(({ cmd }) => cmd === "set-key").map(({ params }) => params.provider),
     ["bailian", "deepseek"],
   );
 
   const first = harness({ daemon: fakeDaemon({ afterStart: NO_KEY }), answers: ["1"], secrets: ["k"] });
-  assert.equal(await first.speakmore(), 0);
+  assert.equal(await first.utterly(), 0);
 });
 
 test("第一次启动的选项里有数据隐私模式：选它不问 key，设置里记成 private", async () => {
@@ -2237,13 +2237,13 @@ test("mode <模式>：还没有那种模式要的 key 时先问，拿要切过�
 test("mode <模式>：没有 key 又没法问时不切，说先做什么；没在运行时存进设置、下次启动生效", async () => {
   haveModel();
   const quiet = harness({ interactive: false });
-  assert.equal(await quiet.speakmore("mode", "local"), 1);
+  assert.equal(await quiet.utterly("mode", "local"), 1);
   assert.match(quiet.output.err, /还没有 DeepSeek 的 key.*speakmore key deepseek/);
   assert.equal(saved("mode"), "native");
 
   haveDeepSeekKey();
   const notRunning = harness();
-  assert.equal(await notRunning.speakmore("mode", "local"), 0);
+  assert.equal(await notRunning.utterly("mode", "local"), 0);
   assert.equal(saved("mode"), "local");
   assert.match(notRunning.output.out, /下次启动生效/);
   assert.deepEqual(notRunning.daemon.calls, []);
@@ -2259,7 +2259,7 @@ test("mode：写错的模式以 2 退出并说能填什么；切没通过以 1 �
   const refused = harness({
     daemon: fakeDaemon({ running: READY, changeRoute: () => ({ ok: false, problem: "DeepSeek 余额不足" }) }),
   });
-  assert.equal(await refused.speakmore("mode", "local"), 1);
+  assert.equal(await refused.utterly("mode", "local"), 1);
   assert.match(refused.output.err, /没有换：DeepSeek 余额不足/);
 });
 
@@ -2275,7 +2275,7 @@ test("在 local 模式时换 native 的模型：不能换，说先切回 native�
   // 没在运行时看设置里的模式
   writeFileSync(paths.settingsFile, JSON.stringify({ mode: "local" }));
   const offline = harness();
-  assert.equal(await offline.speakmore("model", "openai"), 1);
+  assert.equal(await offline.utterly("model", "openai"), 1);
   assert.match(offline.output.err, /现在是 local 模式/);
 });
 
@@ -2289,7 +2289,7 @@ test("在 native 模式时换 local 的两跳：不能换，说先切到 local�
   assert.ok(!daemon.calls.some((call) => call.startsWith("set-")));
 
   const list = harness({ daemon: fakeDaemon({ running: READY }) });
-  assert.equal(await list.speakmore("transcriber"), 0);
+  assert.equal(await list.utterly("transcriber"), 0);
   assert.match(list.output.out, /现在是 native 模式，用不上.*speakmore mode local/);
 });
 
@@ -2365,7 +2365,7 @@ test("transcriber：列出本机转写模型（第一跳），大小、下载过
     ],
   };
   const busy = harness({ daemon: fakeDaemon({ running }) });
-  assert.equal(await busy.speakmore("transcriber"), 0);
+  assert.equal(await busy.utterly("transcriber"), 0);
   assert.match(busy.output.out, /qwen3-asr-0\.6b-q8.*下载中 25%/);
   assert.match(busy.output.out, /sensevoice-small-q8.*没下下来\n(.*\n){2}.*断网了/);
 });
@@ -2380,7 +2380,7 @@ test("transcriber <模型>：不用 key，让在运行的那个当场换；写�
   assert.match(output.out, /第一跳换成了 sensevoice-small-q8/);
 
   const wrong = harness();
-  assert.equal(await wrong.speakmore("transcriber", "gemini"), 2);
+  assert.equal(await wrong.utterly("transcriber", "gemini"), 2);
   assert.match(wrong.output.err, /qwen3-asr-0\.6b-q8/);
 });
 
@@ -2467,23 +2467,23 @@ test("transcriber <模型>：要换的还没下载时先问；答是就交给后
 
 test("transcriber <模型>：不想下就不下也不换；不能问时说先运行哪条命令；没下下来时不换", async () => {
   const declined = harness({ daemon: modelDaemon(), confirms: [false] });
-  assert.equal(await declined.speakmore("transcriber", "sensevoice-small-q8"), 1);
+  assert.equal(await declined.utterly("transcriber", "sensevoice-small-q8"), 1);
   assert.match(declined.output.out, /没有下载，也没有换/);
   assert.ok(!declined.daemon.calls.includes("download-model") && !declined.daemon.calls.includes("set-transcriber"));
 
   const quiet = harness({ daemon: modelDaemon(), interactive: false });
-  assert.equal(await quiet.speakmore("transcriber", "sensevoice-small-q8"), 1);
+  assert.equal(await quiet.utterly("transcriber", "sensevoice-small-q8"), 1);
   assert.match(quiet.output.err, /还没下载：先运行 speakmore transcriber download sensevoice-small-q8/);
 
   const failing = harness({ daemon: modelDaemon({ outcome: "断网了" }), confirms: [true] });
-  assert.equal(await failing.speakmore("transcriber", "sensevoice-small-q8"), 1);
+  assert.equal(await failing.utterly("transcriber", "sensevoice-small-q8"), 1);
   assert.match(failing.output.err, /没下下来：断网了/);
   assert.ok(!failing.daemon.calls.includes("set-transcriber"));
 });
 
 test("transcriber download：用户自己点的，不再问；后台没在运行就在命令行这个进程里下；已经下好的直说", async () => {
   const idle = harness();
-  assert.equal(await idle.speakmore("transcriber", "download", "qwen3-asr-0.6b-q8"), 0);
+  assert.equal(await idle.utterly("transcriber", "download", "qwen3-asr-0.6b-q8"), 0);
   assert.deepEqual(idle.local.downloads, ["qwen3-asr-0.6b-q8"]);
   assert.deepEqual(idle.local.sources, ["cn"]);
   assert.match(idle.output.out, /下载 Qwen3-ASR 0\.6B \(Q8_0\)（850 MB，从国内源（Utterly 的 CDN））/);
@@ -2491,17 +2491,17 @@ test("transcriber download：用户自己点的，不再问；后台没在运行
   assert.equal(idle.confirmed.length, 0);
 
   const again = harness();
-  assert.equal(await again.speakmore("transcriber", "download", "qwen3-asr-0.6b-q8"), 0);
+  assert.equal(await again.utterly("transcriber", "download", "qwen3-asr-0.6b-q8"), 0);
   assert.match(again.output.out, /已经下载好了/);
   assert.deepEqual(again.local.downloads, []);
 
   const failing = harness({ modelDownload: "磁盘写不进去" });
-  assert.equal(await failing.speakmore("transcriber", "download", "sensevoice-small-q8"), 1);
+  assert.equal(await failing.utterly("transcriber", "download", "sensevoice-small-q8"), 1);
   assert.match(failing.output.err, /没下下来：磁盘写不进去/);
 
   const wrong = harness();
-  assert.equal(await wrong.speakmore("transcriber", "download"), 2);
-  assert.equal(await wrong.speakmore("transcriber", "download", "gemini"), 2);
+  assert.equal(await wrong.utterly("transcriber", "download"), 2);
+  assert.equal(await wrong.utterly("transcriber", "download", "gemini"), 2);
 });
 
 test("transcriber check：交给后台念一句、转一次，说念的、转出来的和用了多久；不写就查现在选的", async () => {
@@ -2551,40 +2551,40 @@ test("transcriber cancel：后台正在下的停下；没在下的直说", async
 test("transcriber delete：先确认；--yes 不问；不能问又没 --yes 时以 2 退出；正在用的删不了；没下载的不用删", async () => {
   haveModel("sensevoice-small-q8");
   const asked = harness({ daemon: modelDaemon(), confirms: [false] });
-  assert.equal(await asked.speakmore("transcriber", "delete", "sensevoice-small-q8"), 1);
+  assert.equal(await asked.utterly("transcriber", "delete", "sensevoice-small-q8"), 1);
   assert.match(asked.confirmed[0], /删掉 SenseVoice Small \(Q8_0\)（253 MB）/);
   assert.match(asked.output.out, /没有删/);
   assert.ok(existsSync(join(paths.modelsDir, "sensevoice-small-q8")));
 
   const quiet = harness({ daemon: modelDaemon(), interactive: false });
-  assert.equal(await quiet.speakmore("transcriber", "delete", "sensevoice-small-q8"), 2);
+  assert.equal(await quiet.utterly("transcriber", "delete", "sensevoice-small-q8"), 2);
   assert.match(quiet.output.err, /--yes/);
 
   const sure = harness({ daemon: modelDaemon() });
-  assert.equal(await sure.speakmore("transcriber", "delete", "sensevoice-small-q8", "--yes"), 0);
+  assert.equal(await sure.utterly("transcriber", "delete", "sensevoice-small-q8", "--yes"), 0);
   assert.match(sure.output.out, /删掉了 SenseVoice Small \(Q8_0\)，腾出 253 MB/);
   assert.equal(existsSync(join(paths.modelsDir, "sensevoice-small-q8")), false);
 
   haveModel("qwen3-asr-0.6b-q8");
   const inUse = harness({ daemon: modelDaemon() });
-  assert.equal(await inUse.speakmore("transcriber", "delete", "qwen3-asr-0.6b-q8", "--yes"), 1);
+  assert.equal(await inUse.utterly("transcriber", "delete", "qwen3-asr-0.6b-q8", "--yes"), 1);
   assert.match(inUse.output.err, /正在用，删不了/);
 
   const nothing = harness();
-  assert.equal(await nothing.speakmore("transcriber", "delete", "sensevoice-small-q8", "--yes"), 0);
+  assert.equal(await nothing.utterly("transcriber", "delete", "sensevoice-small-q8", "--yes"), 0);
   assert.match(nothing.output.out, /本来就没下载/);
 });
 
 test("transcriber delete：后台没在运行时自己删；设置里 local 模式用的就是它就不删", async () => {
   haveModel("sensevoice-small-q8");
   const idle = harness();
-  assert.equal(await idle.speakmore("transcriber", "delete", "sensevoice-small-q8", "--yes"), 0);
+  assert.equal(await idle.utterly("transcriber", "delete", "sensevoice-small-q8", "--yes"), 0);
   assert.deepEqual(idle.local.removed, ["sensevoice-small-q8"]);
 
   haveModel("qwen3-asr-0.6b-q8");
   writeFileSync(paths.settingsFile, JSON.stringify({ mode: "local" }));
   const inUse = harness();
-  assert.equal(await inUse.speakmore("transcriber", "delete", "qwen3-asr-0.6b-q8", "--yes"), 1);
+  assert.equal(await inUse.utterly("transcriber", "delete", "qwen3-asr-0.6b-q8", "--yes"), 1);
   assert.match(inUse.output.err, /正在用，删不了/);
   assert.deepEqual(inUse.local.removed, []);
 });
@@ -2599,7 +2599,7 @@ test("mode local：要用的本机模型还没下载时先问；不下就不切�
 
   haveDeepSeekKey();
   const yes = harness({ daemon: modelDaemon({ running: READY }), confirms: [true] });
-  assert.equal(await yes.speakmore("mode", "local"), 0);
+  assert.equal(await yes.utterly("mode", "local"), 0);
   assert.match(yes.output.out, /下好了[\s\S]*切到了 local 模式/);
 });
 

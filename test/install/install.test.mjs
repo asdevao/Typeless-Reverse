@@ -20,7 +20,7 @@ import { afterEach, beforeEach, test } from "node:test";
 
 // 安装脚本的测试：拿一个假的发布包（里面的"Electron"是个记下自己怎么被调用的小脚本）真的跑 install.sh，
 // 装进临时的家目录。系统信息（系统版本、芯片、磁盘、是不是 root、连不连得上各家模型）用排在 PATH 前面的
-// 同名小脚本冒充，所以不联网，也不碰真的 ~/.speakmore。
+// 同名小脚本冒充，所以不联网，也不碰真的 ~/.utterly。
 // 每条都要真的执行几个刚生成的脚本，macOS 第一次执行新文件时会先检查它，一次安装要 3–6 秒，
 // 所以这一组单独跑、限时放得宽（npm run test:install），不拖慢平时的那一组。
 
@@ -105,11 +105,11 @@ function install({ env = {}, args = [], path = "" } = {}) {
   return { code: result.status, out: result.stdout, err: result.stderr, all: result.stdout + result.stderr };
 }
 
-const home = () => join(userHome, ".speakmore");
+const home = () => join(userHome, ".utterly");
 const calls = () => (existsSync(callLog) ? readFileSync(callLog, "utf8").trim().split("\n") : []);
 const installedVersion = (dir = home()) => JSON.parse(readFileSync(join(dir, "app", "package.json"), "utf8")).version;
 
-test("全新安装：程序和运行环境进了 ~/.speakmore，命令能用，家目录以外只多一个链接", () => {
+test("全新安装：程序和运行环境进了 ~/.utterly，命令能用，家目录以外只多一个链接", () => {
   const { code, out, all } = install();
   assert.equal(code, 0, all);
   assert.match(out, /Checks[\s\S]*Install[\s\S]*Installed SpeakMore 9\.9\.9/);
@@ -123,7 +123,7 @@ test("全新安装：程序和运行环境进了 ~/.speakmore，命令能用，�
   assert.equal(readlinkSync(link), join(home(), "bin", "speakmore"));
   assert.equal(readFileSync(join(home(), "bin", "links"), "utf8"), `${link}\n`);
   // 用户的家目录里除了这两处，没有别的东西
-  assert.deepEqual(readdirSync(userHome).sort(), [".local", ".speakmore"]);
+  assert.deepEqual(readdirSync(userHome).sort(), [".local", ".utterly"]);
 
   // 从链接运行：拿自带的 Electron 当 Node，跑的是装好的那份程序，参数原样传过去
   execFileSync(link, ["config", "set", "model", "a b"], { env: { PATH: "/usr/bin:/bin", FAKE_CALL_LOG: callLog } });
@@ -186,9 +186,9 @@ test("再装一次就是升级：程序换成新的，设置、key、历史和�
 
 test("安装时把 0.1 版搬数据的结果说出来", () => {
   const { out } = install({
-    env: { FAKE_STOP_SAYS: "Moved the old version's data to /x/.speakmore (history.db, Recordings)." },
+    env: { FAKE_STOP_SAYS: "Moved the old version's data to /x/.utterly (history.db, Recordings)." },
   });
-  assert.match(out, /✓ Moved the old version's data to \/x\/\.speakmore/);
+  assert.match(out, /✓ Moved the old version's data to \/x\/\.utterly/);
 });
 
 /** 预检查没过、或者中途出错：以非零退出，把原因说清楚，已经装着的不动，没装过的不留下东西 */

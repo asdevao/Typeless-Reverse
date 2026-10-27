@@ -18,11 +18,11 @@ const zh = createTranslator("zh-CN");
 /** 报错里给人看的那句，按中文翻出来对得上 */
 const said = (pattern) => (error) => pattern.test(zh.text(error.problem ?? error.message));
 
-test("所有东西都在家目录下的 .speakmore 这一个目录里", () => {
+test("所有东西都在家目录下的 .utterly 这一个目录里", () => {
   const paths = resolvePaths({}, "/Users/someone", "darwin");
-  assert.equal(paths.home, "/Users/someone/.speakmore");
+  assert.equal(paths.home, "/Users/someone/.utterly");
   for (const [name, path] of Object.entries(paths)) {
-    assert.ok(path === paths.home || path.startsWith("/Users/someone/.speakmore/"), `${name}: ${path}`);
+    assert.ok(path === paths.home || path.startsWith("/Users/someone/.utterly/"), `${name}: ${path}`);
   }
 });
 
@@ -60,12 +60,12 @@ test("程序、你的东西、运行时产生的，各在各的位置", () => {
 
 test("每家模型一把 key，App 和命令行共用一个文件；Gemini 的文件名和 0.3 以前一样；0.7.0 及以前 App 那一份另有名字", () => {
   const paths = resolvePaths({}, "/Users/someone", "darwin");
-  assert.equal(keyFile(paths, "gemini"), "/Users/someone/.speakmore/gemini-key.bin");
-  assert.equal(oldAppKeyFile(paths, "gemini"), "/Users/someone/.speakmore/gemini-key.app.bin");
-  assert.equal(keyFile(paths, "openai"), "/Users/someone/.speakmore/openai-key.bin");
+  assert.equal(keyFile(paths, "gemini"), "/Users/someone/.utterly/gemini-key.bin");
+  assert.equal(oldAppKeyFile(paths, "gemini"), "/Users/someone/.utterly/gemini-key.app.bin");
+  assert.equal(keyFile(paths, "openai"), "/Users/someone/.utterly/openai-key.bin");
   // 润色那一跳的厂商也一样，自定义服务一把
-  assert.equal(keyFile(paths, "deepseek"), "/Users/someone/.speakmore/deepseek-key.bin");
-  assert.equal(keyFile(paths, "custom"), "/Users/someone/.speakmore/custom-key.bin");
+  assert.equal(keyFile(paths, "deepseek"), "/Users/someone/.utterly/deepseek-key.bin");
+  assert.equal(keyFile(paths, "custom"), "/Users/someone/.utterly/custom-key.bin");
   assert.throws(() => keyFile(paths, "../x"), /id/);
   assert.throws(() => oldAppKeyFile(paths, "../x"), /id/);
 });
@@ -76,7 +76,7 @@ test("SPEAKMORE_HOME 把整个目录换到别处", () => {
 });
 
 test("SPEAKMORE_HOME 是空字符串时当作没设，不把文件写到当前目录", () => {
-  assert.equal(resolvePaths({ SPEAKMORE_HOME: "" }, "/Users/someone", "darwin").home, "/Users/someone/.speakmore");
+  assert.equal(resolvePaths({ SPEAKMORE_HOME: "" }, "/Users/someone", "darwin").home, "/Users/someone/.utterly");
 });
 
 test("控制通道的路径太长时报错并说明怎么办，不等到监听时才失败", () => {
@@ -103,14 +103,14 @@ test("ensureHome：把目录建出来，只有自己进得去（里面有录音�
   assertOwnerOnlyDir(paths.home);
 });
 
-test("Windows 上同样是用户目录下的 .speakmore 一个目录；控制通道是按家目录取名的 named pipe，不在磁盘上", () => {
+test("Windows 上同样是用户目录下的 .utterly 一个目录；控制通道是按家目录取名的 named pipe，不在磁盘上", () => {
   const paths = resolvePaths({}, "C:\\Users\\someone", "win32");
-  assert.equal(paths.home, "C:\\Users\\someone\\.speakmore");
+  assert.equal(paths.home, "C:\\Users\\someone\\.utterly");
   for (const [name, path] of Object.entries(paths)) {
     if (name === "controlSocket") continue;
-    assert.ok(path === paths.home || path.startsWith("C:\\Users\\someone\\.speakmore\\"), `${name}: ${path}`);
+    assert.ok(path === paths.home || path.startsWith("C:\\Users\\someone\\.utterly\\"), `${name}: ${path}`);
   }
-  assert.equal(paths.historyDb, "C:\\Users\\someone\\.speakmore\\data\\history.db");
+  assert.equal(paths.historyDb, "C:\\Users\\someone\\.utterly\\data\\history.db");
   assert.match(paths.controlSocket, /^\\\\\.\\pipe\\speakmore-[0-9a-f]{16}$/);
   // 同一个家目录（大小写不同也是同一个）是同一个；换个家目录就是另一个
   assert.equal(resolvePaths({}, "c:\\users\\SOMEONE", "win32").controlSocket, paths.controlSocket);
@@ -147,5 +147,5 @@ test("Windows 上装好的那一份：从程序的位置（<家目录>\\versions
   assert.equal(installedHomeOf("C:\\dev\\speakmore\\node_modules\\electron\\dist\\electron.exe", exists), null);
   // 旁边没有 app
   assert.equal(installedHomeOf("E:\\other\\versions\\0.9.3-1a2b3c4d\\runtime\\electron.exe", exists), null);
-  assert.equal(installedHomeOf("/Users/someone/.speakmore/runtime/Electron.app/Contents/MacOS/Electron", exists), null);
+  assert.equal(installedHomeOf("/Users/someone/.utterly/runtime/Electron.app/Contents/MacOS/Electron", exists), null);
 });

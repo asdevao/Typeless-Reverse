@@ -247,7 +247,7 @@ test("卡住不答话时也停得掉：照它启动时记下的进程号结束�
     "/pkg/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron /pkg",
     "/Applications/SpeakMore.app/Contents/MacOS/SpeakMore",
     // Windows：装好的那份和从源码跑的都是 electron.exe
-    "C:\\Users\\someone\\.speakmore\\runtime\\electron.exe",
+    "C:\\Users\\someone\\.utterly\\runtime\\electron.exe",
     "C:\\dev\\speakmore\\node_modules\\electron\\dist\\electron.exe",
   ]) {
     processes = fakeProcesses();

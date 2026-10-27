@@ -14,9 +14,9 @@ test("设置逐项列出现在的值、从哪来、能填什么，后面是文�
         model: { value: "gemini/gemini-3.8-flash", source: "env", env: "GEMINI_MODEL" },
       },
       paths: {
-        home: "/home/.speakmore",
-        settingsFile: "/home/.speakmore/settings.json",
-        logFile: "/home/.speakmore/logs/main.log",
+        home: "/home/.utterly",
+        settingsFile: "/home/.utterly/settings.json",
+        logFile: "/home/.utterly/logs/main.log",
       },
     },
     plain,
@@ -46,8 +46,8 @@ test("设置逐项列出现在的值、从哪来、能填什么，后面是文�
   assert.match(text, /theme\s+ink\s+墨 · 默认/);
   assert.match(text, /ink \/ cinnabar \/ indigo/);
   assert.match(text, /speakmore config set hotkey fn/);
-  assert.match(text, /目录\s+\/home\/\.speakmore\n/);
-  assert.match(text, /\/home\/\.speakmore\/logs\/main\.log/);
+  assert.match(text, /目录\s+\/home\/\.utterly\n/);
+  assert.match(text, /\/home\/\.utterly\/logs\/main\.log/);
   assert.match(text, /speakmore uninstall/);
 });
 

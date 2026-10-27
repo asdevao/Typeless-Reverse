@@ -31,7 +31,7 @@ test("退出后再删：叫它的进程马上就退出，那几个目录照样�
 
 test("没有那一项时如实说没有，不报错：开机启动、Path 里都没有这个家目录的", windowsOnly, () => {
   // 家目录是编出来的：真装着的那份的开机启动、Path 不会被碰到（只删指着这个家目录的）
-  const home = join(tmpdir(), "sm-winsys-nowhere", ".speakmore");
+  const home = join(tmpdir(), "sm-winsys-nowhere", ".utterly");
   assert.equal(removeLoginItem(home), false);
   assert.equal(removePathEntry(join(home, "bin")), false);
 });
@@ -42,7 +42,7 @@ test(
   (t) => {
     const dir = mkdtempSync(join(tmpdir(), "sm-快捷方式-"));
     t.after(() => rmSync(dir, { recursive: true, force: true }));
-    const home = join(dir, "用户", ".speakmore");
+    const home = join(dir, "用户", ".utterly");
     const targets = {
       "ours.lnk": join(home, "versions", "0.9.3-1a2b3c4d", "runtime", "electron.exe"),
       // 0.9.2 及以前装的：程序直接在家目录的 runtime 里
