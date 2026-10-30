@@ -415,10 +415,6 @@ export function createSettings({ refresh }) {
   }
   $("recheck").addEventListener("click", () => window.speakmore.recheckPermissions());
 
-  // ---------- 关于 ----------
-
-  $("open-homepage").addEventListener("click", () => window.speakmore.openHomepage());
-
   // ---------- 对话框本身 ----------
 
   for (const item of dialog.querySelectorAll(".menu-item")) {
