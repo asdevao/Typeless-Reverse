@@ -47,3 +47,4 @@ website/dist/
 # Claude Code 给子任务临时建的工作副本
 .claude/worktrees/
 __pycache__/
+.memory/
