@@ -1,9 +1,3 @@
-<div align="center">
-
-<a href="README.en.md">English</a>
-
-</div>
-
 # Utterly
 
 **说话，别打字。**
@@ -12,7 +6,7 @@
 
 ## 安装（Windows）
 
-下载 [Utterly-Setup-x64.exe](https://dl.zephyrxiang.com/speakmore/v0.9.4/Utterly-Setup-x64.exe)，双击安装。装完自动启动，首次引导带你完成配置（选识别方式、填模型 key、测麦克风和热键）。
+运行发布产物里的 **Utterly-Setup-x64.exe**，双击安装。装完自动启动，首次引导带你完成配置（选识别方式、填模型 key、测麦克风和热键）。
 
 > 语音识别模型（约 800 MB）首次使用时自动下载，支持断点续传。
 
