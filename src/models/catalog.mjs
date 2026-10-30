@@ -24,6 +24,12 @@ export const MODELSCOPE_OWNER = "ardsfsw";
 /** 一个模型在魔搭上的仓库 */
 export const mirrorRepo = (model) => `${MODELSCOPE_OWNER}/${model.id}`;
 
+/**
+ * 旧 COS 布局的对象名（<模型 id>/<原始提交>/<路径>）：scripts/release/models-layout.mjs 和 ops/stats.mjs
+ * 这些发布运维脚本还在引用这个排法。当前的国内源（modelScope）不用它
+ */
+export const mirrorKey = (model, path) => `${model.id}/${model.origin.revision}/${path}`;
+
 /** 国内源：魔搭上钉在那次提交（mirror.revision）的文件。换了提交就是新地址，内容不会再变 */
 const modelScope = (model, file) =>
   `https://modelscope.cn/models/${mirrorRepo(model)}/resolve/${model.mirror.revision}/${file.path}`;
