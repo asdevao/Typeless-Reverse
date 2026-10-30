@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/icon.svg" width="112" height="112" alt="SpeakMore 图标：靛青底印章，刻五道声波" />
+  <img src="assets/icon.svg" width="112" height="112" alt="Utterly 图标：靛青底印章，刻五道声波" />
 </p>
 
-<h1 align="center">SpeakMore</h1>
+<h1 align="center">Utterly</h1>
 
 <p align="center">
   <b>说话，别打字。</b><br>
@@ -28,7 +28,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://media.speakmore.zephyrxiang.com/readme/home-dark.zh-CN.ded4c77a.webp?v=4" />
-  <img src="https://media.speakmore.zephyrxiang.com/readme/home.zh-CN.9f68edd4.webp" alt="SpeakMore 主窗口首页：字数、节省时间、语速、每日热力图、花费，右上角为当前识别方式" />
+  <img src="https://media.speakmore.zephyrxiang.com/readme/home.zh-CN.9f68edd4.webp" alt="Utterly 主窗口首页：字数、节省时间、语速、每日热力图、花费，右上角为当前识别方式" />
 </picture>
 
 - 按下快捷键开始口述，再次按下结束，文字写入当前光标位置。
@@ -54,7 +54,7 @@
 **macOS**
 
 - 系统要求：macOS 12 及以上。
-- 打开 dmg，将 SpeakMore 拖入"应用程序"。
+- 打开 dmg，将 Utterly 拖入"应用程序"。
 - 安装包已使用 Developer ID 签名，并通过 Apple 公证。
 
 **Windows**
@@ -81,7 +81,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 <details>
 <summary><b>安装包与终端安装的区别</b></summary>
 
-- 安装包为独立应用：macOS 权限授予 SpeakMore 本身，支持开机自启。
+- 安装包为独立应用：macOS 权限授予 Utterly 本身，支持开机自启。
 - 终端安装在 macOS 上由终端启动，权限授予所用终端。
 - Windows 下两种方式的安装内容相同，均位于 `%USERPROFILE%\.speakmore`，并添加开始菜单项。
 - 两种方式共用设置、历史记录与 `speakmore` 命令，同一时间运行其一即可。
@@ -94,7 +94,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 2. 开始口述，屏幕底部的悬浮条随音量变化。
 3. 再次按下快捷键，文字写入光标位置；按 `esc` 取消本次口述。
 
-- SpeakMore 常驻菜单栏（Windows 为任务栏通知区域）。
+- Utterly 常驻菜单栏（Windows 为任务栏通知区域）。
 - 主窗口提供统计、历史记录、模型与设置。
 
 ### 首次引导
@@ -145,7 +145,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
   <img src="https://media.speakmore.zephyrxiang.com/readme/vendors-light.zh-CN.89418227.webp" width="860" alt="支持的厂商：Gemini、OpenAI、通义千问、阿里云百炼、DeepSeek、Kimi、智谱 GLM、MiniMax、SenseVoice，以及 OpenAI 兼容服务" />
 </picture>
 
-<sub>上述名称与标志归各自权利人所有，仅用于说明 SpeakMore 支持对接的服务。</sub>
+<sub>上述名称与标志归各自权利人所有，仅用于说明 Utterly 支持对接的服务。</sub>
 
 **模型页**按用途列出全部模型：
 
@@ -230,7 +230,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 
 - **数据隐私方式不上传任何数据**：语音由本机模型转写为文字。
 - **无需密钥与账号**。
-- **国内源一键下载**：默认经 SpeakMore 国内源下载本机模型。
+- **国内源一键下载**：默认经 Utterly 国内源下载本机模型。
 - **自动切换下载源**：国内源不可用时改用 Hugging Face。
 - **完整性校验**：下载完成后校验 SHA-256。
 - **无中转服务器**：录音或文字以用户自有密钥直接发送至所选厂商。
@@ -240,12 +240,12 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://media.speakmore.zephyrxiang.com/readme/download-speed-dark.zh-CN.170a9ced.webp" />
-  <img src="https://media.speakmore.zephyrxiang.com/readme/download-speed-light.zh-CN.c710e7f4.webp?v=3" width="720" alt="下载 850 MB 本机模型的耗时：SpeakMore 国内源 9.3 MB/s，约 1.5 分钟；hf-mirror.com 约 15 分钟；Hugging Face 约 20 分钟" />
+  <img src="https://media.speakmore.zephyrxiang.com/readme/download-speed-light.zh-CN.c710e7f4.webp?v=3" width="720" alt="下载 850 MB 本机模型的耗时：Utterly 国内源 9.3 MB/s，约 1.5 分钟；hf-mirror.com 约 15 分钟；Hugging Face 约 20 分钟" />
 </picture>
 
 ## 💸 费用自由
 
-- SpeakMore 本身免费。
+- Utterly 本身免费。
 - 模型费用按实际用量，直接结算给厂商。
 - 首页逐项统计花费。
 
@@ -268,7 +268,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
     <td>企业版</td><td>需询价</td><td>需询价</td><td>不限</td><td>Typeless 服务器<sup>1</sup></td><td>需注册</td>
   </tr>
   <tr>
-    <td rowspan="4"><b>SpeakMore</b></td><td><b>纯本机</b></td><td><b>¥0</b></td><td><b>¥0</b></td><td>不限</td><td><b>本机</b></td><td><b>无需</b></td>
+    <td rowspan="4"><b>Utterly</b></td><td><b>纯本机</b></td><td><b>¥0</b></td><td><b>¥0</b></td><td>不限</td><td><b>本机</b></td><td><b>无需</b></td>
   </tr>
   <tr>
     <td><b>本机转写 + DeepSeek</b></td><td><b>¥2.63</b></td><td><b>¥32</b></td><td>不限</td><td>仅文字 → DeepSeek</td><td><b>无需</b></td>
@@ -281,7 +281,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
   </tr>
 </table>
 
-<sub>Typeless 价格取自 <a href="https://www.typeless.com/pricing">typeless.com/pricing</a>（2026-10-17），美元按 6.71 折算人民币。SpeakMore 为估算值，口径同上文推荐组合；使用 Gemini 免费额度时不产生费用。<br>
+<sub>Typeless 价格取自 <a href="https://www.typeless.com/pricing">typeless.com/pricing</a>（2026-10-17），美元按 6.71 折算人民币。Utterly 为估算值，口径同上文推荐组合；使用 Gemini 免费额度时不产生费用。<br>
 <sup>1</sup> 同时上传当前应用、窗口标题与屏幕文字，详见<a href="targets/typeless/docs/06-context-capture-and-privacy.md">逆向笔记</a>。</sub>
 
 ## 📊 评测
@@ -328,7 +328,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 - **签名公证**：Mac 版经 Developer ID 签名与 Apple 公证。
 - **可校验**：全部安装包提供 SHA-256 校验值。
 - **逆向分析**：Typeless 客户端的拆解整理为 [18 篇笔记](targets/typeless/docs/00-overview.md)。
-- **独立实现**：SpeakMore 参照其交互从零实现，不含 Typeless 的任何代码与密钥。
+- **独立实现**：Utterly 参照其交互从零实现，不含 Typeless 的任何代码与密钥。
 
 ## 🧑‍💻 开发者
 
@@ -394,7 +394,7 @@ flowchart LR
 | `speakmore logs [-n 行数] [-f]` | 查看日志 |
 | `speakmore uninstall [--keep-data]` | 卸载（执行前确认） |
 
-- `update` 同时升级 SpeakMore.app，设置、密钥、历史记录与录音保留。
+- `update` 同时升级 Utterly.app，设置、密钥、历史记录与录音保留。
 - `check` 类命令发送最小请求（本机模型由系统语音朗读样句），检测连通性与响应速度。
 - `local` 为转写 + 润色，`private` 为数据隐私。
 - 原生识别厂商：`gemini` / `openai` / `bailian`。
@@ -458,7 +458,7 @@ flowchart LR
 | 辅助功能 | 模拟 ⌘V 写入文字，响应 `esc` |
 
 - App 在首次引导中申请上述权限。
-- 终端安装时，权限授予运行 SpeakMore 的终端。
+- 终端安装时，权限授予运行 Utterly 的终端。
 - Windows 仅需麦克风权限（设置 › 隐私和安全性 › 麦克风）。
 
 </details>
@@ -480,7 +480,7 @@ flowchart LR
 - 密钥的解密密钥保存在钥匙串中（Windows 由 DPAPI 绑定账户），文件复制至他处无法解密。
 - 日志仅记录长度、耗时与用量，不记录口述内容与密钥。
 - 本机模型按需下载，并校验 SHA-256。
-- 目录之外：钥匙串条目、已授予的系统权限、"应用程序"中的 SpeakMore。
+- 目录之外：钥匙串条目、已授予的系统权限、"应用程序"中的 Utterly。
 - Windows 另有开始菜单快捷方式、Path 条目与开机自启项。
 
 </details>
@@ -505,10 +505,10 @@ flowchart LR
 <details>
 <summary><b>🔄 升级与卸载</b></summary>
 
-- **升级**：`speakmore update` 同时升级终端安装与 SpeakMore.app，并重新打开升级前运行的一方。
+- **升级**：`speakmore update` 同时升级终端安装与 Utterly.app，并重新打开升级前运行的一方。
 - **仅安装 App 时升级**：下载新版 dmg 覆盖安装。
 - **升级保留**：设置、密钥、历史记录与录音。
-- **卸载**：`speakmore uninstall` 停止 SpeakMore，删除整个目录、命令及钥匙串条目。
+- **卸载**：`speakmore uninstall` 停止 Utterly，删除整个目录、命令及钥匙串条目。
 - **Windows 卸载**：另删除 Path 条目、开始菜单快捷方式与开机自启项。
 - **保留数据卸载**：附加 `--keep-data`，保留设置、密钥、历史记录与录音。
 - **仅安装 App 时卸载**：从菜单栏退出后，将其移至废纸篓。
@@ -519,4 +519,4 @@ flowchart LR
 
 - [MIT](LICENSE)。
 - `.claude/skills/` 下的文件来自 [REA](https://github.com/morluto/rea)，适用其自身的 MIT 许可。
-- 名称致敬 Typeless。SpeakMore 依据逆向分析笔记独立实现，与 Typeless 无隶属关系。
+- 名称致敬 Typeless。Utterly 依据逆向分析笔记独立实现，与 Typeless 无隶属关系。

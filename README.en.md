@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/icon.svg" width="112" height="112" alt="SpeakMore icon: an indigo seal carved with five sound bars" />
+  <img src="assets/icon.svg" width="112" height="112" alt="Utterly icon: an indigo seal carved with five sound bars" />
 </p>
 
-<h1 align="center">SpeakMore</h1>
+<h1 align="center">Utterly</h1>
 
 <p align="center">
   <b>Speak more. Type less.</b><br>
@@ -28,7 +28,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://media.speakmore.zephyrxiang.com/readme/home-dark.en.d337323a.webp" />
-  <img src="https://media.speakmore.zephyrxiang.com/readme/home.en.2f8dbf53.webp" alt="SpeakMore home window: word count, time saved, speaking rate, daily heatmap, spend, and the active recognition mode" />
+  <img src="https://media.speakmore.zephyrxiang.com/readme/home.en.2f8dbf53.webp" alt="Utterly home window: word count, time saved, speaking rate, daily heatmap, spend, and the active recognition mode" />
 </picture>
 
 - Press the hotkey to start dictating; press it again to insert the text at the cursor.
@@ -54,7 +54,7 @@
 **macOS**
 
 - Requires macOS 12 or later.
-- Open the dmg and drag SpeakMore into Applications.
+- Open the dmg and drag Utterly into Applications.
 - Signed with a Developer ID and notarized by Apple.
 
 **Windows**
@@ -81,7 +81,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 <details>
 <summary><b>Installer and terminal installation compared</b></summary>
 
-- The installer provides a standalone app; macOS permissions are granted to SpeakMore itself, and it can open at login.
+- The installer provides a standalone app; macOS permissions are granted to Utterly itself, and it can open at login.
 - The terminal installation on macOS runs from the terminal; permissions are granted to that terminal.
 - On Windows, both methods install the same files into `%USERPROFILE%\.speakmore` and add a Start menu entry.
 - Both share settings, history and the `speakmore` command; run only one at a time.
@@ -94,7 +94,7 @@ irm https://dl.zephyrxiang.com/speakmore/install.ps1 | iex
 2. Dictate. The bar at the bottom of the screen follows the input level.
 3. Press the hotkey again to insert the text at the cursor, or press `esc` to discard the dictation.
 
-- SpeakMore resides in the menu bar (the notification area on Windows).
+- Utterly resides in the menu bar (the notification area on Windows).
 - The main window provides statistics, history, models and settings.
 
 ### Onboarding
@@ -213,7 +213,7 @@ The **Models** page lists every model by role:
 
 - The same on-device models run on every supported device.
 - An available graphics card is used first.
-- Without a usable graphics card, SpeakMore falls back to the CPU automatically.
+- Without a usable graphics card, Utterly falls back to the CPU automatically.
 
 | Device | Acceleration | Model | Per dictation |
 | --- | --- | --- | --- |
@@ -230,7 +230,7 @@ The **Models** page lists every model by role:
 
 - **No uploads in Data Privacy mode**: speech is transcribed by an on-device model.
 - **No API key or account required.**
-- **One-click download**: on-device models are served from SpeakMore's mirror in mainland China.
+- **One-click download**: on-device models are served from Utterly's mirror in mainland China.
 - **Automatic fallback**: Hugging Face is used if the mirror is unavailable.
 - **Integrity check**: every download is verified against SHA-256.
 - **No intermediary servers**: audio or text goes directly to the selected vendor with the user's own key.
@@ -240,12 +240,12 @@ The **Models** page lists every model by role:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://media.speakmore.zephyrxiang.com/readme/download-speed-dark.en.8b4db543.webp" />
-  <img src="https://media.speakmore.zephyrxiang.com/readme/download-speed-light.en.44f92b14.webp" width="720" alt="Download time for the 850 MB on-device model: SpeakMore China mirror at 9.3 MB/s, about 1.5 minutes; hf-mirror.com about 15 minutes; Hugging Face about 20 minutes" />
+  <img src="https://media.speakmore.zephyrxiang.com/readme/download-speed-light.en.44f92b14.webp" width="720" alt="Download time for the 850 MB on-device model: Utterly China mirror at 9.3 MB/s, about 1.5 minutes; hf-mirror.com about 15 minutes; Hugging Face about 20 minutes" />
 </picture>
 
 ## 💸 Cost freedom
 
-- SpeakMore is free.
+- Utterly is free.
 - Model usage is billed directly by each vendor, according to actual use.
 - The home window itemizes all spending.
 
@@ -268,7 +268,7 @@ Comparison with every Typeless plan (heavy use, 100 dictations a day):
     <td>Enterprise</td><td>Quote</td><td>Quote</td><td>Unlimited</td><td>Typeless<sup>1</sup></td><td>Yes</td>
   </tr>
   <tr>
-    <td rowspan="4"><b>SpeakMore</b></td><td><b>Fully On-device</b></td><td><b>$0</b></td><td><b>$0</b></td><td>Unlimited</td><td><b>On device</b></td><td><b>No</b></td>
+    <td rowspan="4"><b>Utterly</b></td><td><b>Fully On-device</b></td><td><b>$0</b></td><td><b>$0</b></td><td>Unlimited</td><td><b>On device</b></td><td><b>No</b></td>
   </tr>
   <tr>
     <td><b>On-device + DeepSeek</b></td><td><b>$0.39</b></td><td><b>$4.70</b></td><td>Unlimited</td><td>DeepSeek</td><td><b>No</b></td>
@@ -281,7 +281,7 @@ Comparison with every Typeless plan (heavy use, 100 dictations a day):
   </tr>
 </table>
 
-<sub>With On-device + DeepSeek, only the transcribed text is sent to DeepSeek. Typeless prices from <a href="https://www.typeless.com/pricing">typeless.com/pricing</a> (2026-10-17). SpeakMore figures are estimates on the basis of the setups table above; usage within Gemini's free tier incurs no cost.<br>
+<sub>With On-device + DeepSeek, only the transcribed text is sent to DeepSeek. Typeless prices from <a href="https://www.typeless.com/pricing">typeless.com/pricing</a> (2026-10-17). Utterly figures are estimates on the basis of the setups table above; usage within Gemini's free tier incurs no cost.<br>
 <sup>1</sup> Sent to Typeless servers together with the active application, window title and on-screen text; see the <a href="targets/typeless/docs/06-context-capture-and-privacy.md">reverse-engineering notes</a> (Chinese).</sub>
 
 ## 📊 Benchmarks
@@ -328,7 +328,7 @@ Comparison with every Typeless plan (heavy use, 100 dictations a day):
 - **Signed and notarized**: the Mac app carries a Developer ID signature and Apple notarization.
 - **Verifiable**: every package has a SHA-256 checksum.
 - **Reverse-engineered**: the Typeless client is documented in [18 notes](targets/typeless/docs/00-overview.md) (Chinese).
-- **Independently implemented**: SpeakMore was written from scratch and contains no Typeless code or keys.
+- **Independently implemented**: Utterly was written from scratch and contains no Typeless code or keys.
 
 ## 🧑‍💻 For developers
 
@@ -394,7 +394,7 @@ flowchart LR
 | `speakmore logs [-n lines] [-f]` | Show logs |
 | `speakmore uninstall [--keep-data]` | Uninstall, after confirmation |
 
-- `update` also updates SpeakMore.app; settings, keys, history and recordings are preserved.
+- `update` also updates Utterly.app; settings, keys, history and recordings are preserved.
 - `check` commands send a minimal request (for on-device models, a sentence read by the system voice) to check connectivity and response time.
 - `local` is Transcribe + Polish; `private` is Data Privacy.
 - Native providers: `gemini` / `openai` / `bailian`.
@@ -458,7 +458,7 @@ flowchart LR
 | Accessibility | Inserting text with a simulated ⌘V; responding to `esc` |
 
 - The app requests these permissions during onboarding.
-- With the terminal installation, permissions are granted to the terminal that runs SpeakMore.
+- With the terminal installation, permissions are granted to the terminal that runs Utterly.
 - On Windows, only microphone access is required (Settings › Privacy & security › Microphone).
 
 </details>
@@ -480,7 +480,7 @@ flowchart LR
 - The key decryption secret is held in the Keychain (bound to the account by DPAPI on Windows); a copied key file cannot be decrypted.
 - Logs contain lengths, timings and usage only; dictated content and keys are never logged.
 - On-device models are downloaded on request and verified against SHA-256.
-- Outside this directory: the Keychain entry, granted system permissions, and SpeakMore in Applications.
+- Outside this directory: the Keychain entry, granted system permissions, and Utterly in Applications.
 - On Windows, also the Start menu shortcut, a Path entry and the open-at-login entry.
 
 </details>
@@ -505,10 +505,10 @@ flowchart LR
 <details>
 <summary><b>🔄 Updating and uninstalling</b></summary>
 
-- **Update**: `speakmore update` updates both the terminal installation and SpeakMore.app, then reopens whichever was running.
+- **Update**: `speakmore update` updates both the terminal installation and Utterly.app, then reopens whichever was running.
 - **Update, app only**: download the new dmg and install it over the existing copy.
 - **Preserved on update**: settings, keys, history and recordings.
-- **Uninstall**: `speakmore uninstall` stops SpeakMore and removes the entire directory, the command and the Keychain entry.
+- **Uninstall**: `speakmore uninstall` stops Utterly and removes the entire directory, the command and the Keychain entry.
 - **Uninstall on Windows**: also removes the Path entry, Start menu shortcut and open-at-login entry.
 - **Keep data**: add `--keep-data` to preserve settings, keys, history and recordings.
 - **Uninstall, app only**: quit it from the menu bar and move it to the Trash.
@@ -519,4 +519,4 @@ flowchart LR
 
 - [MIT](LICENSE).
 - Files under `.claude/skills/` are from [REA](https://github.com/morluto/rea) and are covered by its own MIT license.
-- The name pays tribute to Typeless. SpeakMore is an independent implementation based on reverse-engineering notes and is not affiliated with Typeless.
+- The name pays tribute to Typeless. Utterly is an independent implementation based on reverse-engineering notes and is not affiliated with Typeless.

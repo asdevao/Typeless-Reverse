@@ -174,7 +174,7 @@ const INSTALLED_ON_WINDOWS =
  * 开机启动登记的是这个可执行文件加上程序目录（Windows 上没有应用包，要把参数也记下来）。
  * 装了新版本时 install.ps1 把这一项改指到新版本的程序上（Electron 认开没开只比程序路径）
  */
-const LOGIN_ITEM = WINDOWS ? { path: process.execPath, args: [app.getAppPath()], name: "SpeakMore" } : {};
+const LOGIN_ITEM = WINDOWS ? { path: process.execPath, args: [app.getAppPath()], name: "Utterly" } : {};
 
 /**
  * 开机启动开着没有。Windows 上 openAtLogin 只认以 AppUserModelId 为名的那一项，我们写的名字是 SpeakMore，
